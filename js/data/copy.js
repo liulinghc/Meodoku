@@ -44,7 +44,7 @@ module.exports = {
   guideTitle: '玩法说明',
   guideGoalTitle: '怎么算赢？',
   guideGoalLine1: '每行、每列、每个色区，各放 1 只猫。',
-  guideGoalLine2: '猫与猫不能相邻（横、竖、斜都不行）。',
+  guideGoalLine2: '猫与猫不能相邻（含斜对角）。',
   guideTapTitle: '点一下格子会怎样',
   guideTap1: '单击：打叉（X），这格不放猫',
   guideTap2: '再点：放一只猫',

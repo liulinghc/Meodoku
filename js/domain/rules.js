@@ -40,7 +40,9 @@ function analyze(cats, n, regionGrid) {
       if (a.r === b.r) bad = true;            // 同行
       if (a.c === b.c) bad = true;            // 同列
       if (a.g === b.g) bad = true;            // 同区域
-      if (adjacent(a, b)) bad = true;         // 相邻（含对角）
+      // 相邻按切比雪夫距离 ≤1：上下左右与斜对角都算；
+      // 同一条斜线但中间隔着格子的两只猫并不违反规则。
+      if (adjacent(a, b)) bad = true;
       if (bad) {
         conflict[a.index] = true;
         conflict[b.index] = true;

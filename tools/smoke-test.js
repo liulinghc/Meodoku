@@ -271,6 +271,20 @@ for (var ri = 0; ri < pack.levels.length; ri++) {
 }
 check('运行时规则判定全部答案通关', runtimeBad.length === 0, runtimeBad.slice(0, 3).join(','));
 
+// 规则边界：斜对角相邻必须判冲突；同一条斜线但中间隔格不算冲突
+var ruleLatin = [];
+for (var lr = 0; lr < 5; lr++) {
+  for (var lc = 0; lc < 5; lc++) ruleLatin.push((lr + lc) % 5);
+}
+var diagFull = rulesMod.analyze([0, 6, 12, 18, 24], 5, ruleLatin);
+check('五猫全填但斜角相邻仍不通关',
+  diagFull.solved === false && diagFull.conflict[0] === true && diagFull.conflict[6] === true,
+  'solved=' + diagFull.solved + ' conflict=' + JSON.stringify(diagFull.conflict));
+var diagFar = rulesMod.analyze([0, 12], 5, ruleLatin);
+check('同一斜线但不相邻不判冲突（只禁相邻）',
+  diagFar.conflict[0] !== true && diagFar.conflict[12] !== true,
+  JSON.stringify(diagFar.conflict));
+
 /* ---------------- 2. 启动与渲染 ---------------- */
 
 console.log('[2] 启动与三场景渲染');
@@ -1266,6 +1280,21 @@ check('每日页进入每日对局',
   app.sm.top().dailyDate === app.daily.todayKey());
 
 var dg7 = app.sm.top();
+
+// 挑战模式回归：斜角相邻的两只猫必须判冲突，不能进入结算
+dg7._restart();
+tapCell(app, dg7, 0, 0);
+tapCell(app, dg7, 0, 0);
+tapCell(app, dg7, 1, 1);
+tapCell(app, dg7, 1, 1);
+frames(app, 2);
+check('每日挑战斜角相邻两只猫判冲突且不结算',
+  dg7.conflict[0] === true && dg7.conflict[dg7.n + 1] === true &&
+  dg7.solvedFlag === false && sceneName(app) === 'game',
+  'conflict=' + JSON.stringify(dg7.conflict) + ' scene=' + sceneName(app));
+dg7._restart();
+frames(app, 1);
+
 fillSolution(app, dg7);
 frames(app, 50);
 check('每日对局完成进入每日结算',
