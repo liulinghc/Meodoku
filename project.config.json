@@ -1,0 +1,45 @@
+{
+  "appid": "touristappid",
+  "projectname": "meodoku",
+  "description": "喵谜格 · 猫咪逻辑方阵",
+  "compileType": "game",
+  "libVersion": "3.0.0",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": false,
+    "minified": false,
+    "newFeature": true,
+    "coverView": true,
+    "autoAudits": false,
+    "checkInvalidKey": true,
+    "checkSiteMap": false,
+    "uploadWithSourceMap": true,
+    "compileHotReLoad": false,
+    "lazyloadPlaceholderEnable": false,
+    "packNpmManually": false,
+    "enableEngineNative": false,
+    "buildHotReload": false
+  },
+  "packOptions": {
+    "ignore": [
+      { "type": "folder", "value": "docs" },
+      { "type": "folder", "value": "tools" },
+      { "type": "folder", "value": "tests" },
+      { "type": "folder", "value": "assets-src" },
+      { "type": "folder", "value": "preview" },
+      { "type": "folder", "value": "node_modules" },
+      { "type": "file", "value": "levels/pack-001.json" },
+      { "type": "file", "value": "README.md" },
+      { "type": "file", "value": "CLAUDE.md" }
+    ],
+    "include": []
+  },
+  "condition": {
+    "game": {
+      "currentL": -1,
+      "list": []
+    }
+  }
+}

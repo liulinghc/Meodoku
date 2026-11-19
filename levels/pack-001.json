@@ -1,0 +1,3017 @@
+{
+  "schema": 3,
+  "pack": 1,
+  "version": 3,
+  "generator": "md-levelgen/2",
+  "generatedAt": "2026-11-19",
+  "total": 300,
+  "tierNames": [
+    "入门",
+    "简单",
+    "普通",
+    "困难",
+    "专家"
+  ],
+  "levels": [
+    {
+      "id": "L001",
+      "n": 4,
+      "r": "baaabbdabddcddcc",
+      "s": "2031",
+      "t": 1,
+      "d": 15,
+      "b": 1,
+      "seed": 3340243743
+    },
+    {
+      "id": "L202",
+      "n": 4,
+      "r": "aaabaabbcccbcddd",
+      "s": "1302",
+      "t": 1,
+      "d": 15,
+      "b": 1,
+      "seed": 3932599064
+    },
+    {
+      "id": "L002",
+      "n": 4,
+      "r": "baaabbaabdccdddc",
+      "s": "2031",
+      "t": 1,
+      "d": 17,
+      "b": 1,
+      "seed": 2807976201
+    },
+    {
+      "id": "L003",
+      "n": 4,
+      "r": "baaabbacdbacddcc",
+      "s": "2031",
+      "t": 1,
+      "d": 20,
+      "b": 1,
+      "seed": 1376160748
+    },
+    {
+      "id": "L004",
+      "n": 4,
+      "r": "baaabbaabdccddcc",
+      "s": "2031",
+      "t": 1,
+      "d": 20,
+      "b": 1,
+      "seed": 3291667630
+    },
+    {
+      "id": "L005",
+      "n": 4,
+      "r": "baaabbcabdccdddc",
+      "s": "2031",
+      "t": 1,
+      "d": 20,
+      "b": 1,
+      "seed": 4237391757
+    },
+    {
+      "id": "L203",
+      "n": 4,
+      "r": "aabbaabbcccdcddd",
+      "s": "1302",
+      "t": 1,
+      "d": 22,
+      "b": 1,
+      "seed": 2889808454
+    },
+    {
+      "id": "L006",
+      "n": 4,
+      "r": "baaabbacddacddcc",
+      "s": "2031",
+      "t": 1,
+      "d": 22,
+      "b": 1,
+      "seed": 2937787608
+    },
+    {
+      "id": "L201",
+      "n": 4,
+      "r": "baaabbaaddccddcc",
+      "s": "2031",
+      "t": 1,
+      "d": 22,
+      "b": 1,
+      "seed": 4011715515
+    },
+    {
+      "id": "L206",
+      "n": 5,
+      "r": "bbbacbbbacebdcceedddeeedd",
+      "s": "31420",
+      "t": 1,
+      "d": 12,
+      "b": 0,
+      "seed": 882951461
+    },
+    {
+      "id": "L007",
+      "n": 5,
+      "r": "aaaccbbaccddeecdddeeddeee",
+      "s": "20413",
+      "t": 1,
+      "d": 12,
+      "b": 0,
+      "seed": 1749471131
+    },
+    {
+      "id": "L008",
+      "n": 5,
+      "r": "bbbaabbbaabbbdceeddceeedc",
+      "s": "31420",
+      "t": 1,
+      "d": 12,
+      "b": 0,
+      "seed": 2202282496
+    },
+    {
+      "id": "L208",
+      "n": 5,
+      "r": "aaabbaaabbcabbbccddddddee",
+      "s": "13024",
+      "t": 1,
+      "d": 12,
+      "b": 0,
+      "seed": 2954245923
+    },
+    {
+      "id": "L009",
+      "n": 5,
+      "r": "bbbacbbbacbeccceeeddeeedd",
+      "s": "30241",
+      "t": 1,
+      "d": 12,
+      "b": 0,
+      "seed": 3624183432
+    },
+    {
+      "id": "L210",
+      "n": 5,
+      "r": "bbbaabbbaadbeceddeceddeee",
+      "s": "41302",
+      "t": 1,
+      "d": 26,
+      "b": 1,
+      "seed": 707453889
+    },
+    {
+      "id": "L207",
+      "n": 5,
+      "r": "bbaaabbaaabbccaecccdeeecd",
+      "s": "30241",
+      "t": 1,
+      "d": 26,
+      "b": 1,
+      "seed": 1130493796
+    },
+    {
+      "id": "L010",
+      "n": 5,
+      "r": "bbaaabbaaabbbcaddeccdeecc",
+      "s": "41302",
+      "t": 1,
+      "d": 26,
+      "b": 1,
+      "seed": 1587476546
+    },
+    {
+      "id": "L011",
+      "n": 5,
+      "r": "aaaccaabbcddcccddeeeddeee",
+      "s": "02413",
+      "t": 1,
+      "d": 26,
+      "b": 1,
+      "seed": 1772395923
+    },
+    {
+      "id": "L012",
+      "n": 5,
+      "r": "aabbbaacbbdccbbdceeedceee",
+      "s": "14203",
+      "t": 1,
+      "d": 26,
+      "b": 1,
+      "seed": 1848636693
+    },
+    {
+      "id": "L013",
+      "n": 5,
+      "r": "aaabbaabbbaacebdcceedceee",
+      "s": "14203",
+      "t": 1,
+      "d": 26,
+      "b": 1,
+      "seed": 2096179028
+    },
+    {
+      "id": "L205",
+      "n": 5,
+      "r": "aabbbaabbbaacbbddceedccee",
+      "s": "14203",
+      "t": 1,
+      "d": 26,
+      "b": 1,
+      "seed": 2332807910
+    },
+    {
+      "id": "L204",
+      "n": 5,
+      "r": "ccaabccabbeccddeeeddeeedd",
+      "s": "24130",
+      "t": 1,
+      "d": 26,
+      "b": 1,
+      "seed": 3582140887
+    },
+    {
+      "id": "L014",
+      "n": 5,
+      "r": "bbaaabbbaabbccceddcceeecc",
+      "s": "31420",
+      "t": 1,
+      "d": 29,
+      "b": 1,
+      "seed": 1068414058
+    },
+    {
+      "id": "L015",
+      "n": 5,
+      "r": "caabbcaabbccdbbecdddecddd",
+      "s": "24130",
+      "t": 1,
+      "d": 29,
+      "b": 1,
+      "seed": 1248681649
+    },
+    {
+      "id": "L209",
+      "n": 5,
+      "r": "aaabbaabbbddbccdddecdddee",
+      "s": "02413",
+      "t": 1,
+      "d": 29,
+      "b": 1,
+      "seed": 1788579410
+    },
+    {
+      "id": "L016",
+      "n": 5,
+      "r": "aaabbaacbbddcccdddecdddee",
+      "s": "14203",
+      "t": 1,
+      "d": 29,
+      "b": 1,
+      "seed": 2126891432
+    },
+    {
+      "id": "L017",
+      "n": 5,
+      "r": "aaabbaaccbdacccdddecdddec",
+      "s": "14203",
+      "t": 1,
+      "d": 29,
+      "b": 1,
+      "seed": 2513624889
+    },
+    {
+      "id": "L018",
+      "n": 5,
+      "r": "ccaaacbbaacccadeceddeeedd",
+      "s": "42031",
+      "t": 1,
+      "d": 29,
+      "b": 1,
+      "seed": 3144577095
+    },
+    {
+      "id": "L019",
+      "n": 5,
+      "r": "bbaaabbacabbaceddeeedddee",
+      "s": "20314",
+      "t": 1,
+      "d": 29,
+      "b": 1,
+      "seed": 3165720537
+    },
+    {
+      "id": "L020",
+      "n": 5,
+      "r": "bbaaabbacabdacedddeedddee",
+      "s": "20314",
+      "t": 1,
+      "d": 29,
+      "b": 1,
+      "seed": 3298493142
+    },
+    {
+      "id": "L215",
+      "n": 5,
+      "r": "bbaaabbccadddceddeeedddee",
+      "s": "20314",
+      "t": 2,
+      "d": 31,
+      "b": 1,
+      "seed": 2869724354
+    },
+    {
+      "id": "L021",
+      "n": 5,
+      "r": "aaabcabbbcabeccddeceddeee",
+      "s": "02413",
+      "t": 2,
+      "d": 34,
+      "b": 1,
+      "seed": 2775468033
+    },
+    {
+      "id": "L022",
+      "n": 5,
+      "r": "aaabbaabbbacccbddcccddcee",
+      "s": "14203",
+      "t": 2,
+      "d": 35,
+      "b": 2,
+      "seed": 1193326947
+    },
+    {
+      "id": "L213",
+      "n": 5,
+      "r": "bccaabbccabcccdeeecdeeedd",
+      "s": "30241",
+      "t": 2,
+      "d": 35,
+      "b": 2,
+      "seed": 2810261203
+    },
+    {
+      "id": "L023",
+      "n": 5,
+      "r": "acccbaacbbcccddeeeddeeedd",
+      "s": "03142",
+      "t": 2,
+      "d": 35,
+      "b": 2,
+      "seed": 3096231284
+    },
+    {
+      "id": "L024",
+      "n": 5,
+      "r": "bbbaabbccceccddeeeddeeedd",
+      "s": "30241",
+      "t": 2,
+      "d": 35,
+      "b": 2,
+      "seed": 3416999781
+    },
+    {
+      "id": "L025",
+      "n": 5,
+      "r": "bbbaabbcacbeccceeccdeeedd",
+      "s": "30241",
+      "t": 2,
+      "d": 35,
+      "b": 2,
+      "seed": 3417374417
+    },
+    {
+      "id": "L216",
+      "n": 5,
+      "r": "aacccabbbcbbcccdddeeddeee",
+      "s": "02413",
+      "t": 2,
+      "d": 35,
+      "b": 2,
+      "seed": 3834798228
+    },
+    {
+      "id": "L026",
+      "n": 5,
+      "r": "aaabbacabbaceddcceddceeed",
+      "s": "03142",
+      "t": 2,
+      "d": 36,
+      "b": 1,
+      "seed": 1820542219
+    },
+    {
+      "id": "L027",
+      "n": 5,
+      "r": "bbbaabbcccddcecdddecddeee",
+      "s": "31402",
+      "t": 2,
+      "d": 37,
+      "b": 2,
+      "seed": 203532642
+    },
+    {
+      "id": "L221",
+      "n": 5,
+      "r": "aaabbaaabbacccbdddccdddee",
+      "s": "14203",
+      "t": 2,
+      "d": 37,
+      "b": 2,
+      "seed": 601232938
+    },
+    {
+      "id": "L028",
+      "n": 5,
+      "r": "bbaaabbbeaceeeaceeddceeed",
+      "s": "42031",
+      "t": 2,
+      "d": 37,
+      "b": 2,
+      "seed": 2442695033
+    },
+    {
+      "id": "L029",
+      "n": 5,
+      "r": "bbbaabbccadbeceddeeeddeee",
+      "s": "41302",
+      "t": 2,
+      "d": 40,
+      "b": 2,
+      "seed": 1793656627
+    },
+    {
+      "id": "L030",
+      "n": 5,
+      "r": "aaaccabbbcdddccdddeeddeee",
+      "s": "02413",
+      "t": 2,
+      "d": 40,
+      "b": 2,
+      "seed": 2990656057
+    },
+    {
+      "id": "L031",
+      "n": 5,
+      "r": "aaabcabbbcaadccdddceddeee",
+      "s": "02413",
+      "t": 2,
+      "d": 40,
+      "b": 2,
+      "seed": 3239014157
+    },
+    {
+      "id": "L032",
+      "n": 5,
+      "r": "bbaaabaaccdddceddcceddeee",
+      "s": "20314",
+      "t": 2,
+      "d": 40,
+      "b": 2,
+      "seed": 3243911456
+    },
+    {
+      "id": "L033",
+      "n": 5,
+      "r": "bbbaabbbacbeccceeddceeedd",
+      "s": "31420",
+      "t": 2,
+      "d": 42,
+      "b": 2,
+      "seed": 616904
+    },
+    {
+      "id": "L219",
+      "n": 5,
+      "r": "bcccabbcaaddcceddeeeddeee",
+      "s": "41302",
+      "t": 2,
+      "d": 42,
+      "b": 2,
+      "seed": 1033829913
+    },
+    {
+      "id": "L217",
+      "n": 5,
+      "r": "bbbaabbcccebccceeddceeedd",
+      "s": "31420",
+      "t": 2,
+      "d": 42,
+      "b": 2,
+      "seed": 1054263175
+    },
+    {
+      "id": "L034",
+      "n": 5,
+      "r": "bbcaabbcaceeccceeddceeedd",
+      "s": "31420",
+      "t": 2,
+      "d": 42,
+      "b": 2,
+      "seed": 1064274749
+    },
+    {
+      "id": "L035",
+      "n": 5,
+      "r": "aabbbcabbbcccbbcddeeddeee",
+      "s": "13024",
+      "t": 2,
+      "d": 42,
+      "b": 2,
+      "seed": 3361330550
+    },
+    {
+      "id": "L036",
+      "n": 5,
+      "r": "caaabccaabecabbeceddeeedd",
+      "s": "24130",
+      "t": 2,
+      "d": 42,
+      "b": 2,
+      "seed": 4101214600
+    },
+    {
+      "id": "L037",
+      "n": 5,
+      "r": "caaabccabbecaadecdddeeedd",
+      "s": "24130",
+      "t": 2,
+      "d": 45,
+      "b": 2,
+      "seed": 1545445226
+    },
+    {
+      "id": "L222",
+      "n": 5,
+      "r": "aaabbacbbbacedbcceddceeed",
+      "s": "03142",
+      "t": 2,
+      "d": 45,
+      "b": 2,
+      "seed": 1600163163
+    },
+    {
+      "id": "L038",
+      "n": 5,
+      "r": "aaabbcacbbccceecdddeddeee",
+      "s": "13024",
+      "t": 2,
+      "d": 45,
+      "b": 2,
+      "seed": 2365544144
+    },
+    {
+      "id": "L039",
+      "n": 5,
+      "r": "bbaaabbbcaebbccedddceeedc",
+      "s": "31420",
+      "t": 2,
+      "d": 45,
+      "b": 2,
+      "seed": 2563552535
+    },
+    {
+      "id": "L220",
+      "n": 5,
+      "r": "aabbbaaabbcccdbcdddecccee",
+      "s": "13024",
+      "t": 2,
+      "d": 45,
+      "b": 2,
+      "seed": 3581192718
+    },
+    {
+      "id": "L214",
+      "n": 5,
+      "r": "aaabbaaabbacebbcceddceeed",
+      "s": "03142",
+      "t": 2,
+      "d": 45,
+      "b": 2,
+      "seed": 3750553218
+    },
+    {
+      "id": "L040",
+      "n": 5,
+      "r": "bbaaabbaaabbcccedddceeecc",
+      "s": "31420",
+      "t": 2,
+      "d": 45,
+      "b": 2,
+      "seed": 3940838564
+    },
+    {
+      "id": "L212",
+      "n": 5,
+      "r": "aabbbcacbbccceecddeeddeee",
+      "s": "13024",
+      "t": 2,
+      "d": 45,
+      "b": 2,
+      "seed": 3982478400
+    },
+    {
+      "id": "L041",
+      "n": 5,
+      "r": "aabbbcaabbcccbbcdddeddeee",
+      "s": "13024",
+      "t": 2,
+      "d": 45,
+      "b": 2,
+      "seed": 4017329461
+    },
+    {
+      "id": "L211",
+      "n": 5,
+      "r": "bcaaabccaabccadeeccdeeddd",
+      "s": "30241",
+      "t": 2,
+      "d": 51,
+      "b": 3,
+      "seed": 2669427697
+    },
+    {
+      "id": "L042",
+      "n": 5,
+      "r": "caaabccabbecdbdecdddeeddd",
+      "s": "24130",
+      "t": 2,
+      "d": 51,
+      "b": 3,
+      "seed": 3856593554
+    },
+    {
+      "id": "L218",
+      "n": 5,
+      "r": "bbaaacbbbaccdddeeeddeeedd",
+      "s": "42031",
+      "t": 2,
+      "d": 54,
+      "b": 3,
+      "seed": 41391126
+    },
+    {
+      "id": "L043",
+      "n": 5,
+      "r": "bbaaabbbcadddcadeeccddeec",
+      "s": "41302",
+      "t": 2,
+      "d": 54,
+      "b": 3,
+      "seed": 160693594
+    },
+    {
+      "id": "L044",
+      "n": 5,
+      "r": "aaacbaaccbddceeddceeddeee",
+      "s": "14203",
+      "t": 2,
+      "d": 54,
+      "b": 3,
+      "seed": 571888934
+    },
+    {
+      "id": "L045",
+      "n": 5,
+      "r": "bbaaabbbcaddbcadeeccddeec",
+      "s": "41302",
+      "t": 2,
+      "d": 54,
+      "b": 3,
+      "seed": 2226502299
+    },
+    {
+      "id": "L046",
+      "n": 6,
+      "r": "cbbbaaccbbbaccbaaacccdaaddddeeffffee",
+      "s": "420351",
+      "t": 2,
+      "d": 23,
+      "b": 0,
+      "seed": 1051340787
+    },
+    {
+      "id": "L047",
+      "n": 6,
+      "r": "caabbbcabbbbceddddeedfdfeeffffeeffff",
+      "s": "250413",
+      "t": 2,
+      "d": 23,
+      "b": 0,
+      "seed": 2357185425
+    },
+    {
+      "id": "L048",
+      "n": 6,
+      "r": "bbbaaabcbbaaccdbeacfdeeecfdeeecfdeee",
+      "s": "530241",
+      "t": 2,
+      "d": 35,
+      "b": 1,
+      "seed": 4054656240
+    },
+    {
+      "id": "L223",
+      "n": 6,
+      "r": "bbaaaabdccccddcceeddcceedfcffedfffee",
+      "s": "403152",
+      "t": 2,
+      "d": 37,
+      "b": 1,
+      "seed": 2341157487
+    },
+    {
+      "id": "L049",
+      "n": 6,
+      "r": "bbbbaabddaaabbdccaddddccddccceffffee",
+      "s": "403152",
+      "t": 2,
+      "d": 37,
+      "b": 1,
+      "seed": 3525512865
+    },
+    {
+      "id": "L227",
+      "n": 6,
+      "r": "aabbbbaabbbbcadbebcdddeecfdddefffeee",
+      "s": "140352",
+      "t": 2,
+      "d": 37,
+      "b": 1,
+      "seed": 3699779131
+    },
+    {
+      "id": "L050",
+      "n": 6,
+      "r": "aaabccdbbbccdddccfdddeffdeeeffeeefff",
+      "s": "024135",
+      "t": 2,
+      "d": 37,
+      "b": 1,
+      "seed": 3948552772
+    },
+    {
+      "id": "L051",
+      "n": 6,
+      "r": "aaccbbacccbbdcddeeddddeeddffeefffeee",
+      "s": "041352",
+      "t": 2,
+      "d": 38,
+      "b": 1,
+      "seed": 111039717
+    },
+    {
+      "id": "L052",
+      "n": 6,
+      "r": "abbcccaabbccddbbecdddeecfddeeeffeeee",
+      "s": "035241",
+      "t": 2,
+      "d": 38,
+      "b": 1,
+      "seed": 465136846
+    },
+    {
+      "id": "L053",
+      "n": 6,
+      "r": "aabbbbdaaccbdddcccfdfeeeffffeefffeee",
+      "s": "053142",
+      "t": 2,
+      "d": 38,
+      "b": 1,
+      "seed": 550633490
+    },
+    {
+      "id": "L054",
+      "n": 6,
+      "r": "aaacccbbaaccbbbccfbdbccfddeeffeeefff",
+      "s": "204135",
+      "t": 2,
+      "d": 38,
+      "b": 1,
+      "seed": 1553475205
+    },
+    {
+      "id": "L055",
+      "n": 6,
+      "r": "aaccbbdacccbdddcccfddfeefdffeeffffee",
+      "s": "053142",
+      "t": 2,
+      "d": 38,
+      "b": 1,
+      "seed": 1716772530
+    },
+    {
+      "id": "L235",
+      "n": 6,
+      "r": "bbbbaabbbcaabbbccdbbbcedffeeedfffedd",
+      "s": "413520",
+      "t": 2,
+      "d": 38,
+      "b": 1,
+      "seed": 1975536950
+    },
+    {
+      "id": "L056",
+      "n": 6,
+      "r": "bbbdaabbbdaabbbdaceeddcceeeffceeefff",
+      "s": "415203",
+      "t": 2,
+      "d": 38,
+      "b": 1,
+      "seed": 2182334179
+    },
+    {
+      "id": "L231",
+      "n": 6,
+      "r": "aabbbbcacddbcccdddcefdddcefffdeeffff",
+      "s": "052413",
+      "t": 2,
+      "d": 38,
+      "b": 1,
+      "seed": 2573506247
+    },
+    {
+      "id": "L234",
+      "n": 6,
+      "r": "bbbaaabbbccaebccddebdddfeeefffeeeeff",
+      "s": "302415",
+      "t": 2,
+      "d": 38,
+      "b": 1,
+      "seed": 2673112565
+    },
+    {
+      "id": "L225",
+      "n": 6,
+      "r": "aaabbbaaabbbcccbbbdcccfbdeeeffddefff",
+      "s": "142035",
+      "t": 2,
+      "d": 38,
+      "b": 1,
+      "seed": 2857277149
+    },
+    {
+      "id": "L224",
+      "n": 6,
+      "r": "aaabbbaadddbccddbbccddffcedddfeeffff",
+      "s": "250314",
+      "t": 2,
+      "d": 38,
+      "b": 1,
+      "seed": 3078341118
+    },
+    {
+      "id": "L057",
+      "n": 6,
+      "r": "aabbbbcabbdbcacddbcccdddcefffdeeffff",
+      "s": "052413",
+      "t": 2,
+      "d": 38,
+      "b": 1,
+      "seed": 3354551376
+    },
+    {
+      "id": "L058",
+      "n": 6,
+      "r": "bbbaaabbbbacbbbbacdddcccdeeeefeeefff",
+      "s": "315024",
+      "t": 2,
+      "d": 38,
+      "b": 1,
+      "seed": 3429744710
+    },
+    {
+      "id": "L059",
+      "n": 6,
+      "r": "aaaabbcaaabbcacabbccccbdeffdddeefffd",
+      "s": "142503",
+      "t": 2,
+      "d": 38,
+      "b": 1,
+      "seed": 3764475265
+    },
+    {
+      "id": "L060",
+      "n": 6,
+      "r": "caabbbcacbbbcccbeecddbeeffdeeeffffee",
+      "s": "140253",
+      "t": 2,
+      "d": 38,
+      "b": 1,
+      "seed": 3969159596
+    },
+    {
+      "id": "L226",
+      "n": 6,
+      "r": "bbbbaabbbbaabbcccaedddccedfccceeffff",
+      "s": "514203",
+      "t": 2,
+      "d": 40,
+      "b": 1,
+      "seed": 1121257532
+    },
+    {
+      "id": "L061",
+      "n": 6,
+      "r": "bbaaccbbaaccbdaccebdaeeefddeeefffeee",
+      "s": "304152",
+      "t": 2,
+      "d": 40,
+      "b": 1,
+      "seed": 1174631359
+    },
+    {
+      "id": "L230",
+      "n": 6,
+      "r": "cccbaaccbbadfccdddffeedeffeeeefffeee",
+      "s": "531420",
+      "t": 2,
+      "d": 40,
+      "b": 1,
+      "seed": 1555820584
+    },
+    {
+      "id": "L062",
+      "n": 6,
+      "r": "aaabbbacbbddacdddfeceddfeeefffeeffff",
+      "s": "031425",
+      "t": 2,
+      "d": 40,
+      "b": 1,
+      "seed": 1679235751
+    },
+    {
+      "id": "L229",
+      "n": 6,
+      "r": "aaabbbadcbccddccccdfeeeedfeeeedfffee",
+      "s": "135042",
+      "t": 2,
+      "d": 40,
+      "b": 1,
+      "seed": 2594649689
+    },
+    {
+      "id": "L232",
+      "n": 6,
+      "r": "aabbbbacbbbbaccdbefdddbeffdeeefffeee",
+      "s": "041352",
+      "t": 2,
+      "d": 40,
+      "b": 1,
+      "seed": 2727422294
+    },
+    {
+      "id": "L233",
+      "n": 6,
+      "r": "bbbaaabbaaaabbadcabbddcceeddfceeeffc",
+      "s": "514203",
+      "t": 2,
+      "d": 40,
+      "b": 1,
+      "seed": 2877225780
+    },
+    {
+      "id": "L063",
+      "n": 6,
+      "r": "bbbbaabbbbaabbbdacbeddcceedffceeeffc",
+      "s": "415203",
+      "t": 2,
+      "d": 40,
+      "b": 1,
+      "seed": 2972276770
+    },
+    {
+      "id": "L064",
+      "n": 6,
+      "r": "bbaaaabbaaaabbbccaedddccedfffcedffcc",
+      "s": "514203",
+      "t": 2,
+      "d": 40,
+      "b": 1,
+      "seed": 3273873079
+    },
+    {
+      "id": "L065",
+      "n": 6,
+      "r": "aaabbbddacbbddacccfdddeeffffeeffeeee",
+      "s": "253140",
+      "t": 2,
+      "d": 40,
+      "b": 1,
+      "seed": 3552559767
+    },
+    {
+      "id": "L228",
+      "n": 6,
+      "r": "bbaaccbbacccddacecfdeeeefdfeeefffeee",
+      "s": "305142",
+      "t": 2,
+      "d": 40,
+      "b": 1,
+      "seed": 3721328394
+    },
+    {
+      "id": "L066",
+      "n": 6,
+      "r": "bbbaaabbccaabbccddbeecfdeeecfdeeeeff",
+      "s": "302514",
+      "t": 2,
+      "d": 43,
+      "b": 1,
+      "seed": 634878500
+    },
+    {
+      "id": "L067",
+      "n": 6,
+      "r": "aaacbbacccbcddccccddeeffdeeeffeeffff",
+      "s": "142035",
+      "t": 2,
+      "d": 43,
+      "b": 1,
+      "seed": 1410211917
+    },
+    {
+      "id": "L068",
+      "n": 6,
+      "r": "aaabbbacabbbccadbbeefddbefffddefffdd",
+      "s": "251403",
+      "t": 2,
+      "d": 43,
+      "b": 1,
+      "seed": 1560896166
+    },
+    {
+      "id": "L069",
+      "n": 6,
+      "r": "caaabbcadbbbccddeeffdeeeffeeeeffeeee",
+      "s": "350241",
+      "t": 2,
+      "d": 43,
+      "b": 1,
+      "seed": 2221520643
+    },
+    {
+      "id": "L070",
+      "n": 6,
+      "r": "caaaabcaadbbccdddeffdeeefffeeefffeee",
+      "s": "350241",
+      "t": 2,
+      "d": 43,
+      "b": 1,
+      "seed": 2884476384
+    },
+    {
+      "id": "L237",
+      "n": 6,
+      "r": "aabbbbcacbbbcccddbccffdbecffffeeffff",
+      "s": "152403",
+      "t": 3,
+      "d": 45,
+      "b": 1,
+      "seed": 590534378
+    },
+    {
+      "id": "L248",
+      "n": 6,
+      "r": "aabcccaabbccadbeccadfeeefdfeeefffeee",
+      "s": "035142",
+      "t": 3,
+      "d": 46,
+      "b": 2,
+      "seed": 739092106
+    },
+    {
+      "id": "L071",
+      "n": 6,
+      "r": "ccaaaaccbbbacfdddeffdeeeffdeeefffeee",
+      "s": "530241",
+      "t": 3,
+      "d": 46,
+      "b": 2,
+      "seed": 1627050943
+    },
+    {
+      "id": "L072",
+      "n": 6,
+      "r": "caaabbcccddbeccddfeedddfeedfffeeddff",
+      "s": "251304",
+      "t": 3,
+      "d": 46,
+      "b": 2,
+      "seed": 3500374959
+    },
+    {
+      "id": "L249",
+      "n": 6,
+      "r": "bbbbaabdcccadddccaddddcedddffeffffee",
+      "s": "403152",
+      "t": 3,
+      "d": 47,
+      "b": 2,
+      "seed": 717542843
+    },
+    {
+      "id": "L073",
+      "n": 6,
+      "r": "bbbbaabdbccadddcccddddeedfdffeffffee",
+      "s": "403152",
+      "t": 3,
+      "d": 47,
+      "b": 2,
+      "seed": 3871103224
+    },
+    {
+      "id": "L074",
+      "n": 6,
+      "r": "aabbbcabbbbcadbbbcaddbcceeddcfeeffff",
+      "s": "135204",
+      "t": 3,
+      "d": 49,
+      "b": 2,
+      "seed": 159653785
+    },
+    {
+      "id": "L075",
+      "n": 6,
+      "r": "aaabbbaacccbaacccbecccddeceefdeeefff",
+      "s": "152403",
+      "t": 3,
+      "d": 49,
+      "b": 2,
+      "seed": 218887742
+    },
+    {
+      "id": "L076",
+      "n": 6,
+      "r": "aabbbbcabbbbcabbeeccdddefdddeefffeee",
+      "s": "140352",
+      "t": 3,
+      "d": 49,
+      "b": 2,
+      "seed": 840325755
+    },
+    {
+      "id": "L077",
+      "n": 6,
+      "r": "bbbaaabcbbbaccdddafddaaaffeeeeffeeee",
+      "s": "530241",
+      "t": 3,
+      "d": 49,
+      "b": 2,
+      "seed": 917556430
+    },
+    {
+      "id": "L078",
+      "n": 6,
+      "r": "bbaaadbcacddbcccddeeefdfeeefffeeffff",
+      "s": "302415",
+      "t": 3,
+      "d": 49,
+      "b": 2,
+      "seed": 3767458349
+    },
+    {
+      "id": "L241",
+      "n": 6,
+      "r": "bbbaaabaaacabbddceddddcefddeeeffddee",
+      "s": "304251",
+      "t": 3,
+      "d": 49,
+      "b": 2,
+      "seed": 4242514398
+    },
+    {
+      "id": "L079",
+      "n": 6,
+      "r": "cccbbaccbbbacccbdaeecfddeeefdfeeefff",
+      "s": "520413",
+      "t": 3,
+      "d": 51,
+      "b": 2,
+      "seed": 3712508016
+    },
+    {
+      "id": "L080",
+      "n": 6,
+      "r": "bbbbaacbbdadcccdddeeeedfeeefffeeffff",
+      "s": "520413",
+      "t": 3,
+      "d": 52,
+      "b": 2,
+      "seed": 800137336
+    },
+    {
+      "id": "L240",
+      "n": 6,
+      "r": "aaaabbaaabbbdccbbbdcfebbdffeeeddffee",
+      "s": "142053",
+      "t": 3,
+      "d": 52,
+      "b": 2,
+      "seed": 3507183183
+    },
+    {
+      "id": "L081",
+      "n": 6,
+      "r": "aaabbbaddbccaddbcceedddceffccceeffff",
+      "s": "135204",
+      "t": 3,
+      "d": 54,
+      "b": 2,
+      "seed": 1602120410
+    },
+    {
+      "id": "L082",
+      "n": 6,
+      "r": "bbbaaabbaacadbbacaddddccefffcceefffc",
+      "s": "514203",
+      "t": 3,
+      "d": 54,
+      "b": 2,
+      "seed": 3634425189
+    },
+    {
+      "id": "L083",
+      "n": 6,
+      "r": "bbbaaadbbaaaddbbcadeeccafeeeccffeccc",
+      "s": "524031",
+      "t": 3,
+      "d": 54,
+      "b": 2,
+      "seed": 3988522318
+    },
+    {
+      "id": "L236",
+      "n": 6,
+      "r": "aaaaccaabbbcdabbccddddccedddcfeedfff",
+      "s": "135204",
+      "t": 3,
+      "d": 55,
+      "b": 3,
+      "seed": 1271591451
+    },
+    {
+      "id": "L084",
+      "n": 6,
+      "r": "aabbbbaaabbbacccbbcccfdbefffddeefffd",
+      "s": "152403",
+      "t": 3,
+      "d": 55,
+      "b": 3,
+      "seed": 2931724855
+    },
+    {
+      "id": "L252",
+      "n": 6,
+      "r": "bbbaaabbcaccdbcaccdbcccedfcffeffffee",
+      "s": "314052",
+      "t": 3,
+      "d": 57,
+      "b": 2,
+      "seed": 96104830
+    },
+    {
+      "id": "L242",
+      "n": 6,
+      "r": "aaabbdacabddacdddfccdddfeeefffeeffff",
+      "s": "031425",
+      "t": 3,
+      "d": 57,
+      "b": 2,
+      "seed": 109363901
+    },
+    {
+      "id": "L085",
+      "n": 6,
+      "r": "aaabbbabbbccaaddcceaadffeeedffeeedff",
+      "s": "025314",
+      "t": 3,
+      "d": 57,
+      "b": 2,
+      "seed": 403049535
+    },
+    {
+      "id": "L086",
+      "n": 6,
+      "r": "aaabbbaddbcceddcccedddccedfccceeffff",
+      "s": "135204",
+      "t": 3,
+      "d": 57,
+      "b": 2,
+      "seed": 2634753763
+    },
+    {
+      "id": "L087",
+      "n": 6,
+      "r": "bbbaaabdcccaddcceadddceedddccefffeee",
+      "s": "403152",
+      "t": 3,
+      "d": 57,
+      "b": 2,
+      "seed": 2673461352
+    },
+    {
+      "id": "L246",
+      "n": 6,
+      "r": "aaaabbaacddbcacdffcccddfecffdfeeffff",
+      "s": "152403",
+      "t": 3,
+      "d": 57,
+      "b": 2,
+      "seed": 2868551592
+    },
+    {
+      "id": "L245",
+      "n": 6,
+      "r": "dbbaaaddbaaadbbbcadeebcafeeeccffeeec",
+      "s": "524031",
+      "t": 3,
+      "d": 57,
+      "b": 2,
+      "seed": 2883185314
+    },
+    {
+      "id": "L088",
+      "n": 6,
+      "r": "bbbaaabdbbccbdcbbcddccccdffeecdfeeee",
+      "s": "425031",
+      "t": 3,
+      "d": 57,
+      "b": 2,
+      "seed": 3087596486
+    },
+    {
+      "id": "L089",
+      "n": 6,
+      "r": "aaabbbadaacbddcccbdccecfdeeeefdeeeff",
+      "s": "153024",
+      "t": 3,
+      "d": 57,
+      "b": 2,
+      "seed": 4026122793
+    },
+    {
+      "id": "L090",
+      "n": 6,
+      "r": "aaabbcaabbcceaddfceeedffeeedffeeedff",
+      "s": "025314",
+      "t": 3,
+      "d": 57,
+      "b": 2,
+      "seed": 4158263972
+    },
+    {
+      "id": "L251",
+      "n": 6,
+      "r": "aaabbbacacbdecacbdecccddeefcdfeeffff",
+      "s": "241503",
+      "t": 3,
+      "d": 57,
+      "b": 2,
+      "seed": 4170008157
+    },
+    {
+      "id": "L091",
+      "n": 6,
+      "r": "bbbbaabbbbcabdccccbdfcccddfffeddffee",
+      "s": "403152",
+      "t": 3,
+      "d": 58,
+      "b": 4,
+      "seed": 180087047
+    },
+    {
+      "id": "L092",
+      "n": 6,
+      "r": "aaabbbaabbbcaabdbcaeedbceeedffeeefff",
+      "s": "025314",
+      "t": 3,
+      "d": 58,
+      "b": 3,
+      "seed": 378119002
+    },
+    {
+      "id": "L093",
+      "n": 6,
+      "r": "aaaabbaabbbbcaaabbccedddcceeedfffeed",
+      "s": "240531",
+      "t": 3,
+      "d": 58,
+      "b": 3,
+      "seed": 696492461
+    },
+    {
+      "id": "L238",
+      "n": 6,
+      "r": "bbbaaabcbccabcccddeccccdeeeffdffffdd",
+      "s": "402513",
+      "t": 3,
+      "d": 58,
+      "b": 3,
+      "seed": 2035745209
+    },
+    {
+      "id": "L094",
+      "n": 6,
+      "r": "bbccaabdcccaddcccedddccedfdffeffffee",
+      "s": "403152",
+      "t": 3,
+      "d": 58,
+      "b": 3,
+      "seed": 2802121385
+    },
+    {
+      "id": "L095",
+      "n": 6,
+      "r": "bbbaaaccbbbaccddaaffdeeefffeeeffffee",
+      "s": "530241",
+      "t": 3,
+      "d": 60,
+      "b": 3,
+      "seed": 422281245
+    },
+    {
+      "id": "L096",
+      "n": 6,
+      "r": "bbbdaabbbdacbbbdacebddcceedfcfeeefff",
+      "s": "415203",
+      "t": 3,
+      "d": 60,
+      "b": 3,
+      "seed": 1211326981
+    },
+    {
+      "id": "L097",
+      "n": 6,
+      "r": "bbbaaacbbaddcbddddceeefdeefeffeeffff",
+      "s": "420513",
+      "t": 3,
+      "d": 60,
+      "b": 3,
+      "seed": 1810400012
+    },
+    {
+      "id": "L239",
+      "n": 6,
+      "r": "cccaaaddccbbdccbbbdddfbeddffeeffffee",
+      "s": "352041",
+      "t": 3,
+      "d": 60,
+      "b": 3,
+      "seed": 3146303752
+    },
+    {
+      "id": "L247",
+      "n": 6,
+      "r": "aaabbbccccbbccccbfdcecffdeefffddffff",
+      "s": "153024",
+      "t": 3,
+      "d": 60,
+      "b": 4,
+      "seed": 3907380697
+    },
+    {
+      "id": "L098",
+      "n": 6,
+      "r": "aaaabbaacccbefcdcdeffdddeffffdefffdd",
+      "s": "152403",
+      "t": 3,
+      "d": 63,
+      "b": 3,
+      "seed": 161121098
+    },
+    {
+      "id": "L099",
+      "n": 6,
+      "r": "aaaabbddaaabddcccbdddecfedeecfeeeeff",
+      "s": "153024",
+      "t": 3,
+      "d": 63,
+      "b": 3,
+      "seed": 2280475004
+    },
+    {
+      "id": "L100",
+      "n": 6,
+      "r": "aaabbbaccbdbaecbdbeeccddeffffdffffdd",
+      "s": "152403",
+      "t": 3,
+      "d": 65,
+      "b": 3,
+      "seed": 586398604
+    },
+    {
+      "id": "L244",
+      "n": 6,
+      "r": "cccaabddccabdcccabdddcbbfdffeefffeee",
+      "s": "352041",
+      "t": 3,
+      "d": 65,
+      "b": 3,
+      "seed": 962249331
+    },
+    {
+      "id": "L101",
+      "n": 6,
+      "r": "bbaaaabbaadabccaddfceeedfceeddfffeee",
+      "s": "402531",
+      "t": 3,
+      "d": 65,
+      "b": 3,
+      "seed": 1003053074
+    },
+    {
+      "id": "L243",
+      "n": 6,
+      "r": "bbbaaabbaadabcccdabcceddfcceedffffed",
+      "s": "402531",
+      "t": 3,
+      "d": 65,
+      "b": 3,
+      "seed": 1543100188
+    },
+    {
+      "id": "L102",
+      "n": 6,
+      "r": "aaccbbaccbbbaccddbeeccdbefffdfeeefff",
+      "s": "152403",
+      "t": 3,
+      "d": 65,
+      "b": 4,
+      "seed": 2037967627
+    },
+    {
+      "id": "L250",
+      "n": 6,
+      "r": "aaacbbaeccdbeecdddeecfddeffffdefffdd",
+      "s": "152403",
+      "t": 3,
+      "d": 65,
+      "b": 4,
+      "seed": 2433988540
+    },
+    {
+      "id": "L103",
+      "n": 6,
+      "r": "bbaaccbddaccfddacefdddeefffdeeffeeee",
+      "s": "304251",
+      "t": 3,
+      "d": 65,
+      "b": 4,
+      "seed": 3261969035
+    },
+    {
+      "id": "L104",
+      "n": 6,
+      "r": "aaabbbaaaccbaeccbbeeccdbefffddeeefff",
+      "s": "152403",
+      "t": 3,
+      "d": 65,
+      "b": 3,
+      "seed": 3462182294
+    },
+    {
+      "id": "L105",
+      "n": 6,
+      "r": "aaabbbabbbcbaabbccdddcccdeefcceeeffc",
+      "s": "135024",
+      "t": 3,
+      "d": 65,
+      "b": 3,
+      "seed": 3606404548
+    },
+    {
+      "id": "L264",
+      "n": 7,
+      "r": "bbbaaaaeebcccceeedddcggeeddfgeeffdfggfffdfgggffff",
+      "s": "5264130",
+      "t": 3,
+      "d": 35,
+      "b": 0,
+      "seed": 1427251829
+    },
+    {
+      "id": "L106",
+      "n": 7,
+      "r": "aaabbbbcaabbbeccaaeeecdddeeefddeeegfddggggfddgggg",
+      "s": "2413506",
+      "t": 3,
+      "d": 35,
+      "b": 0,
+      "seed": 1546582249
+    },
+    {
+      "id": "L263",
+      "n": 7,
+      "r": "aaaabbbaaabbbbacaaccbcccccdbcceceddffeeeddffegggg",
+      "s": "3615204",
+      "t": 3,
+      "d": 35,
+      "b": 0,
+      "seed": 1631365044
+    },
+    {
+      "id": "L107",
+      "n": 7,
+      "r": "cbbbaaaccbbbadccccbadccbbbddcccebddeeeeedfggggfff",
+      "s": "4205361",
+      "t": 3,
+      "d": 35,
+      "b": 0,
+      "seed": 2350102414
+    },
+    {
+      "id": "L108",
+      "n": 7,
+      "r": "aaaabbbcccccebddcceeeddfeeeeffffgeefggfgggffggggg",
+      "s": "2631504",
+      "t": 3,
+      "d": 35,
+      "b": 0,
+      "seed": 2410171101
+    },
+    {
+      "id": "L109",
+      "n": 7,
+      "r": "bbbbaaabeedccceeddddceeddddfeedgfffegggfgfegggggf",
+      "s": "5063142",
+      "t": 3,
+      "d": 35,
+      "b": 0,
+      "seed": 3034666394
+    },
+    {
+      "id": "L254",
+      "n": 7,
+      "r": "caaabbbcccbbbbecdddddeeedfffeeedddfgeggfffgggggff",
+      "s": "2513064",
+      "t": 3,
+      "d": 35,
+      "b": 0,
+      "seed": 3240440702
+    },
+    {
+      "id": "L110",
+      "n": 7,
+      "r": "aaaabbbccddbbbccdddggeeddfggeffffggefffffgffffggg",
+      "s": "2513046",
+      "t": 3,
+      "d": 46,
+      "b": 1,
+      "seed": 230504753
+    },
+    {
+      "id": "L111",
+      "n": 7,
+      "r": "caaaabbcaabbbbcaaabbbcaaaddbeeaddddgeefddfgggffff",
+      "s": "3504162",
+      "t": 3,
+      "d": 47,
+      "b": 1,
+      "seed": 3274222346
+    },
+    {
+      "id": "L257",
+      "n": 7,
+      "r": "dddbbaadbbbbaadddcbccdddccccdddccecfdffeeefffgggg",
+      "s": "6130524",
+      "t": 3,
+      "d": 47,
+      "b": 1,
+      "seed": 3861878715
+    },
+    {
+      "id": "L270",
+      "n": 7,
+      "r": "aabbbccabbbcccabbgcccdbbgffcdbegfccdeegfffdeeggff",
+      "s": "1350264",
+      "t": 3,
+      "d": 47,
+      "b": 1,
+      "seed": 4240876915
+    },
+    {
+      "id": "L265",
+      "n": 7,
+      "r": "aabbbbbacccbddaccccddecffccdeffccggefffgggefggggg",
+      "s": "1426035",
+      "t": 3,
+      "d": 48,
+      "b": 1,
+      "seed": 729676214
+    },
+    {
+      "id": "L112",
+      "n": 7,
+      "r": "aaaebbbaaaebbbacaedbbacgedddccgeeddffggeddffggddd",
+      "s": "2516403",
+      "t": 3,
+      "d": 49,
+      "b": 1,
+      "seed": 275115925
+    },
+    {
+      "id": "L113",
+      "n": 7,
+      "r": "cbbbbaaccbbbbacccbbaacccceadfcceeddfffeggdffffggg",
+      "s": "5206314",
+      "t": 3,
+      "d": 49,
+      "b": 1,
+      "seed": 388978012
+    },
+    {
+      "id": "L114",
+      "n": 7,
+      "r": "caabbddcaabbddcccfbddffffeedffffeeefffgegeffgggge",
+      "s": "1306425",
+      "t": 3,
+      "d": 49,
+      "b": 1,
+      "seed": 674151484
+    },
+    {
+      "id": "L115",
+      "n": 7,
+      "r": "ccbbbaaccbbbeaccbbbeacccddeegggddeegggdffegggddff",
+      "s": "5203641",
+      "t": 3,
+      "d": 49,
+      "b": 1,
+      "seed": 1100981335
+    },
+    {
+      "id": "L116",
+      "n": 7,
+      "r": "aaddbbbacddbbbacdbbeeccdddeegddddeegffffeegggfffe",
+      "s": "0513642",
+      "t": 3,
+      "d": 49,
+      "b": 1,
+      "seed": 1108714536
+    },
+    {
+      "id": "L256",
+      "n": 7,
+      "r": "abbccccaabbcccadcccceddgcgceddgggeefffgggeffggggg",
+      "s": "0351624",
+      "t": 3,
+      "d": 49,
+      "b": 1,
+      "seed": 1283357116
+    },
+    {
+      "id": "L117",
+      "n": 7,
+      "r": "bbbbaaabbbbccaffbdccefffddeeffffdeefffggggffggggg",
+      "s": "4153602",
+      "t": 3,
+      "d": 49,
+      "b": 1,
+      "seed": 1571056327
+    },
+    {
+      "id": "L260",
+      "n": 7,
+      "r": "bbbaaaabbbabaabcbbbaaccfdddgecfdddgeffddggeeddggg",
+      "s": "6413025",
+      "t": 3,
+      "d": 49,
+      "b": 1,
+      "seed": 1717920168
+    },
+    {
+      "id": "L269",
+      "n": 7,
+      "r": "eaaaccceadabbceeddbbceeeddffgeeffffggggfffggggfff",
+      "s": "2463150",
+      "t": 3,
+      "d": 49,
+      "b": 1,
+      "seed": 1866845602
+    },
+    {
+      "id": "L118",
+      "n": 7,
+      "r": "abbccccaabbcccdabccceddbbceefdbbceefffgggeffgggee",
+      "s": "0351624",
+      "t": 3,
+      "d": 49,
+      "b": 1,
+      "seed": 1894051439
+    },
+    {
+      "id": "L119",
+      "n": 7,
+      "r": "bbaaaaabbbaaaaccbbaaafcdddadfcdedddffeegggfeeeegg",
+      "s": "4206315",
+      "t": 3,
+      "d": 49,
+      "b": 1,
+      "seed": 2631235070
+    },
+    {
+      "id": "L120",
+      "n": 7,
+      "r": "bbbbaaabbdbcaabbdbccabdddcaabeefcccgeeffccgggffff",
+      "s": "6053142",
+      "t": 3,
+      "d": 49,
+      "b": 1,
+      "seed": 2697329211
+    },
+    {
+      "id": "L259",
+      "n": 7,
+      "r": "cbbbaaaccbbbbaccccaaaeeccadaeeeggdaggeegdfgggggff",
+      "s": "4205163",
+      "t": 3,
+      "d": 49,
+      "b": 1,
+      "seed": 2756749273
+    },
+    {
+      "id": "L121",
+      "n": 7,
+      "r": "baaaaccbbbddccffddeecfffdeegfffgeegfffggggfffgggg",
+      "s": "2063514",
+      "t": 3,
+      "d": 49,
+      "b": 1,
+      "seed": 3252673083
+    },
+    {
+      "id": "L122",
+      "n": 7,
+      "r": "cbbaaaacbbbaaacceaaaaeceaadaeeeddddeefgdddfffgggd",
+      "s": "6315024",
+      "t": 3,
+      "d": 49,
+      "b": 1,
+      "seed": 3399471416
+    },
+    {
+      "id": "L123",
+      "n": 7,
+      "r": "bbbccaabbbbcaaeeebccdeeeedddgeeefffggeffffggeefff",
+      "s": "5246130",
+      "t": 3,
+      "d": 49,
+      "b": 1,
+      "seed": 3987979099
+    },
+    {
+      "id": "L124",
+      "n": 7,
+      "r": "bbbdcaabdbdccaddddeceffddeeefffgeeefffgggeffggggg",
+      "s": "6052413",
+      "t": 3,
+      "d": 52,
+      "b": 1,
+      "seed": 114766796
+    },
+    {
+      "id": "L125",
+      "n": 7,
+      "r": "bbbbaaabbbbaaabbcbcaabdcccccddeeeefddggeefdggggff",
+      "s": "5041362",
+      "t": 3,
+      "d": 52,
+      "b": 1,
+      "seed": 522658260
+    },
+    {
+      "id": "L266",
+      "n": 7,
+      "r": "aaabbbbaabbcccaaadcccaaadccceeddfcceeeffggeeefggg",
+      "s": "0253146",
+      "t": 3,
+      "d": 52,
+      "b": 1,
+      "seed": 573804583
+    },
+    {
+      "id": "L126",
+      "n": 7,
+      "r": "aaabbbdaeeccbdeeccccdeecccddefffffgfffffggffffggg",
+      "s": "1536024",
+      "t": 3,
+      "d": 52,
+      "b": 1,
+      "seed": 1526147400
+    },
+    {
+      "id": "L267",
+      "n": 7,
+      "r": "ccbbbaacccbbaecccbbeeccddbegfffdbegfffdgegffffggg",
+      "s": "6302514",
+      "t": 3,
+      "d": 52,
+      "b": 1,
+      "seed": 1779045216
+    },
+    {
+      "id": "L253",
+      "n": 7,
+      "r": "aaaacccbbbacccbdddccgedddcggedffcggeefffggffffggg",
+      "s": "3152046",
+      "t": 3,
+      "d": 52,
+      "b": 1,
+      "seed": 2503257071
+    },
+    {
+      "id": "L127",
+      "n": 7,
+      "r": "aaaabbbaaabbbcaaabbbcaaddbccddddeeedfffeggfffffgg",
+      "s": "0362415",
+      "t": 3,
+      "d": 52,
+      "b": 1,
+      "seed": 2553495917
+    },
+    {
+      "id": "L128",
+      "n": 7,
+      "r": "aaabbbbaabbbbcddbbbccddbbccfdddefffdddeegfddeeggg",
+      "s": "0251364",
+      "t": 3,
+      "d": 52,
+      "b": 1,
+      "seed": 2718878474
+    },
+    {
+      "id": "L261",
+      "n": 7,
+      "r": "bbaaaeebbaaaeebcccdeebcdddeeffffeeeffgggggffggggg",
+      "s": "3024615",
+      "t": 3,
+      "d": 52,
+      "b": 1,
+      "seed": 2735605831
+    },
+    {
+      "id": "L262",
+      "n": 7,
+      "r": "aabbbbbaabbbbdcccddddecgddddeggddddeegfffdegggfff",
+      "s": "1426053",
+      "t": 3,
+      "d": 52,
+      "b": 1,
+      "seed": 2889521878
+    },
+    {
+      "id": "L255",
+      "n": 7,
+      "r": "bbaaaaabbaddddbcccdeefcgddeefggggeeffgggeefgggeee",
+      "s": "5024613",
+      "t": 3,
+      "d": 52,
+      "b": 1,
+      "seed": 3019376733
+    },
+    {
+      "id": "L258",
+      "n": 7,
+      "r": "bbaaaccbbbbaacbbbaaccbbdaaccdddeefcdddgeffdgggeff",
+      "s": "3052461",
+      "t": 3,
+      "d": 52,
+      "b": 1,
+      "seed": 3883427978
+    },
+    {
+      "id": "L129",
+      "n": 7,
+      "r": "aabbbbdaaabbbdcaabbbdcaaeeddcceefggcceeffgceeeefg",
+      "s": "1305246",
+      "t": 3,
+      "d": 52,
+      "b": 1,
+      "seed": 3968225529
+    },
+    {
+      "id": "L130",
+      "n": 7,
+      "r": "ccbbaaaccbbaddcedddddeedddffeegdddfeggffdfeggffff",
+      "s": "5304162",
+      "t": 3,
+      "d": 52,
+      "b": 1,
+      "seed": 4146615654
+    },
+    {
+      "id": "L131",
+      "n": 7,
+      "r": "bbaaaccbaaccccbdddcccdddccdcfdddddefffgeeefgggeee",
+      "s": "4052613",
+      "t": 3,
+      "d": 54,
+      "b": 1,
+      "seed": 13955778
+    },
+    {
+      "id": "L132",
+      "n": 7,
+      "r": "aabbbbbacccddbaccedddfceeeddfeeeeedfeeeeedffggggg",
+      "s": "1625304",
+      "t": 3,
+      "d": 54,
+      "b": 1,
+      "seed": 198875155
+    },
+    {
+      "id": "L133",
+      "n": 7,
+      "r": "cbbbaaaccbbbaacccbaaaccbbfdaceeefddeefffdgeeeeegg",
+      "s": "4205136",
+      "t": 3,
+      "d": 54,
+      "b": 1,
+      "seed": 628761728
+    },
+    {
+      "id": "L134",
+      "n": 7,
+      "r": "bbaaaaabbacccabbaaccabbbdcccedddddceeeffccggggfff",
+      "s": "6153042",
+      "t": 3,
+      "d": 54,
+      "b": 1,
+      "seed": 824005195
+    },
+    {
+      "id": "L135",
+      "n": 7,
+      "r": "aaabbbbeaabbbdeeccdddeecfdddgecffdfgecffffggfffff",
+      "s": "2536140",
+      "t": 3,
+      "d": 54,
+      "b": 1,
+      "seed": 1184105600
+    },
+    {
+      "id": "L268",
+      "n": 7,
+      "r": "bbbbaaabbbccaabbcccddbbeeeddbeeeeggeeffffgeeeeffg",
+      "s": "4025136",
+      "t": 3,
+      "d": 54,
+      "b": 1,
+      "seed": 1251754257
+    },
+    {
+      "id": "L136",
+      "n": 7,
+      "r": "bbaaaccdbaacccdbaacfcddeecfcggeecffggeecffgggefff",
+      "s": "4160352",
+      "t": 3,
+      "d": 54,
+      "b": 1,
+      "seed": 1724972374
+    },
+    {
+      "id": "L137",
+      "n": 7,
+      "r": "aaaeebbaaaeedbacceedbcceedddggeeeddggeggffgggggff",
+      "s": "0614253",
+      "t": 3,
+      "d": 54,
+      "b": 1,
+      "seed": 2147543641
+    },
+    {
+      "id": "L138",
+      "n": 7,
+      "r": "bbaacccbaaccccdddeeceddggeeeddgfffeddggfffdggggff",
+      "s": "3051642",
+      "t": 3,
+      "d": 54,
+      "b": 1,
+      "seed": 2989048874
+    },
+    {
+      "id": "L139",
+      "n": 7,
+      "r": "cabbbbbcaaddbdceeddddeeeddffegeggffegggfffeggggff",
+      "s": "1504263",
+      "t": 3,
+      "d": 54,
+      "b": 1,
+      "seed": 3801927551
+    },
+    {
+      "id": "L140",
+      "n": 7,
+      "r": "bbaaaacbbaaacceedddcdeeeddddgeeefdfgggefffggggfff",
+      "s": "4053162",
+      "t": 3,
+      "d": 54,
+      "b": 1,
+      "seed": 3970128177
+    },
+    {
+      "id": "L141",
+      "n": 7,
+      "r": "aaaaabbcccaabbccccdeecccddegffccdegfccddggfffdggg",
+      "s": "2613504",
+      "t": 4,
+      "d": 57,
+      "b": 1,
+      "seed": 461319100
+    },
+    {
+      "id": "L142",
+      "n": 7,
+      "r": "ccaaabbcccabbbcccadddcceeggdceeeggfeegggffeeggggf",
+      "s": "2406153",
+      "t": 4,
+      "d": 57,
+      "b": 1,
+      "seed": 2749853472
+    },
+    {
+      "id": "L143",
+      "n": 7,
+      "r": "aaabbccaabbbccaabbbccaddbcccddeeffcdddegffddeeggg",
+      "s": "0251364",
+      "t": 4,
+      "d": 57,
+      "b": 1,
+      "seed": 3102706465
+    },
+    {
+      "id": "L272",
+      "n": 7,
+      "r": "aaabbbbaabbbbbaabcccdaaecfddaeeefddeeeffdgeeegggg",
+      "s": "0246135",
+      "t": 4,
+      "d": 57,
+      "b": 1,
+      "seed": 3196719144
+    },
+    {
+      "id": "L144",
+      "n": 7,
+      "r": "bbbbaaabdbccaeddccgeeddcggegdffggegdffggggdffffgg",
+      "s": "4031526",
+      "t": 4,
+      "d": 58,
+      "b": 2,
+      "seed": 333472527
+    },
+    {
+      "id": "L145",
+      "n": 7,
+      "r": "aaabbccadbbcccddddeecddgdeeeffggeeeffgggggfffgggg",
+      "s": "0263514",
+      "t": 4,
+      "d": 58,
+      "b": 2,
+      "seed": 1798714243
+    },
+    {
+      "id": "L279",
+      "n": 7,
+      "r": "aaabbbbaaaabbbcddabbbcdddbbbcddddebccfggeefffggee",
+      "s": "1603524",
+      "t": 4,
+      "d": 58,
+      "b": 2,
+      "seed": 2318509361
+    },
+    {
+      "id": "L146",
+      "n": 7,
+      "r": "aaaaaccbbaaaccbbaccccbbddcccbedddddeegdfdfegggfff",
+      "s": "4053162",
+      "t": 4,
+      "d": 58,
+      "b": 2,
+      "seed": 2474253971
+    },
+    {
+      "id": "L147",
+      "n": 7,
+      "r": "bbaaaaabbbaaaabdbdacabddddccddddeecdffgeeeffgggee",
+      "s": "6052413",
+      "t": 4,
+      "d": 58,
+      "b": 2,
+      "seed": 3061389962
+    },
+    {
+      "id": "L280",
+      "n": 7,
+      "r": "aaaabbbaaabbbbaaaabcbddddcccedddcgcedddfgceefffgg",
+      "s": "1352046",
+      "t": 4,
+      "d": 58,
+      "b": 2,
+      "seed": 3272110208
+    },
+    {
+      "id": "L148",
+      "n": 7,
+      "r": "cccaabbccccabbcccaaabeeccddbeeccgddefffgggeeefffg",
+      "s": "3514026",
+      "t": 4,
+      "d": 58,
+      "b": 2,
+      "seed": 3801526216
+    },
+    {
+      "id": "L149",
+      "n": 7,
+      "r": "aaaaabbaaeaadbaceeedbcccceddfffeeggfffggggffffggg",
+      "s": "2615304",
+      "t": 4,
+      "d": 59,
+      "b": 1,
+      "seed": 356467266
+    },
+    {
+      "id": "L150",
+      "n": 7,
+      "r": "ccaaabbcccaadbcceaedbcceeeddccceegdfeeeegdfffgggd",
+      "s": "2615304",
+      "t": 4,
+      "d": 59,
+      "b": 1,
+      "seed": 1681219055
+    },
+    {
+      "id": "L281",
+      "n": 7,
+      "r": "aaaabbcaaabbccddadbbcdaaddeedddddeefdffggefffggge",
+      "s": "1360524",
+      "t": 4,
+      "d": 59,
+      "b": 1,
+      "seed": 3961190082
+    },
+    {
+      "id": "L151",
+      "n": 7,
+      "r": "aabbcccaaabbccdddddfcdeeeeffgeeeeffgeeeeffgggefff",
+      "s": "1460352",
+      "t": 4,
+      "d": 59,
+      "b": 1,
+      "seed": 4155406238
+    },
+    {
+      "id": "L278",
+      "n": 7,
+      "r": "aaabbbbaabbbbbaaabcbbddeeccbdffeccbdfeegcgffegggg",
+      "s": "2640315",
+      "t": 4,
+      "d": 61,
+      "b": 2,
+      "seed": 424272382
+    },
+    {
+      "id": "L152",
+      "n": 7,
+      "r": "bbbbaacbbbbaccbdddacegggddceggdddeeggfffffgggffff",
+      "s": "4153620",
+      "t": 4,
+      "d": 61,
+      "b": 2,
+      "seed": 2197338717
+    },
+    {
+      "id": "L153",
+      "n": 7,
+      "r": "aaaabbbaaabbccaaaabbcaaeeddceeeddddeeffddgeeffggg",
+      "s": "1364025",
+      "t": 4,
+      "d": 63,
+      "b": 2,
+      "seed": 3039840699
+    },
+    {
+      "id": "L154",
+      "n": 7,
+      "r": "bbaaaaabdacceebdcceeeddccceeggfeeeeggffffegggffff",
+      "s": "5031642",
+      "t": 4,
+      "d": 63,
+      "b": 2,
+      "seed": 3525746372
+    },
+    {
+      "id": "L155",
+      "n": 7,
+      "r": "caabbbbcaebbdbceebbddeeeffddegeffddgggfffdggggfff",
+      "s": "1406253",
+      "t": 4,
+      "d": 63,
+      "b": 2,
+      "seed": 4000351190
+    },
+    {
+      "id": "L156",
+      "n": 7,
+      "r": "bbbbbaadbdbbcadddbccaddeecccedecccfeeegggfeeegggf",
+      "s": "5140263",
+      "t": 4,
+      "d": 65,
+      "b": 2,
+      "seed": 63832445
+    },
+    {
+      "id": "L157",
+      "n": 7,
+      "r": "cccbbaacbbbbaacccbbadfbbbbedfffeeedffffggdffffggg",
+      "s": "5206314",
+      "t": 4,
+      "d": 66,
+      "b": 2,
+      "seed": 1948637049
+    },
+    {
+      "id": "L158",
+      "n": 7,
+      "r": "aaaaabbaaaaabbaccacbbddccceedccgeefdddggffddgggff",
+      "s": "1520463",
+      "t": 4,
+      "d": 66,
+      "b": 2,
+      "seed": 2851066679
+    },
+    {
+      "id": "L271",
+      "n": 7,
+      "r": "bbbaaaabdddeecddeeeecddeeeccdeeeecfdddgfffggggfff",
+      "s": "4061352",
+      "t": 4,
+      "d": 66,
+      "b": 3,
+      "seed": 4235548249
+    },
+    {
+      "id": "L159",
+      "n": 7,
+      "r": "aabbbddaabbbbdcabbdbdcaaedddcceedddggeeeefgggffff",
+      "s": "1405362",
+      "t": 4,
+      "d": 67,
+      "b": 3,
+      "seed": 2923316433
+    },
+    {
+      "id": "L160",
+      "n": 7,
+      "r": "ccbaaaeccbbbaeccdddaedddddeefffggegfffggggfffgggg",
+      "s": "4203516",
+      "t": 4,
+      "d": 68,
+      "b": 2,
+      "seed": 724778057
+    },
+    {
+      "id": "L273",
+      "n": 7,
+      "r": "bbaaccdbbacccdeeacccdeeccfcdeggcfffggfffffgggffff",
+      "s": "3146052",
+      "t": 4,
+      "d": 68,
+      "b": 2,
+      "seed": 1045710395
+    },
+    {
+      "id": "L161",
+      "n": 7,
+      "r": "ddaaabbdcccabbdeccbbbdeebbffggegfffggggfffgggffff",
+      "s": "4630251",
+      "t": 4,
+      "d": 68,
+      "b": 2,
+      "seed": 1130668805
+    },
+    {
+      "id": "L162",
+      "n": 7,
+      "r": "bbaaaaabbaaaaabbbccaceeddccceedddccfffgggcffgggcc",
+      "s": "5163024",
+      "t": 4,
+      "d": 68,
+      "b": 2,
+      "seed": 1293966130
+    },
+    {
+      "id": "L163",
+      "n": 7,
+      "r": "bbbaaaabbbccaebbddceebddcceebddfffeddfffggdddffgg",
+      "s": "3041625",
+      "t": 4,
+      "d": 68,
+      "b": 2,
+      "seed": 1934711257
+    },
+    {
+      "id": "L164",
+      "n": 7,
+      "r": "bbbaaaabbbddaabdbbdcabddddcceedcccceeefccceeffggg",
+      "s": "4152036",
+      "t": 4,
+      "d": 68,
+      "b": 3,
+      "seed": 1950539697
+    },
+    {
+      "id": "L165",
+      "n": 7,
+      "r": "aaccbbbacccbbbddcdeeeddddeffggdeeefggdefefggggfff",
+      "s": "1520463",
+      "t": 4,
+      "d": 68,
+      "b": 2,
+      "seed": 2664356828
+    },
+    {
+      "id": "L166",
+      "n": 7,
+      "r": "aaabbbbacabcbbacacccbacccccdeeeccddeefffgdeeefggg",
+      "s": "1536024",
+      "t": 4,
+      "d": 68,
+      "b": 2,
+      "seed": 2798037076
+    },
+    {
+      "id": "L167",
+      "n": 7,
+      "r": "aaccccbaaaacbbaaaccebadccceedddceeedgdgeffggggfff",
+      "s": "0531462",
+      "t": 4,
+      "d": 68,
+      "b": 2,
+      "seed": 3006938310
+    },
+    {
+      "id": "L168",
+      "n": 7,
+      "r": "aaaabccaddbbccdddbfccdeebfffeeebfffeggffffeeggfff",
+      "s": "1460253",
+      "t": 4,
+      "d": 68,
+      "b": 2,
+      "seed": 3982768664
+    },
+    {
+      "id": "L276",
+      "n": 7,
+      "r": "ccccaadcccbbadceeebddeeeefddggeefdfgggffffggggfff",
+      "s": "5306241",
+      "t": 4,
+      "d": 72,
+      "b": 3,
+      "seed": 2762156092
+    },
+    {
+      "id": "L274",
+      "n": 7,
+      "r": "aaaabbbacaaabbacdabbeccdddbeccdddbeccfdddgcffgggg",
+      "s": "0513624",
+      "t": 4,
+      "d": 73,
+      "b": 3,
+      "seed": 1067259658
+    },
+    {
+      "id": "L283",
+      "n": 7,
+      "r": "aaaabbcaabbbccaaaabceadbbbcegdbbbbegddbffegggffff",
+      "s": "0351642",
+      "t": 4,
+      "d": 74,
+      "b": 4,
+      "seed": 281028736
+    },
+    {
+      "id": "L169",
+      "n": 7,
+      "r": "aaabbbbaaaabbbacdabbbacddebbccdfeeeggfffeeggffeee",
+      "s": "2513640",
+      "t": 4,
+      "d": 74,
+      "b": 3,
+      "seed": 3631849840
+    },
+    {
+      "id": "L275",
+      "n": 7,
+      "r": "aaabbbbabbbcccaaaaddcaaaddccfafdeeeffffgeeffffggg",
+      "s": "0263514",
+      "t": 4,
+      "d": 77,
+      "b": 4,
+      "seed": 203208413
+    },
+    {
+      "id": "L170",
+      "n": 7,
+      "r": "aaabbbcaabbbccfadddecfffdeeefffdgeefffggegfffgggg",
+      "s": "0263514",
+      "t": 4,
+      "d": 77,
+      "b": 3,
+      "seed": 541386643
+    },
+    {
+      "id": "L171",
+      "n": 7,
+      "r": "aaacbbbadaccbbddecgggdeeeeggddeegggdfffffgffffggg",
+      "s": "1530246",
+      "t": 4,
+      "d": 77,
+      "b": 4,
+      "seed": 895882152
+    },
+    {
+      "id": "L172",
+      "n": 7,
+      "r": "aaadbbbcaddbebccddeebcfddeeeffdgeeefgggggeffgggee",
+      "s": "2613504",
+      "t": 4,
+      "d": 77,
+      "b": 3,
+      "seed": 969460394
+    },
+    {
+      "id": "L173",
+      "n": 7,
+      "r": "aabbcccaaabbccadddbcceeddccceedccccfffggggffggggg",
+      "s": "1463025",
+      "t": 4,
+      "d": 77,
+      "b": 5,
+      "seed": 1968390619
+    },
+    {
+      "id": "L174",
+      "n": 7,
+      "r": "aaaaabbacccbbbaaacccbdccccbbdddeeebdddgeefddggeff",
+      "s": "1530462",
+      "t": 4,
+      "d": 77,
+      "b": 3,
+      "seed": 2289334594
+    },
+    {
+      "id": "L175",
+      "n": 7,
+      "r": "bbbbaaabbccagadcccaggdddcgggeeefgggeeffffgeeffggg",
+      "s": "5130246",
+      "t": 4,
+      "d": 77,
+      "b": 5,
+      "seed": 2418402686
+    },
+    {
+      "id": "L176",
+      "n": 7,
+      "r": "aaaddbbccaddbbcceeddgfffeedgffeeeggfeeegggfeeeggg",
+      "s": "2615304",
+      "t": 4,
+      "d": 77,
+      "b": 3,
+      "seed": 2550494741
+    },
+    {
+      "id": "L177",
+      "n": 7,
+      "r": "aaaaabbaacaabbcacaadbcccaedbfeeeeddfeeeeggffeeggg",
+      "s": "1625304",
+      "t": 4,
+      "d": 77,
+      "b": 3,
+      "seed": 2904140544
+    },
+    {
+      "id": "L178",
+      "n": 7,
+      "r": "bbaaaeebbacdeeccccdeeccffddeffffgdeffgggggffggggg",
+      "s": "3024615",
+      "t": 4,
+      "d": 77,
+      "b": 4,
+      "seed": 3846435143
+    },
+    {
+      "id": "L277",
+      "n": 7,
+      "r": "aaabbbbacaabbbdccebbbdcdebbbdddeeffdgdgeffggggeff",
+      "s": "1520463",
+      "t": 4,
+      "d": 77,
+      "b": 4,
+      "seed": 3982056047
+    },
+    {
+      "id": "L282",
+      "n": 7,
+      "r": "aaaabbbaabbbbbaabfcccdaafcccdfffeccdffeegcdffgggc",
+      "s": "1360425",
+      "t": 4,
+      "d": 77,
+      "b": 3,
+      "seed": 4146109459
+    },
+    {
+      "id": "L179",
+      "n": 8,
+      "r": "caabbbbbcadbbeeecadddeeecfdddeeeffdgdeeeffdgghhhffgggghhffggghhh",
+      "s": "24036157",
+      "t": 4,
+      "d": 46,
+      "b": 0,
+      "seed": 1981563569
+    },
+    {
+      "id": "L180",
+      "n": 8,
+      "r": "aaaaabbbdaabbbbcdaacccccddfcccechffceeechffggeeehfgggeeehfggeeee",
+      "s": "35716240",
+      "t": 4,
+      "d": 46,
+      "b": 0,
+      "seed": 2505277843
+    },
+    {
+      "id": "L284",
+      "n": 8,
+      "r": "ccaaaabbcccddebbcfdddeeeffddeeeeffddeggehffdeegehhddgggghhdggggg",
+      "s": "46037251",
+      "t": 4,
+      "d": 46,
+      "b": 0,
+      "seed": 2522282043
+    },
+    {
+      "id": "L285",
+      "n": 8,
+      "r": "fffbbaacffdbbbacffddddacffddddecffddggeefhhhhggehhhggggghhhggggg",
+      "s": "53726041",
+      "t": 4,
+      "d": 60,
+      "b": 1,
+      "seed": 2543831306
+    },
+    {
+      "id": "L181",
+      "n": 8,
+      "r": "aaaabbbbaaaebbbbaccebdbbcceebdbdccefbdddccefffddccegffddgggghhhh",
+      "s": "04172536",
+      "t": 4,
+      "d": 61,
+      "b": 1,
+      "seed": 2581518613
+    },
+    {
+      "id": "L182",
+      "n": 8,
+      "r": "bbaaaaaabbcacaafbbccccffbdccecffdddeeeffhhhhggfghhgggggghhhggggg",
+      "s": "70513642",
+      "t": 4,
+      "d": 61,
+      "b": 1,
+      "seed": 2829060948
+    },
+    {
+      "id": "L183",
+      "n": 8,
+      "r": "aaabbccdaabbbcddaabccccdaaacccddaaaeedddeeeeefffeehefffghhhhgggg",
+      "s": "02463571",
+      "t": 4,
+      "d": 61,
+      "b": 1,
+      "seed": 2935164416
+    },
+    {
+      "id": "L184",
+      "n": 8,
+      "r": "aaaabbcceeebbbcceeeddccfeedddddfgehhhfffggghhfffgghhhfffgggghhff",
+      "s": "24631705",
+      "t": 4,
+      "d": 63,
+      "b": 1,
+      "seed": 2320358466
+    },
+    {
+      "id": "L286",
+      "n": 8,
+      "r": "aaabbcccaaaabbccdaebbeccdaeeeeccddeeeeecddffffecgghhhfffgghhffff",
+      "s": "25706413",
+      "t": 4,
+      "d": 64,
+      "b": 1,
+      "seed": 1417152601
+    },
+    {
+      "id": "L289",
+      "n": 8,
+      "r": "cccbbaaacccdbbaegccddaaeggccdeeeggcffeeegggffeeegghhhehegghhhhhh",
+      "s": "75146302",
+      "t": 5,
+      "d": 69,
+      "b": 1,
+      "seed": 4172598257
+    },
+    {
+      "id": "L287",
+      "n": 8,
+      "r": "aaccbbbbaaccddbeaccdddeeacgdddeefggdhdeefgghhdehfggghhhhfgghhhhh",
+      "s": "16247035",
+      "t": 5,
+      "d": 70,
+      "b": 2,
+      "seed": 18464467
+    },
+    {
+      "id": "L185",
+      "n": 8,
+      "r": "aaaabbbbaaabbbccaaadbbbcadddecccadddeeegddffheegffffhhggffffhhhh",
+      "s": "03715264",
+      "t": 5,
+      "d": 71,
+      "b": 1,
+      "seed": 1002494282
+    },
+    {
+      "id": "L290",
+      "n": 8,
+      "r": "bccaaaafbcccaaffbcccaaffbcccddffeedddfffegggghfheghhghfheghhhhhh",
+      "s": "30251647",
+      "t": 5,
+      "d": 71,
+      "b": 2,
+      "seed": 1190681664
+    },
+    {
+      "id": "L186",
+      "n": 8,
+      "r": "ccccbaaacccbbbdaccceedddheeeeffdhhheffffhggeefffhhggggfghhhggggg",
+      "s": "64173520",
+      "t": 5,
+      "d": 75,
+      "b": 2,
+      "seed": 1681698939
+    },
+    {
+      "id": "L187",
+      "n": 8,
+      "r": "aabbccccaaabbcccabbbbdccabbbbddcebebddddeeefddddhefffdgdhhhhfggg",
+      "s": "14750362",
+      "t": 5,
+      "d": 78,
+      "b": 3,
+      "seed": 1060260926
+    },
+    {
+      "id": "L188",
+      "n": 8,
+      "r": "eebbbaaaeebbbccaeeebbccceeebdddcehhhhddceehhdddfhhhgggffhhhhgfff",
+      "s": "52640731",
+      "t": 5,
+      "d": 78,
+      "b": 6,
+      "seed": 3121848188
+    },
+    {
+      "id": "L288",
+      "n": 8,
+      "r": "bbbaaaddbbbcaaadbbccaaadbccceeddbbcceeedbeeeeeefgggghfffgggghhhh",
+      "s": "30264715",
+      "t": 5,
+      "d": 80,
+      "b": 2,
+      "seed": 958756482
+    },
+    {
+      "id": "L293",
+      "n": 8,
+      "r": "aaaaabbdaaaaabbdaccabbbdccccbfddcceebfdgceeeffggeeeehhhgeeehhggg",
+      "s": "05162473",
+      "t": 5,
+      "d": 86,
+      "b": 3,
+      "seed": 94705237
+    },
+    {
+      "id": "L189",
+      "n": 8,
+      "r": "ddddaabbddccaabbdddccccbddecccffddeeeggfhhhegggfhhhhgggghhhhhhgg",
+      "s": "46302751",
+      "t": 5,
+      "d": 88,
+      "b": 4,
+      "seed": 46780847
+    },
+    {
+      "id": "L190",
+      "n": 8,
+      "r": "aaaaacbbaaaaccbbaaddcccbaaedcbbbeeeddbbbeefddgbbhhfffggghhfggggg",
+      "s": "47530261",
+      "t": 5,
+      "d": 88,
+      "b": 3,
+      "seed": 1001026969
+    },
+    {
+      "id": "L191",
+      "n": 8,
+      "r": "edddaaabedddaabbeeedcccbeeddddcceeffffgghhfhfggghhhhffgghhhhhhgg",
+      "s": "47530261",
+      "t": 5,
+      "d": 88,
+      "b": 3,
+      "seed": 1263654429
+    },
+    {
+      "id": "L292",
+      "n": 8,
+      "r": "bbbaaaccbddaeeccdddaeeecddddeeeedhhfefeeghhfffeegghfffffghhhffff",
+      "s": "50726413",
+      "t": 5,
+      "d": 88,
+      "b": 3,
+      "seed": 1544561686
+    },
+    {
+      "id": "L291",
+      "n": 8,
+      "r": "bbbaaaaabbaaacacbbbaccacbdbbecccbdddecccffffeeegfhffeeeghhhheggg",
+      "s": "60514273",
+      "t": 5,
+      "d": 88,
+      "b": 3,
+      "seed": 2557433735
+    },
+    {
+      "id": "L192",
+      "n": 8,
+      "r": "bbbaacccbbbbaaccddddafceddddffeedggdffeeggggfhehghhgfhhhgghhhhhh",
+      "s": "31627405",
+      "t": 5,
+      "d": 88,
+      "b": 4,
+      "seed": 3514834536
+    },
+    {
+      "id": "L193",
+      "n": 9,
+      "r": "eeeddbbaaeeddbbccaeeddbbccaeedddbbccehhggggcceehhgggifeehggiiifhhhhggiffhhhhgiiii",
+      "s": "746208315",
+      "t": 5,
+      "d": 73,
+      "b": 1,
+      "seed": 952257584
+    },
+    {
+      "id": "L194",
+      "n": 9,
+      "r": "eebbbaaaaeedbbbccaeeddbbccgeedddfgcgeeeddfgggeeedffigghhhddfigihhhhdfiiihhhhhfiii",
+      "s": "536204718",
+      "t": 5,
+      "d": 73,
+      "b": 1,
+      "seed": 3414089283
+    },
+    {
+      "id": "L294",
+      "n": 9,
+      "r": "aaaaaacccaaaaaaccbdaaaacccbddddccccbedddcccbbeddffgggieeffffggieeehggggihhhhgggii",
+      "s": "185204637",
+      "t": 5,
+      "d": 81,
+      "b": 2,
+      "seed": 500591535
+    },
+    {
+      "id": "L195",
+      "n": 9,
+      "r": "bbbccaaaabbcccedddffceeedddfffeeeggdfffieegggffiiiegggfiiiiegggfihhhhhhgfiiiihhhh",
+      "s": "602841753",
+      "t": 5,
+      "d": 82,
+      "b": 2,
+      "seed": 1546908036
+    },
+    {
+      "id": "L196",
+      "n": 9,
+      "r": "aaaaaabbbaaaaacbbbaddaccccbeedddccbbeedddccbbeedfdccbbegffffhbhggifffhhhgiiifhhhh",
+      "s": "586403172",
+      "t": 5,
+      "d": 84,
+      "b": 2,
+      "seed": 2704467141
+    },
+    {
+      "id": "L197",
+      "n": 9,
+      "r": "aaaaabcccaaaaabbccaaaabbccceedddbbccfeedddcccfdddddgcgffdidgggghhiiigggghhiiiiggg",
+      "s": "368420715",
+      "t": 5,
+      "d": 89,
+      "b": 2,
+      "seed": 489347575
+    },
+    {
+      "id": "L198",
+      "n": 9,
+      "r": "dddaaabbbdddddaccbgggdeecccggddeeffcggeeeefffggghhhfffgiiihhfhfggiiihhhfiiiiiihhf",
+      "s": "386247051",
+      "t": 5,
+      "d": 90,
+      "b": 3,
+      "seed": 645219206
+    },
+    {
+      "id": "L295",
+      "n": 9,
+      "r": "aabbccccdabbbccccdafbeecdddffbeeedddfffeeedddfiiehhgggiihehggggiihhhhhggiiihhhhgg",
+      "s": "135740862",
+      "t": 5,
+      "d": 91,
+      "b": 2,
+      "seed": 1514071614
+    },
+    {
+      "id": "L298",
+      "n": 9,
+      "r": "ccaaaaabbcccdaaaabcccdddddbccccdddfbeccddfdfbeecgffffheeeggiffheeeggiihheggggiiih",
+      "s": "281406375",
+      "t": 5,
+      "d": 91,
+      "b": 2,
+      "seed": 2135509627
+    },
+    {
+      "id": "L199",
+      "n": 9,
+      "r": "ccbbbaaaacddbaaahacddbeeehhccdeeeehhffeeegghhffegggghhfigggighhfiiiiiiihfiiiiiiih",
+      "s": "730241685",
+      "t": 5,
+      "d": 91,
+      "b": 2,
+      "seed": 3185637618
+    },
+    {
+      "id": "L297",
+      "n": 9,
+      "r": "bbbbaaaccbbbbbaaacbbbbbaaacdddbdafccedddddfcgedhhhffggehhhhhfgieehhhhigieehhhhiii",
+      "s": "418205736",
+      "t": 5,
+      "d": 91,
+      "b": 2,
+      "seed": 3575658876
+    },
+    {
+      "id": "L200",
+      "n": 9,
+      "r": "ccaaaabbbccaadabbbfcdddeeeeffddeeeeefffieehhhffiiiihhhfggiiihhhggiiihhhhgggiiiihh",
+      "s": "471350286",
+      "t": 5,
+      "d": 91,
+      "b": 2,
+      "seed": 4252047329
+    },
+    {
+      "id": "L300",
+      "n": 9,
+      "r": "caaaaabbbccaaabbbbccccaabdbecccabbdbeefffbdddgeifhhdddgiiffhdhdgiiffhhhdgiiiihhhh",
+      "s": "582713064",
+      "t": 5,
+      "d": 93,
+      "b": 4,
+      "seed": 1454837657
+    },
+    {
+      "id": "L299",
+      "n": 9,
+      "r": "bbbccaaaabcccaaeeebbbcceeeebddeeeeeibddeeeiiiffddhhhiifggghhiiifggghhhiifgghhhiii",
+      "s": "704251368",
+      "t": 5,
+      "d": 100,
+      "b": 3,
+      "seed": 1456304970
+    },
+    {
+      "id": "L296",
+      "n": 9,
+      "r": "cbbbbaaaacccbaaeeecccdddeeecddddeeeeffddeegegfddheegggfffhhggggiifihhgggiiiihhggg",
+      "s": "631470852",
+      "t": 5,
+      "d": 100,
+      "b": 3,
+      "seed": 1717465117
+    }
+  ]
+}

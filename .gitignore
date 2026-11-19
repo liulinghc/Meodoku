@@ -1,0 +1,47 @@
+# macOS / 编辑器自动生成的文件
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 日志与临时文件
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tmp
+*.temp
+.tmp/
+.temp/
+logs/
+
+# Node.js 依赖（当前项目没有，防止以后误传）
+node_modules/
+
+# 微信开发者工具的个人配置（每台电脑不同，不上传）
+project.private.config.json
+miniprogram_npm/
+
+# 本地环境变量、密钥与密码文件（如果以后添加）
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.keystore
+*.jks
+secrets.json
+secret.json
+
+# 可以重新生成的构建/预览产物
+preview/
+dist/
+build/
+.cache/
+
+# 本机编辑器/工具配置
+.claude/
