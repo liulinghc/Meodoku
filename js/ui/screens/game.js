@@ -551,7 +551,6 @@ GameScene.prototype._cycle = function (i) {
   }
 
   this._saveResume();
-  this.app.haptic();
 };
 
 /** 新放下的猫与哪只猫冲突，返回对应文案 */
@@ -590,7 +589,6 @@ GameScene.prototype._undo = function () {
     this.app.progress.addUndos();
   }
   this._saveResume();
-  this.app.haptic();
 };
 
 /**
@@ -623,7 +621,6 @@ GameScene.prototype._restart = function () {
   this._saveResume();
 
   this.app.toast.show(copy.toastRestarted);
-  this.app.haptic();
 };
 
 /* ---------------- 提示 ---------------- */
@@ -723,7 +720,6 @@ GameScene.prototype._hint = function () {
   this.app.progress.addHints(1);
   this._apply(idx, CAT);
   this._saveResume();
-  this.app.haptic();
 
   if (!this.solvedFlag) {
     this.app.toast.show(paid === 'ticket' ? copy.toastHintTicket : format(copy.toastHintCoin, config.HINT_COIN_COST));
