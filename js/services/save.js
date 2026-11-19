@@ -4,8 +4,10 @@
  * - 写入防抖：touch() 只标脏，由主循环 tick() 到点落盘（不依赖定时器，便于测试）
  * - 双槽：主槽 + 备份槽，主槽不可用时回退
  *
- * schema 3（S5）：每日挑战、签到、图鉴、成就、商店皮肤。
- * schema 2 → 3 只补默认结构；schema 1 → 3 先按稳定关卡 ID 重映射（S4 规则）。
+ * schema 4（S5.1）：新增 coachSeen（首次规则卡已读标记）。
+ * 关卡重排迁移：schema 1 按稳定 ID 映射；schema 2/3 先按旧播放顺序快照
+ * （levels/legacy-order.js）找回旧 ID，再按稳定 ID 映射到新序号。
+ * 被教学曲线替换的旧第 1–30 关不挂接到新题面，只保证新关卡可进入。
  */
 var config = require('../data/config');
 var storage = require('../platform/storage');
@@ -14,6 +16,7 @@ var logger = require('../core/logger');
 var date = require('../core/date');
 var catData = require('../data/cats');
 var theme = require('../data/theme');
+var tutorial = require('./tutorial');
 
 function emptyResume() {
   return { index: 0, n: 0, cells: [], timeMs: 0, moves: 0, mistakes: 0, hintsUsed: 0 };
@@ -58,6 +61,7 @@ function defaults() {
     achievements: {},
     cosmetics: { skins: { cream: true }, current: 'cream' },
     guideSeen: false,
+    coachSeen: {},
     settings: { haptic: true, debug: false }
   };
 }
@@ -85,39 +89,130 @@ function pad3(n) {
 }
 
 /**
- * schema 1（S3 200 关）→ 当前 schema（S4 起 300 关）。
- * 旧档的 completed 下标指向 S3 的播放顺序；关卡已重排为 15 章，
- * 但每关 ID 不变，因此按 L001…L200 找回新序号，保留玩家真实进度。
+ * 旧前 30 关已被教学曲线替换：不把旧通关记录挂到新题面上，
+ * 但至少保证新前 30 关可以进入，避免老玩家被旧进度锁住。
+ */
+var TUTORIAL_COUNT = 30;
+
+function unlockedFrom(maxMapped, legacyFrontier) {
+  var total = require('../../levels/index').total();
+  var unlocked = Math.min(total + 1, maxMapped ? maxMapped + 1 : 1);
+  if (legacyFrontier) {
+    unlocked = Math.max(unlocked, Math.min(total + 1, TUTORIAL_COUNT + 1));
+  }
+  return unlocked;
+}
+
+/**
+ * schema 1（S3 200 关）→ 当前 schema。
+ * 旧档的 completed 下标指向 S3 的播放顺序；每关 ID 稳定，
+ * 按 L001…L200 找回新序号。找不到的旧 ID（前 30 关）已被替换，
+ * 不再按数字序号硬套到新题面——那会把进度记到不同的关卡上。
  */
 function migrateV1(d, raw) {
   var levels = require('../../levels/index');
-  var total = levels.total();
   var completed = {};
   var maxNew = 0;
+  var droppedTutorial = false;
   var key;
-  var i;
 
   for (key in d.completed) {
     if (!d.completed.hasOwnProperty(key)) continue;
     var oldIndex = parseInt(key, 10);
     var newIndex = levels.indexOfId('L' + pad3(oldIndex));
-    if (!newIndex) newIndex = oldIndex >= 1 && oldIndex <= total ? oldIndex : 0;
-    if (!newIndex) continue;
+    if (!newIndex) {
+      if (oldIndex >= 1 && oldIndex <= TUTORIAL_COUNT) droppedTutorial = true;
+      continue;
+    }
     completed[newIndex] = d.completed[key];
     if (newIndex > maxNew) maxNew = newIndex;
   }
 
-  // 旧 unlocked 表示"1…unlocked-1 均可进入"，迁移成新序号前缀。
+  // 旧 unlocked 表示“1…unlocked-1 均可进入”，迁移成新序号前缀。
   var oldUnlocked = int(raw.unlocked, 1, 1, 10000);
-  for (i = 1; i < oldUnlocked; i++) {
-    var frontier = levels.indexOfId('L' + pad3(i));
+  var frontierOld = oldUnlocked - 1;
+  if (frontierOld >= 1 && frontierOld <= TUTORIAL_COUNT) droppedTutorial = true;
+  if (frontierOld > TUTORIAL_COUNT) {
+    var frontier = levels.indexOfId('L' + pad3(frontierOld));
     if (frontier > maxNew) maxNew = frontier;
   }
 
   d.completed = completed;
-  d.unlocked = Math.min(total + 1, maxNew ? maxNew + 1 : 1);
-  var last = levels.indexOfId('L' + pad3(int(raw.lastLevel, 1, 1, 10000)));
+  d.unlocked = unlockedFrom(maxNew, droppedTutorial);
+  var oldLast = int(raw.lastLevel, 1, 1, 10000);
+  var last = oldLast > TUTORIAL_COUNT ?
+    levels.indexOfId('L' + pad3(oldLast)) : 0;
   d.lastLevel = last || 1;
+}
+
+/**
+ * schema 2/3（旧 300 关播放顺序）→ 当前 schema。
+ * completed / lastLevel / resume 的下标都是旧播放序号，
+ * 先经 legacy-order 找回旧稳定 ID，再按 ID 找新序号。
+ */
+function migrateOldOrder(d, raw) {
+  var levels = require('../../levels/index');
+  var legacy = require('../../levels/legacy-order');
+  var completed = {};
+  var maxNew = 0;
+  var droppedTutorial = false;
+  var key;
+
+  function newIndexOf(oldIndex) {
+    if (!(oldIndex >= 1 && oldIndex <= legacy.length)) return 0;
+    return levels.indexOfId(legacy[oldIndex - 1]);
+  }
+
+  for (key in d.completed) {
+    if (!d.completed.hasOwnProperty(key)) continue;
+    var oldIndex = parseInt(key, 10);
+    var newIndex = newIndexOf(oldIndex);
+    if (!newIndex) {
+      if (oldIndex >= 1 && oldIndex <= TUTORIAL_COUNT) droppedTutorial = true;
+      continue;
+    }
+    completed[newIndex] = d.completed[key];
+    if (newIndex > maxNew) maxNew = newIndex;
+  }
+
+  var oldUnlocked = int(raw.unlocked, 1, 1, legacy.length + 1);
+  var frontierOld = oldUnlocked - 1;
+  if (frontierOld >= 1 && frontierOld <= TUTORIAL_COUNT) droppedTutorial = true;
+  if (frontierOld > TUTORIAL_COUNT) {
+    var frontier = newIndexOf(frontierOld);
+    if (frontier > maxNew) maxNew = frontier;
+  }
+
+  d.completed = completed;
+  d.unlocked = unlockedFrom(maxNew, droppedTutorial);
+  var oldLast = int(raw.lastLevel, 1, 1, legacy.length);
+  d.lastLevel = oldLast > TUTORIAL_COUNT ? (newIndexOf(oldLast) || 1) : 1;
+}
+
+/** 旧存档的续玩下标同样按旧顺序迁移；落点不存在则放弃续玩 */
+function migrateResumeRaw(raw, from) {
+  var r = obj(raw);
+  if (!r) return null;
+  if (from === config.SAVE_SCHEMA) return r;
+
+  var oldIndex = int(r.index, 0, 0, 10000);
+  if (!oldIndex) return null;
+  var newIndex = 0;
+  if (from === 1) {
+    newIndex = require('../../levels/index').indexOfId('L' + pad3(oldIndex));
+  } else {
+    var legacy = require('../../levels/legacy-order');
+    var id = oldIndex >= 1 && oldIndex <= legacy.length ? legacy[oldIndex - 1] : '';
+    if (id) newIndex = require('../../levels/index').indexOfId(id);
+  }
+  if (!newIndex) return null;
+
+  var out = {};
+  for (var k in r) {
+    if (r.hasOwnProperty(k)) out[k] = r[k];
+  }
+  out.index = newIndex;
+  return out;
 }
 
 function normalizeResume(raw, total) {
@@ -247,6 +342,18 @@ function normalizeAchievements(raw) {
   return out;
 }
 
+function normalizeCoachSeen(raw) {
+  var out = {};
+  raw = obj(raw);
+  if (!raw) return out;
+  for (var id in raw) {
+    if (raw.hasOwnProperty(id) && tutorial.isKnownCoach(id) && raw[id]) {
+      out[id] = true;
+    }
+  }
+  return out;
+}
+
 function normalizeCosmetics(raw) {
   var out = defaults().cosmetics;
   raw = obj(raw);
@@ -270,7 +377,7 @@ function normalize(raw) {
   raw = obj(raw);
   if (!raw) return d;
   var from = raw.schema;
-  if (from !== 1 && from !== 2 && from !== config.SAVE_SCHEMA) {
+  if (from !== 1 && from !== 2 && from !== 3 && from !== config.SAVE_SCHEMA) {
     logger.warn('存档版本不符: ' + from + '，按默认值合并');
   }
 
@@ -319,6 +426,7 @@ function normalize(raw) {
   d.achievements = normalizeAchievements(raw.achievements);
   d.cosmetics = normalizeCosmetics(raw.cosmetics);
   d.guideSeen = bool(raw.guideSeen, false);
+  d.coachSeen = normalizeCoachSeen(raw.coachSeen);
 
   var st = obj(raw.settings);
   if (st) {
@@ -329,6 +437,7 @@ function normalize(raw) {
   var levels = require('../../levels/index');
   var total = levels.total();
   if (from === 1) migrateV1(d, raw);
+  else if (from === 2 || from === 3) migrateOldOrder(d, raw);
 
   d.unlocked = Math.min(total + 1, Math.max(1, d.unlocked));
   d.lastLevel = Math.min(total, Math.max(1, d.lastLevel));
@@ -340,13 +449,14 @@ function normalize(raw) {
     if (ci >= 1 && ci <= total) cleanCompleted[ci] = d.completed[ck];
   }
   d.completed = cleanCompleted;
-  d.resume = normalizeResume(raw.resume, total);
+  d.resume = normalizeResume(migrateResumeRaw(raw.resume, from), total);
   d.schema = config.SAVE_SCHEMA;
   return d;
 }
 
 function usable(raw) {
-  return obj(raw) && (raw.schema === 1 || raw.schema === 2 || raw.schema === config.SAVE_SCHEMA);
+  return obj(raw) && (raw.schema === 1 || raw.schema === 2 || raw.schema === 3 ||
+    raw.schema === config.SAVE_SCHEMA);
 }
 
 function readKey(key) {

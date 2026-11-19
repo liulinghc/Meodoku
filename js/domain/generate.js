@@ -16,7 +16,7 @@ var rng = require('../core/rng');
 var solver = require('./solver');
 var difficulty = require('./difficulty');
 
-var GENERATOR_VERSION = 2;
+var GENERATOR_VERSION = 4;
 
 function range(n) {
   var a = [];
@@ -396,6 +396,125 @@ function decodeSolutionString(str) {
   return out;
 }
 
+/** 解格下标数组（每行一只猫） */
+function solutionCells(solution, n) {
+  var out = [];
+  for (var r = 0; r < n; r++) out.push(r * n + solution[r]);
+  return out;
+}
+
+/**
+ * 预放猫编码：长度 n，第 r 行为数字表示该行预放了第几列的猫，
+ * '.' 表示该行不预放。预放猫必须来自答案，因此只记录行，列由答案给出。
+ */
+function encodeGivenString(n, solution, givens) {
+  var rows = [];
+  var i;
+  for (i = 0; i < n; i++) rows.push('.');
+  for (i = 0; i < givens.length; i++) {
+    var idx = givens[i];
+    var r = Math.floor(idx / n);
+    if (r >= 0 && r < n && solution[r] === idx % n) rows[r] = String(solution[r]);
+  }
+  return rows.join('');
+}
+
+function decodeGivenString(str, n, solution) {
+  if (!str || str.length !== n) return [];
+  var out = [];
+  for (var r = 0; r < n; r++) {
+    var ch = str.charAt(r);
+    if (ch === '.' || ch === '-' || ch === ' ') continue;
+    var c = ch.charCodeAt(0) - 48;
+    if (!(c >= 0 && c < n) || solution[r] !== c) return null;
+    out.push(r * n + c);
+  }
+  return out;
+}
+
+/**
+ * 从答案里挑一组预放猫。
+ * 只枚举“选哪些行”，每行最多一只，最多 2^n 种（n≤9）。
+ * 优先：可纯逻辑完成、有明确第一手、打叉/锁定负担轻。
+ */
+function selectGivens(n, region, solution, count, opts) {
+  opts = opts || {};
+  var requireGuessFree = opts.guessFree !== false;
+  var best = null;
+  var total = 1 << n;
+  var N = n * n;
+
+  for (var mask = 0; mask < total; mask++) {
+    var bits = 0;
+    var givens = [];
+    for (var r = 0; r < n; r++) {
+      if (mask & (1 << r)) {
+        bits++;
+        givens.push(r * n + solution[r]);
+      }
+    }
+    if (bits !== count) continue;
+
+    var a = difficulty.analyzeDifficulty(n, region, givens);
+    if (!a) continue;
+    if (requireGuessFree && !a.guessFree) continue;
+    if (opts.tier && a.tier !== opts.tier) continue;
+    if (opts.maxScore !== undefined && a.score > opts.maxScore) continue;
+    if (opts.minScore !== undefined && a.score < opts.minScore) continue;
+
+    // 难度低、第一手明确、开局有必然位置者优先；mask 用于确定性平局裁决
+    var key = [
+      a.score,
+      a.firstMove < 0 ? 1 : 0,
+      a.firstMoveLockSteps,
+      a.marks,
+      a.placements,
+      mask
+    ];
+    if (!best || compareKeys(key, best.key) < 0) {
+      best = {
+        key: key,
+        givens: givens,
+        analysis: a,
+        givenString: encodeGivenString(n, solution, givens),
+        focus: a.firstMove
+      };
+    }
+  }
+  return best;
+}
+
+function compareKeys(a, b) {
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return a[i] - b[i];
+  }
+  return 0;
+}
+
+/** 解格 + 预放猫的规则校验 */
+function givenErrors(n, region, solution, givens) {
+  var errs = [];
+  if (!Array.isArray(givens)) return ['预放猫格式'];
+  var seen = {};
+  var regSeen = {};
+  var cells = solutionCells(solution, n);
+  var cellSet = {};
+  for (var i = 0; i < cells.length; i++) cellSet[cells[i]] = true;
+  if (givens.length >= n) errs.push('预放猫过多');
+  for (var k = 0; k < givens.length; k++) {
+    var idx = givens[k];
+    if (!(idx >= 0 && idx < n * n)) { errs.push('预放猫越界'); continue; }
+    if (!cellSet[idx]) { errs.push('预放猫不在答案中'); continue; }
+    var r = Math.floor(idx / n);
+    var g = region[idx];
+    if (seen[r]) errs.push('预放猫同行');
+    if (regSeen[g]) errs.push('预放猫同区');
+    seen[r] = true;
+    regSeen[g] = true;
+  }
+  return errs;
+}
+
 /* ---------------- 对外 ---------------- */
 
 /**
@@ -408,6 +527,7 @@ function generateLevel(seed, n, opts) {
   var mode = opts.mode || 'balanced';
   var maxIter = opts.repairIter || 60;
   var targetTier = opts.tier || 0;
+  var givens = opts.givens || [];
   var stat = {
     attempts: 0,
     structure: 0,
@@ -463,12 +583,24 @@ function generateLevel(seed, n, opts) {
       continue;
     }
 
-    var diff = difficulty.analyzeDifficulty(n, region);
+    var diff = difficulty.analyzeDifficulty(n, region, givens);
     if (!diff) {
       stat.difficultyFail++;
       continue;
     }
     if (targetTier && diff.tier !== targetTier) {
+      stat.tierReject++;
+      continue;
+    }
+    if (opts.guessFree && !diff.guessFree) {
+      stat.tierReject++;
+      continue;
+    }
+    if (opts.maxScore !== undefined && diff.score > opts.maxScore) {
+      stat.tierReject++;
+      continue;
+    }
+    if (opts.minScore !== undefined && diff.score < opts.minScore) {
       stat.tierReject++;
       continue;
     }
@@ -480,11 +612,15 @@ function generateLevel(seed, n, opts) {
       regionString: encodeRegionString(region, n),
       solution: solution,
       solutionString: encodeSolutionString(solution),
+      givens: givens,
+      givenString: encodeGivenString(n, solution, givens),
+      focus: diff.firstMove,
       tier: diff.tier,
       difficulty: diff.score,
       branch: diff.branchCount,
       failedBranches: diff.failedBranches,
       propagationRatio: diff.propagationRatio,
+      analysis: diff,
       attempts: stat.attempts,
       repair: stat.repaired > 0,
       stats: stat
@@ -512,6 +648,12 @@ function validateLevel(level, opts) {
   var solution = levelSolution(level);
   var errs = [];
   var i;
+  var givens = level.givens;
+  if (!givens && typeof level.g === 'string') {
+    givens = decodeGivenString(level.g, n, solution);
+    if (givens === null) errs.push('预放猫编码非法');
+    else givens = givens || [];
+  }
 
   if (region.length !== n * n) errs.push('区域长度');
   for (i = 0; i < region.length; i++) {
@@ -532,6 +674,11 @@ function validateLevel(level, opts) {
     if (r > 0 && Math.abs(c - solution[r - 1]) < 2) errs.push('相邻 r' + r);
   }
   for (var g2 = 0; g2 < n; g2++) if (!usedReg[g2]) errs.push('区域缺解格 g' + g2);
+
+  if (givens && givens.length) {
+    var gErrs = givenErrors(n, region, solution, givens);
+    for (var ge = 0; ge < gErrs.length; ge++) errs.push(gErrs[ge]);
+  }
 
   var struct = checkStructure(n, region);
   if (struct) errs.push(struct);
@@ -589,6 +736,11 @@ module.exports = {
   decodeRegionString: decodeRegionString,
   encodeSolutionString: encodeSolutionString,
   decodeSolutionString: decodeSolutionString,
+  solutionCells: solutionCells,
+  encodeGivenString: encodeGivenString,
+  decodeGivenString: decodeGivenString,
+  selectGivens: selectGivens,
+  givenErrors: givenErrors,
   generateLevel: generateLevel,
   validateLevel: validateLevel,
   regionsConnected: regionsConnected,

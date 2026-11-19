@@ -166,13 +166,19 @@ Layout.prototype.guide = function () {
   var contentX = x + pad;
   var contentW = cardW - 2 * pad;
   var ctaY = y + cardH - pad - ctaH;
+  var dotsY = ctaY - 22 * s;
 
   var tile = 26 * s;
-  var rowGap = 32 * s;
-  var row0 = y + 180 * s;
+  var rowGap = 38 * s;
+  var row0 = y + 116 * s;
   var rows = [];
   for (var i = 0; i < 3; i++) {
     rows.push({ x: contentX, y: row0 + i * rowGap, size: tile });
+  }
+
+  var dots = [];
+  for (var d = 0; d < 3; d++) {
+    dots.push({ cx: w / 2 + (d - 1) * 18 * s, cy: dotsY, r: 4 * s });
   }
 
   return {
@@ -180,12 +186,39 @@ Layout.prototype.guide = function () {
     close: { cx: x + cardW - pad - 14 * s, cy: y + pad + 14 * s, r: 14 * s },
     titleY: y + 36 * s,
     dividerY: y + 56 * s,
-    goal: { x: contentX, y: y + 70 * s, w: contentW, h: 68 * s },
-    tap: { x: contentX, y: y + 146 * s, w: contentW, h: 130 * s, rows: rows },
-    tip: { x: contentX, y: y + 280 * s, w: contentW, h: 60 * s },
+    goal: { x: contentX, y: y + 78 * s, w: contentW, h: 110 * s },
+    tap: { x: contentX, y: y + 72 * s, w: contentW, h: 160 * s, rows: rows },
+    tip: { x: contentX, y: y + 82 * s, w: contentW, h: 118 * s },
+    dots: dots,
     cta: { x: contentX, y: ctaY, w: contentW, h: ctaH }
   };
-};
+}
+
+/* ---------------- 首次规则卡 ---------------- */
+
+Layout.prototype.coach = function () {
+  var s = this.s;
+  var w = this.w;
+  var h = this.h;
+  var margin = 16 * s;
+  var pad = 18 * s;
+  var cardW = Math.min(w - 2 * margin, 336 * s);
+  var cardH = 196 * s;
+  var x = (w - cardW) / 2;
+  var y = Math.max(this.safeTop + 36 * s, h * 0.5 - cardH * 0.62);
+  var btnH = 42 * s;
+
+  return {
+    card: { x: x, y: y, w: cardW, h: cardH },
+    titleX: x + pad,
+    titleY: y + 34 * s,
+    bodyX: x + pad,
+    bodyY: y + 66 * s,
+    bodyW: cardW - 2 * pad,
+    lineH: 20 * s,
+    cta: { x: x + pad, y: y + cardH - pad - btnH, w: cardW - 2 * pad, h: btnH }
+  };
+};;
 
 /* ---------------- 结算界面 ---------------- */
 

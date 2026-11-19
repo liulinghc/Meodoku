@@ -4,12 +4,12 @@
  */
 module.exports = {
   APP_NAME: '喵谜格',
-  VERSION: '0.5.0',
-  STAGE: 'S5',
+  VERSION: '0.5.1',
+  STAGE: 'S5.1',
 
   SAVE_KEY: 'md:save:v1',
   SAVE_BAK_KEY: 'md:save:bak',
-  SAVE_SCHEMA: 3,
+  SAVE_SCHEMA: 4,
   SAVE_DEBOUNCE_MS: 800,
 
   INITIAL_COINS: 100,
@@ -23,6 +23,11 @@ module.exports = {
 
   // S2 提示：优先扣提示券，没有券时可花金币代付
   HINT_COIN_COST: 45,
+
+  // S5.1 新手保护（只作用于主线前若干关）
+  FREE_HINT_LEVELS: 10,     // 前 10 关提示免费
+  MERCY_LEVELS: 5,          // 前 5 关不设失误上限（当前版本本来就不会因失误失败）
+  IDLE_HINT_SECONDS: 20,    // 连续无操作多久后给一次温和提示
 
   CHAPTER_SIZE: 20,
   CHAPTER_COUNT: 15,

@@ -2,10 +2,12 @@
  * 关卡索引。多包时在此追加 require 即可，业务侧只认全局 1-based 序号。
  *
  * 正式包使用紧凑编码：
- *   r = n² 个区域字母；s = n 个答案列号字符。
- * 这里解码为运行时使用的 regions（每行一个字符串）与 solution（数字数组），
- * 并补齐 index / chapter / id / tier / difficulty。构建期的唯一解与结构校验
- * 已由 tools/gen-pack.js 完成，运行时不重复求解。
+ *   r = n² 个区域字母；s = n 个答案列号字符；
+ *   g = 可选，长度 n，第 r 行预放猫的列号（'.' 表示不预放）；
+ *   h = 可选，教学关高亮格的下标。
+ * 这里解码为运行时使用的 regions（每行一个字符串）、solution（数字数组）、
+ * givens（预放猫格子下标）与 focus，并补齐 index / chapter / id / tier。
+ * 构建期的唯一解与结构校验已由 tools/gen-pack.js 完成，运行时不重复求解。
  */
 var config = require('../js/data/config');
 
@@ -20,6 +22,7 @@ function decodeLevel(raw) {
   var n = raw.n;
   var regions = [];
   var solution = [];
+  var givens = [];
   var i, r;
 
   if (!(n >= 4 && n <= 9)) throw new Error('关卡边长非法: ' + n);
@@ -37,8 +40,25 @@ function decodeLevel(raw) {
     solution.push(c);
   }
 
+  if (raw.g) {
+    if (raw.g.length !== n) throw new Error('预放串长度非法: ' + (raw.id || '?'));
+    for (r = 0; r < n; r++) {
+      var ch = raw.g.charAt(r);
+      if (ch === '.' || ch === '-') continue;
+      var gc = ch.charCodeAt(0) - 48;
+      if (!(gc >= 0 && gc < n) || solution[r] !== gc) {
+        throw new Error('预放猫不在答案中: ' + (raw.id || '?'));
+      }
+      givens.push(r * n + gc);
+    }
+    if (givens.length >= n) throw new Error('预放猫过多: ' + (raw.id || '?'));
+  }
+
   raw.regions = regions;
   raw.solution = solution;
+  raw.givens = givens;
+  raw.givenCount = givens.length;
+  raw.focus = typeof raw.h === 'number' ? raw.h : -1;
   raw.tier = raw.t;
   raw.difficulty = raw.d;
   return raw;

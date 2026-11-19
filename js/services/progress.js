@@ -214,6 +214,18 @@ Progress.prototype.completeLevel = function (index, info) {
   };
 };
 
+/* ---------------- 新手规则卡 ---------------- */
+
+Progress.prototype.coachSeen = function (id) {
+  return !!this.d().coachSeen[id];
+};
+
+Progress.prototype.markCoachSeen = function (id) {
+  if (!id || this.d().coachSeen[id]) return;
+  this.d().coachSeen[id] = true;
+  this.save.touch();
+};
+
 /* ---------------- 统计 ---------------- */
 
 Progress.prototype.addCatsPlaced = function (n) {

@@ -13,6 +13,7 @@ var copy = require('../../data/copy');
 var config = require('../../data/config');
 var cats = require('../../data/cats');
 var levels = require('../../services/levels');
+var tutorial = require('../../services/tutorial');
 var rules = require('../../domain/rules');
 var hit = require('../hit');
 var clock = require('../../core/clock');
@@ -35,6 +36,9 @@ function GameScene(app) {
   this.n = 5;
   this.regions = [];
   this.cells = [];
+  this.givens = [];      // 预放猫格子（不可移动）
+  this.givenSet = {};
+  this.focus = -1;       // 教学关高亮格
   this.popAt = {};
   this.undoStack = [];
   this.conflict = {};
@@ -54,6 +58,11 @@ function GameScene(app) {
   this.resultInfo = null;
   this.resultOpened = false;
   this.resumeT = 0;      // 续玩盘面自动保存节流
+
+  this.coach = null;     // 首次规则卡；显示期间暂停计时
+  this.idleT = 0;
+  this.idleShown = false;
+  this.hintGlowT = 0;    // 闲置提示后，提示按钮的柔和高亮
 }
 
 /* ---------------- 生命周期 ---------------- */
@@ -92,8 +101,18 @@ GameScene.prototype.enter = function (params) {
   this.level = level;
   this.n = level.n;
   this.regions = parseRegions(level.regions, this.n);
+  this.givens = (level.givens || []).slice();
+  this.givenSet = {};
+  this.focus = level.focus >= 0 ? level.focus : -1;
   this.cells = [];
   for (var i = 0; i < this.n * this.n; i++) this.cells.push(EMPTY);
+  for (var g = 0; g < this.givens.length; g++) {
+    var gi = this.givens[g];
+    if (gi >= 0 && gi < this.cells.length) {
+      this.cells[gi] = CAT;
+      this.givenSet[gi] = true;
+    }
+  }
   this.popAt = {};
   this.undoStack = [];
   this.conflict = {};
@@ -112,6 +131,10 @@ GameScene.prototype.enter = function (params) {
   this.resultInfo = null;
   this.resultOpened = false;
   this.resumeT = 0;
+  this.coach = null;
+  this.idleT = 0;
+  this.idleShown = false;
+  this.hintGlowT = 0;
 
   // 续玩：仅主线关卡；每日挑战鼓励当天重试，不与主线单槽混用
   var resume = this.dailyMode ? null : app.progress.getResume(this.index);
@@ -124,12 +147,26 @@ GameScene.prototype.enter = function (params) {
     this.hintsUsed = resume.hintsUsed;
     if (resume.moves > 0 || resume.timeMs > 500) app.toast.show(copy.toastResumed);
   }
+  // 预放猫永远以关卡数据为准：续玩档也不能把它们清掉或改掉
+  this._applyGivens();
 
   this.L = app.layout.game(this.n);
   this.boardLayer = this._buildBoardLayer();
 
+  this.coach = tutorial.coachFor(this.index, level, app.progress.d().coachSeen);
   if (!this.dailyMode) app.progress.setLastLevel(this.index);
   this._recompute();
+};
+
+/** 把关卡预放猫强制落回盘面（进入/重开/撤销后调用） */
+GameScene.prototype._applyGivens = function () {
+  for (var i = 0; i < this.givens.length; i++) {
+    var idx = this.givens[i];
+    if (idx >= 0 && idx < this.cells.length) {
+      this.cells[idx] = CAT;
+      delete this.popAt[idx];
+    }
+  }
 };
 
 /* ---------------- 更新 ---------------- */
@@ -137,26 +174,37 @@ GameScene.prototype.enter = function (params) {
 GameScene.prototype.update = function (dt) {
   this._updateFx(dt);
 
-  if (!this.solvedFlag) {
-    this.elapsed += dt;
-    this.resumeT += dt;
-    if (this.resumeT >= 3) {
-      this.resumeT = 0;
-      this._saveResume();
+  if (this.solvedFlag) {
+    // 通关后先停留一小段时间展示庆祝，再进结算
+    this.celebrateT += dt;
+    if (this.settleDelay > 0) {
+      this.settleDelay -= dt;
+      if (this.settleDelay <= 0) this._openResult();
     }
     return;
   }
 
-  // 通关后先停留一小段时间展示庆祝，再进结算
-  this.celebrateT += dt;
-  if (this.settleDelay > 0) {
-    this.settleDelay -= dt;
-    if (this.settleDelay <= 0) this._openResult();
+  // 规则卡显示期间暂停计时，不让新玩家读说明时被扣时间
+  if (this.coach) return;
+
+  this.elapsed += dt;
+  this.resumeT += dt;
+  if (this.resumeT >= 3) {
+    this.resumeT = 0;
+    this._saveResume();
+  }
+
+  this.idleT += dt;
+  if (!this.idleShown && this.idleT >= config.IDLE_HINT_SECONDS) {
+    this.idleShown = true;
+    this.hintGlowT = 6;
+    this.app.toast.show(copy.toastIdleHint);
   }
 };
 
 GameScene.prototype._updateFx = function (dt) {
   if (this.shakeT > 0) this.shakeT = Math.max(0, this.shakeT - dt);
+  if (this.hintGlowT > 0) this.hintGlowT = Math.max(0, this.hintGlowT - dt);
   for (var i = this.fx.length - 1; i >= 0; i--) {
     this.fx[i].t += dt;
     if (this.fx[i].t > FX_LIFE) this.fx.splice(i, 1);
@@ -174,6 +222,41 @@ GameScene.prototype.render = function (r) {
   this._renderRules(r);
   this._renderBoard(r);
   this._renderBand(r);
+  if (this.coach) this._renderCoach(r);
+};
+
+GameScene.prototype._renderCoach = function (r) {
+  var th = this.app.theme;
+  var s = this.app.layout.s;
+  var L = this.app.layout.coach();
+  var c = L.card;
+
+  r.fill(th.color.mask);
+  draw.softShadow(r, c.x, c.y, c.w, c.h, th.radius.board);
+  r.roundRect(c.x, c.y, c.w, c.h, th.radius.board, th.color.card);
+
+  r.roundRect(c.x + 18 * s, c.y + 22 * s, 28 * s, 5 * s, 2.5 * s, th.color.cta);
+  r.text(this.coach.title, L.titleX, L.titleY, {
+    size: th.font.body,
+    weight: '700',
+    color: th.color.text
+  });
+  for (var i = 0; i < this.coach.lines.length; i++) {
+    r.text(this.coach.lines[i], L.bodyX, L.bodyY + i * L.lineH, {
+      size: th.font.small,
+      color: th.color.textSoft,
+      maxWidth: L.bodyW
+    });
+  }
+
+  draw.softShadow(r, L.cta.x, L.cta.y, L.cta.w, L.cta.h, L.cta.h / 2);
+  r.roundRect(L.cta.x, L.cta.y, L.cta.w, L.cta.h, L.cta.h / 2, th.color.cta);
+  r.text(copy.coachDone, L.cta.x + L.cta.w / 2, L.cta.y + L.cta.h / 2 + 1, {
+    size: th.font.banner,
+    weight: '700',
+    color: th.color.textOnColor,
+    align: 'center'
+  });
 };
 
 GameScene.prototype._renderTop = function (r) {
@@ -292,6 +375,8 @@ GameScene.prototype._renderBoard = function (r) {
     this.app.renderer.drawLayer(this.boardLayer.layer, this.boardLayer.x + shakeX, this.boardLayer.y);
   }
 
+  this._renderFocus(r, shakeX);
+
   var now = clock.now();
 
   for (var i = 0; i < n * n; i++) {
@@ -324,6 +409,16 @@ GameScene.prototype._renderBoard = function (r) {
       var ease = 1 - Math.pow(1 - k, 3);
       var scale = 0.7 + 0.3 * ease + 0.06 * Math.sin(Math.PI * k);
       draw.catFace(r, cx, cy + rc.size * 0.05, rc.size * 0.98 * scale, this._catFor(g), {});
+
+      // 预放猫加锁标：视觉上明确“这只不能动”
+      if (this.givenSet[i]) {
+        var br = Math.max(7 * s, rc.size * 0.15);
+        var bx = ax + rc.size - br - 2 * s;
+        var by = ay + br + 2 * s;
+        r.circle(bx, by, br, th.color.card);
+        r.strokeCircle(bx, by, br, th.color.border, 1 * s);
+        draw.iconLock(r, bx, by, br * 1.5, th.color.textSoft);
+      }
     }
 
     if (this.conflict[i]) {
@@ -332,6 +427,30 @@ GameScene.prototype._renderBoard = function (r) {
   }
 
   this._renderFx(r, shakeX);
+};
+
+/** 教学关突破口：在空格上画柔和的呼吸光，放下猫后自动消失 */
+GameScene.prototype._renderFocus = function (r, shakeX) {
+  if (this.focus < 0 || this.focus >= this.cells.length) return;
+  if (this.cells[this.focus] === CAT) return;
+
+  var th = this.app.theme;
+  var s = this.app.layout.s;
+  var L = this.L;
+  var geom = L.geom;
+  var rc = this.app.layout.cellRect(geom, Math.floor(this.focus / this.n), this.focus % this.n);
+  var ax = L.board.x + rc.x + shakeX;
+  var ay = L.board.y + rc.y;
+  var pulse = (Math.sin(clock.now() / 320) + 1) / 2;
+
+  r.roundRect(ax - 1, ay - 1, rc.size + 2, rc.size + 2, geom.radius,
+    draw.alpha(th.color.highlight, 0.30 + 0.28 * pulse));
+  r.strokeRoundRect(ax - 1, ay - 1, rc.size + 2, rc.size + 2, geom.radius,
+    draw.alpha(th.color.cta, 0.55 + 0.35 * pulse), 2.5 * s);
+
+  r.ctx.globalAlpha = 0.55 + 0.35 * pulse;
+  draw.iconStar(r, ax + rc.size / 2, ay + rc.size / 2, rc.size * 0.42, th.color.cta);
+  r.ctx.globalAlpha = 1;
 };
 
 /** 放置反馈：合法放置为品牌色扩散环，冲突放置为红色扩散环 */
@@ -375,6 +494,14 @@ GameScene.prototype._renderBand = function (r) {
 
   for (var i = 0; i < L.tools.length; i++) {
     var t = L.tools[i];
+
+    // 闲置一段时间后，提示按钮柔和呼吸，提醒玩家可以求助
+    if (t.key === 'hint' && this.hintGlowT > 0) {
+      var gk = (Math.sin(clock.now() / 260) + 1) / 2;
+      r.strokeCircle(t.cx, t.cy, t.r + (5 + 3 * gk) * s,
+        draw.alpha(th.color.highlight, 0.45 + 0.45 * gk), 3 * s);
+    }
+
     r.circle(t.cx, t.cy, t.r, 'rgba(255, 255, 255, 0.95)');
     icons[i](r, t.cx, t.cy, 22 * s, th.color.ink);
     // 先画 1px 阴影再画正文，浅蓝底上白字也读得清
@@ -391,18 +518,19 @@ GameScene.prototype._renderBand = function (r) {
       align: 'center'
     });
 
-    // 提示按钮右上角显示剩余提示券
+    // 提示按钮右上角：教学关显示“免”，其余显示剩余提示券
     if (t.key === 'hint') {
+      var free = this._freeHint();
       var tickets = this.app.progress.tickets();
       var br = 9 * s;
       var bx = t.cx + t.r * 0.70;
       var by = t.cy - t.r * 0.70;
-      r.circle(bx, by, br, tickets > 0 ? th.color.cta : th.color.bgSunken);
+      r.circle(bx, by, br, free || tickets > 0 ? th.color.cta : th.color.bgSunken);
       r.strokeCircle(bx, by, br, th.color.card, 1.5 * s);
-      r.text(String(Math.min(99, tickets)), bx, by + 0.5, {
+      r.text(free ? copy.hintFreeBadge : String(Math.min(99, tickets)), bx, by + 0.5, {
         size: th.font.micro,
         weight: '700',
-        color: tickets > 0 ? th.color.textOnColor : th.color.textSoft,
+        color: free || tickets > 0 ? th.color.textOnColor : th.color.textSoft,
         align: 'center'
       });
     }
@@ -527,6 +655,7 @@ GameScene.prototype.exit = function () {
 };
 
 GameScene.prototype._apply = function (i, v, silent) {
+  if (this.givenSet[i]) return;
   this.cells[i] = v;
   if (v === CAT) {
     this.popAt[i] = clock.now();
@@ -542,6 +671,13 @@ GameScene.prototype._apply = function (i, v, silent) {
 
 GameScene.prototype._cycle = function (i) {
   if (this.solvedFlag) return;
+  this.idleT = 0;
+  this.hintGlowT = 0;
+  if (this.givenSet[i]) {
+    this.app.toast.show(copy.toastGivenLocked);
+    return;
+  }
+
   var prev = this.cells[i];
   var next = prev === EMPTY ? MARK : (prev === MARK ? CAT : EMPTY);
   this.undoStack.push({ i: i, prev: prev });
@@ -553,7 +689,10 @@ GameScene.prototype._cycle = function (i) {
     if (this.conflict[i]) {
       this.shakeT = ERROR_SHAKE;
       this.fx.push({ i: i, kind: 'bad', t: 0 });
-      this.app.toast.show(this._conflictReason(i));
+      // 前 5 关的第一次冲突优先给“不会失败”的安抚；之后恢复具体原因
+      var msg = tutorial.isMerciful(this.index, this.dailyMode) && this.mistakes <= 1 ?
+        copy.toastMistakeSafe : this._conflictReason(i);
+      this.app.toast.show(msg);
     } else {
       this.fx.push({ i: i, kind: 'ok', t: 0 });
     }
@@ -583,6 +722,8 @@ GameScene.prototype._conflictReason = function (idx) {
 
 GameScene.prototype._undo = function () {
   if (this.solvedFlag) return;
+  this.idleT = 0;
+  this.hintGlowT = 0;
   if (!this.undoStack.length) {
     this.app.toast.show(copy.toastNoUndo);
     return;
@@ -591,10 +732,12 @@ GameScene.prototype._undo = function () {
   if (op.snapshot) {
     this.cells = op.snapshot.slice();
     this.popAt = {};
+    this._applyGivens();
     this.app.progress.addUndos();
     this._recompute();
   } else {
     this._apply(op.i, op.prev, true);
+    this._applyGivens();
     this.app.progress.addUndos();
   }
   this._saveResume();
@@ -607,10 +750,13 @@ GameScene.prototype._undo = function () {
  */
 GameScene.prototype._restart = function () {
   if (this.solvedFlag) return;
+  this.idleT = 0;
+  this.hintGlowT = 0;
 
+  // 预放猫不算玩家的操作：只统计/快照玩家自己放下的内容
   var has = false;
   for (var i = 0; i < this.cells.length; i++) {
-    if (this.cells[i] !== EMPTY) { has = true; break; }
+    if (!this.givenSet[i] && this.cells[i] !== EMPTY) { has = true; break; }
   }
 
   if (has) {
@@ -626,6 +772,8 @@ GameScene.prototype._restart = function () {
   this.elapsed = 0;
   this.moves = 0;
   this.mistakes = 0;
+  this.idleShown = false;
+  this._applyGivens();
   this._recompute();
   this._saveResume();
 
@@ -699,6 +847,10 @@ GameScene.prototype._hintCell = function () {
   return fallback;
 };
 
+GameScene.prototype._freeHint = function () {
+  return tutorial.isFreeHintLevel(this.index, this.dailyMode);
+};
+
 /** 返回 'ticket' | 'coin'；资源不足时提示并返回 '' */
 GameScene.prototype._payHint = function () {
   var progress = this.app.progress;
@@ -716,13 +868,16 @@ GameScene.prototype._payHint = function () {
 
 GameScene.prototype._hint = function () {
   if (this.solvedFlag) return;
+  this.idleT = 0;
+  this.hintGlowT = 0;
   var idx = this._hintCell();
   if (idx < 0) {
     this.app.toast.show(copy.toastNoHintCell);
     return;
   }
 
-  var paid = this._payHint();
+  // 前 10 关教学提示免费；仍计入 hintsUsed，避免用提示刷三爪
+  var paid = this._freeHint() ? 'free' : this._payHint();
   if (!paid) return;
 
   this.hintsUsed++;
@@ -731,7 +886,9 @@ GameScene.prototype._hint = function () {
   this._saveResume();
 
   if (!this.solvedFlag) {
-    this.app.toast.show(paid === 'ticket' ? copy.toastHintTicket : format(copy.toastHintCoin, config.HINT_COIN_COST));
+    if (paid === 'free') this.app.toast.show(copy.toastHintFree);
+    else if (paid === 'ticket') this.app.toast.show(copy.toastHintTicket);
+    else this.app.toast.show(format(copy.toastHintCoin, config.HINT_COIN_COST));
   }
 };
 
@@ -840,9 +997,18 @@ GameScene.prototype._cellAt = function (x, y) {
 
 GameScene.prototype.onTouchEnd = function (x, y, isTap) {
   if (!isTap) return;
+
+  // 规则卡是唯一输入目标：读完点“知道啦”才继续
+  if (this.coach) {
+    var CL = this.app.layout.coach();
+    if (hit.inRect(x, y, CL.cta)) this._dismissCoach();
+    return;
+  }
+
   if (this.solvedFlag) return;
   var app = this.app;
   var L = this.L;
+  this.idleT = 0;
 
   if (hit.inCircleLoose(x, y, L.back, 4)) {
     app.sm.pop();
@@ -871,6 +1037,13 @@ GameScene.prototype.onTouchEnd = function (x, y, isTap) {
 };
 
 /* ---------------- 工具 ---------------- */
+
+GameScene.prototype._dismissCoach = function () {
+  if (!this.coach) return;
+  this.app.progress.markCoachSeen(this.coach.id);
+  this.coach = null;
+  this.idleT = 0;
+};
 
 function parseRegions(rows, n) {
   var out = [];

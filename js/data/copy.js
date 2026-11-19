@@ -53,9 +53,69 @@ module.exports = {
   guideTipTitle: '卡住了？',
   guideTipLine1: '底部工具：撤销 / 重开 / 提示。',
   guideTipLine2: '提示会直接放下一只正确的猫。',
+  guideGuardTitle: '新手保护',
+  guideGuardLine1: '前 5 关不会失败，放心试。',
+  guideGuardLine2: '前 10 关提示免费，不花券和金币。',
+  guideGuardLine3: '带小锁的猫是题目放好的，不能移动。',
+  guideNext: '下一步',
   guideDone: '知道啦',
   guideHelpMark: '?',
   guideCloseMark: '×',
+
+  // 首次出现规则时的单页提示（每关最多一张，读过后不再出现）
+  coachDone: '知道啦',
+  coachCards: {
+    given: {
+      title: '带锁的猫',
+      lines: [
+        '带小锁的猫是题目放好的，不能移动。',
+        '还差 1 只猫：点两下空格，',
+        '第一下打叉，第二下才放猫。'
+      ]
+    },
+    rowcol: {
+      title: '行、列各一只',
+      lines: [
+        '每一行、每一列都只能有 1 只猫。',
+        '先看只剩一个空位的行或列。'
+      ]
+    },
+    region: {
+      title: '每区一猫',
+      lines: [
+        '每个颜色区也只能有 1 只猫。',
+        '猫和猫斜着挨着也不行。'
+      ]
+    },
+    focus: {
+      title: '找突破口',
+      lines: [
+        '发光的格子是这题的突破口。',
+        '点两下把猫放进去试试。'
+      ]
+    },
+    freehint: {
+      title: '提示免费',
+      lines: [
+        '前 10 关的提示不花券和金币。',
+        '卡住时点下面的「提示」。'
+      ]
+    },
+    mark: {
+      title: '先打叉再推理',
+      lines: [
+        '不确定的格子先点一下打叉。',
+        '一行/列/区只剩一格时，就放猫。'
+      ]
+    },
+    bigboard: {
+      title: '5×5 入门',
+      lines: [
+        '棋盘变大成 5×5 了。',
+        '先找只剩一个候选的色区。'
+      ]
+    }
+  },
 
   toastDailyUnavailable: '今日题库暂不可用',
   toastLocked: '先完成前面的关卡',
@@ -71,8 +131,13 @@ module.exports = {
 
   toastHintTicket: '提示券 -1 · 已放下一只猫',
   toastHintCoin: '金币 -%d · 已放下一只猫',
+  toastHintFree: '教学提示 · 已放下一只猫',
   toastNoHintRes: '提示券不足，金币也不够',
   toastNoHintCell: '先处理盘面冲突，再用提示',
+  toastGivenLocked: '带小锁的猫不能移动',
+  toastMistakeSafe: '没关系，前 5 关不会失败，改一改继续',
+  toastIdleHint: '卡住了？可以点下面的「提示」',
+  hintFreeBadge: '免',
 
   errorRow: '同一行不能有两只猫',
   errorCol: '同一列不能有两只猫',

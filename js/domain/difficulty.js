@@ -1,19 +1,37 @@
 /**
- * 难度评级（人类技巧求解器）与布局规范签名。
+ * 难度评级与布局规范签名。
  *
- * 求解器只使用可解释的推理：
- *   R1 单元排除、R2 邻域排除、R3 唯一候选、
- *   R4 锁定候选（区域⇄行/列）、R5 最少候选分支。
- * 所有遍历顺序固定，同一区域布局必然得到同一档位与分数。
+ * 评级只看“玩家实际要做多少推理”，不再以棋盘尺寸为主因子：
+ *   1. 开局候选画像（预放猫后，每个位置还有多少选择、是否有必然位置）
+ *   2. 完成所需的推理步数（唯一候选放猫 + 锁定候选排除）
+ *   3. 需要打叉的候选格数量（X 标记负担）
+ *   4. 是否需要锁定候选（行/列/区信息组合）
+ *   5. 是否需要假设验证（猜一次即视为高级排除，教学/入门关禁用）
  *
- * 档位按“逻辑指标 + 尺寸上限”判定，详见 docs/02 §14。
+ * 尺寸只保留档位上下限，防止 4×4 被评为专家、9×9 被评为入门。
+ * 同一盘面 + 同一组预放猫 → 同一档位与分数。
  */
+var human = require('./human');
+
 var TIER_NAMES = ['入门', '简单', '普通', '困难', '专家'];
-var SCORE_T1 = 30;
-var SCORE_T2 = 45;
-var SCORE_T3 = 55;
-var SCORE_T4 = 65;
-var BRANCH_NODE_LIMIT = 40000;
+
+// 分数 → 档位边界：T1 < 40 ≤ T2 < 55 ≤ T3 < 70 ≤ T4 < 80 ≤ T5
+var SCORE_T1 = 40;
+var SCORE_T2 = 55;
+var SCORE_T3 = 70;
+var SCORE_T4 = 80;
+// 只要需要假设验证，就不能评「入门」：难度分至少 40（T2）。
+var SCORE_GUESS_FLOOR = 40;
+var BRANCH_NODE_LIMIT = human.NODE_LIMIT;
+
+// 分数权重（合计 1.0，预放猫为减分项）
+var W_SIZE = 0.18;
+var W_GUESS = 0.30;
+var W_WORK = 0.18;
+var W_MARK = 0.14;
+var W_LOCK = 0.10;
+var W_OPEN = 0.05;
+var W_GIVEN = 0.08;
 
 function minTierOf(n) {
   // 尺寸决定该档下限：4/5→T1, 6→T2, 7→T3, 8→T4, 9→T5
@@ -36,318 +54,175 @@ function tierFromScore(score) {
   return 5;
 }
 
-/* ---------------- 人类技巧求解器 ---------------- */
+/**
+ * 由人类求解指标算逻辑分。
+ * 预放猫越多、开局必然位置越多、打叉/锁定/假设越少，分数越低。
+ */
+function scoreOf(n, a) {
+  var playable = Math.max(1, a.playable);
+  var sizeF = (n - 4) / 5;                       // 尺寸只剩 18% 权重
+  var guessF = Math.min((a.branchCount + 0.5 * a.failedBranches) / 3, 1);
+  var workF = Math.min((a.placements + a.lockSteps) / (playable * 2), 1);
+  var markF = Math.min(a.marks / (n * n), 1);
+  var lockF = Math.min(a.lockSteps / (playable * 1.5), 1);
+  var openF = Math.min(a.initial.avgCellOptions / n, 1);
+  var givenF = n ? a.givenCount / n : 0;
 
-function makeState(n, region) {
+  var raw = 100 * (
+    W_SIZE * sizeF +
+    W_GUESS * guessF +
+    W_WORK * workF +
+    W_MARK * markF +
+    W_LOCK * lockF +
+    W_OPEN * openF
+  ) - 100 * W_GIVEN * givenF;
+
+  if (!isFinite(raw)) return 0;
+  var score = Math.round(raw);
+  if (score < 0) score = 0;
+  if (score > 100) score = 100;
+  if (a.branchCount > 0 && score < SCORE_GUESS_FLOOR) {
+    score = SCORE_GUESS_FLOOR;
+  }
+  return score;
+}
+
+/** 与 SYM 对应的行/列角色是否互换（转置类对称） */
+var SYM_SWAP = [false, true, false, true, false, false, true, true];
+
+/**
+ * 按对称变换 t 重建盘面与预放猫。
+ * 变换后 (r,c) 对应原盘 SYM[t](r,c)，因此 firstMove 可原路映射回去。
+ */
+function transformBoard(n, region, givens, t) {
   var N = n * n;
-  var st = {
-    n: n,
-    region: region,
-    cand: new Array(N),
-    rowCat: new Array(n),
-    colCat: new Array(n),
-    regCat: new Array(n),
-    regCells: [],
-    cats: 0
-  };
-  var i;
-  for (i = 0; i < N; i++) st.cand[i] = 1;
-  for (i = 0; i < n; i++) {
-    st.rowCat[i] = -1;
-    st.colCat[i] = -1;
-    st.regCat[i] = -1;
-    st.regCells.push([]);
-  }
-  for (i = 0; i < N; i++) st.regCells[region[i]].push(i);
-  return st;
-}
-
-function cloneState(st) {
-  return {
-    n: st.n,
-    region: st.region,
-    cand: st.cand.slice(),
-    rowCat: st.rowCat.slice(),
-    colCat: st.colCat.slice(),
-    regCat: st.regCat.slice(),
-    regCells: st.regCells,
-    cats: st.cats
-  };
-}
-
-function place(st, r, c) {
-  var n = st.n;
-  var idx = r * n + c;
-  if (!st.cand[idx]) return false;
-  var g = st.region[idx];
-  if (st.rowCat[r] >= 0 || st.colCat[c] >= 0 || st.regCat[g] >= 0) return false;
-
-  st.rowCat[r] = c;
-  st.colCat[c] = r;
-  st.regCat[g] = r;
-  st.cats++;
-
-  var i;
-  for (i = 0; i < n; i++) {
-    st.cand[r * n + i] = 0;       // R1 同行
-    st.cand[i * n + c] = 0;       // R1 同列
-  }
-  var reg = st.regCells[g];
-  for (i = 0; i < reg.length; i++) st.cand[reg[i]] = 0;
-
-  for (var rr = r - 1; rr <= r + 1; rr++) {
-    if (rr < 0 || rr >= n) continue;
-    for (var cc = c - 1; cc <= c + 1; cc++) {
-      if (cc < 0 || cc >= n) continue;
-      st.cand[rr * n + cc] = 0;   // R2 八邻域
-    }
-  }
-  return true;
-}
-
-function unitCands(st, type, id) {
-  var n = st.n;
-  var out = [];
-  var i;
-  if (type === 0) {
-    if (st.rowCat[id] >= 0) return out;
-    for (i = 0; i < n; i++) if (st.cand[id * n + i]) out.push(id * n + i);
-  } else if (type === 1) {
-    if (st.colCat[id] >= 0) return out;
-    for (i = 0; i < n; i++) if (st.cand[i * n + id]) out.push(i * n + id);
-  } else {
-    if (st.regCat[id] >= 0) return out;
-    var cells = st.regCells[id];
-    for (i = 0; i < cells.length; i++) if (st.cand[cells[i]]) out.push(cells[i]);
-  }
-  return out;
-}
-
-function eliminateRowOutside(st, row, keepReg) {
-  var n = st.n;
-  var changed = false;
-  for (var c = 0; c < n; c++) {
-    var idx = row * n + c;
-    if (st.region[idx] !== keepReg && st.cand[idx]) {
-      st.cand[idx] = 0;
-      changed = true;
-    }
-  }
-  return changed;
-}
-
-function eliminateColOutside(st, col, keepReg) {
-  var n = st.n;
-  var changed = false;
-  for (var r = 0; r < n; r++) {
-    var idx = r * n + col;
-    if (st.region[idx] !== keepReg && st.cand[idx]) {
-      st.cand[idx] = 0;
-      changed = true;
-    }
-  }
-  return changed;
-}
-
-function eliminateRegionOutside(st, reg, row, col) {
-  var cells = st.regCells[reg];
-  var n = st.n;
-  var changed = false;
-  for (var i = 0; i < cells.length; i++) {
-    var idx = cells[i];
-    var r = Math.floor(idx / n);
-    var c = idx % n;
-    if (r !== row && c !== col && st.cand[idx]) {
-      st.cand[idx] = 0;
-      changed = true;
-    }
-  }
-  return changed;
-}
-
-/** 返回 'solved' | 'stuck' | 'contradiction' */
-function propagate(st, metrics) {
-  var n = st.n;
-  while (true) {
-    if (st.cats === n) return 'solved';
-
-    var single = -1;
-    var t, id, list;
-    for (t = 0; t < 3; t++) {
-      for (id = 0; id < n; id++) {
-        if ((t === 0 && st.rowCat[id] >= 0) ||
-            (t === 1 && st.colCat[id] >= 0) ||
-            (t === 2 && st.regCat[id] >= 0)) continue;
-        list = unitCands(st, t, id);
-        if (!list.length) return 'contradiction';
-        if (list.length === 1 && single < 0) single = list[0];
-      }
-    }
-    if (single >= 0) {
-      if (!place(st, Math.floor(single / n), single % n)) return 'contradiction';
-      if (metrics) metrics.propagations++;
-      continue;
-    }
-
-    // R4：反复消除候选，直到不动点
-    var changed = false;
-    var g, r, c, k;
-    for (g = 0; g < n; g++) {
-      if (st.regCat[g] >= 0) continue;
-      list = unitCands(st, 2, g);
-      if (!list.length) return 'contradiction';
-      var row = -2;
-      var col = -2;
-      var multiRow = false;
-      var multiCol = false;
-      for (k = 0; k < list.length; k++) {
-        r = Math.floor(list[k] / n);
-        c = list[k] % n;
-        if (row === -2) row = r;
-        else if (row !== r) multiRow = true;
-        if (col === -2) col = c;
-        else if (col !== c) multiCol = true;
-      }
-      if (!multiRow && row >= 0) changed = eliminateRowOutside(st, row, g) || changed;
-      if (!multiCol && col >= 0) changed = eliminateColOutside(st, col, g) || changed;
-    }
-    for (r = 0; r < n; r++) {
-      if (st.rowCat[r] >= 0) continue;
-      list = unitCands(st, 0, r);
-      if (!list.length) return 'contradiction';
-      var onlyReg = -2;
-      var multiReg = false;
-      for (k = 0; k < list.length; k++) {
-        g = st.region[list[k]];
-        if (onlyReg === -2) onlyReg = g;
-        else if (onlyReg !== g) multiReg = true;
-      }
-      if (!multiReg && onlyReg >= 0) {
-        changed = eliminateRegionOutside(st, onlyReg, r, -1) || changed;
-      }
-    }
+  var out = new Array(N);
+  var givenSet = {};
+  var outGivens = [];
+  var i, r, c, p, src;
+  for (i = 0; i < givens.length; i++) givenSet[givens[i]] = true;
+  for (r = 0; r < n; r++) {
     for (c = 0; c < n; c++) {
-      if (st.colCat[c] >= 0) continue;
-      list = unitCands(st, 1, c);
-      if (!list.length) return 'contradiction';
-      var onlyRegC = -2;
-      var multiRegC = false;
-      for (k = 0; k < list.length; k++) {
-        g = st.region[list[k]];
-        if (onlyRegC === -2) onlyRegC = g;
-        else if (onlyRegC !== g) multiRegC = true;
-      }
-      if (!multiRegC && onlyRegC >= 0) {
-        changed = eliminateRegionOutside(st, onlyRegC, -1, c) || changed;
-      }
+      p = SYM[t](r, c, n);
+      src = p[0] * n + p[1];
+      out[r * n + c] = region[src];
+      if (givenSet[src]) outGivens.push(r * n + c);
     }
-    if (!changed) return 'stuck';
   }
+  outGivens.sort(function (a, b) { return a - b; });
+  return { region: out, givens: outGivens };
 }
 
-function pickUnit(st) {
-  var n = st.n;
-  var bestType = -1;
-  var bestId = -1;
-  var bestList = null;
-  var t, id, list;
-  for (t = 0; t < 3; t++) {
-    for (id = 0; id < n; id++) {
-      if ((t === 0 && st.rowCat[id] >= 0) ||
-          (t === 1 && st.colCat[id] >= 0) ||
-          (t === 2 && st.regCat[id] >= 0)) continue;
-      list = unitCands(st, t, id);
-      if (list.length <= 1) continue;
-      if (!bestList || list.length < bestList.length) {
-        bestList = list;
-        bestType = t;
-        bestId = id;
-      }
-    }
-  }
-  if (!bestList) return null;
-  return { type: bestType, id: bestId, list: bestList };
+function mapRule(rule, swapped) {
+  if (!swapped) return rule;
+  if (rule === 'row') return 'col';
+  if (rule === 'col') return 'row';
+  return rule;
 }
 
-function search(st, depth, metrics) {
-  var res = propagate(st, metrics);
-  if (res === 'solved') {
-    if (depth > metrics.branchCount) metrics.branchCount = depth;
-    if (depth > metrics.maxDepth) metrics.maxDepth = depth;
-    return true;
+function compareKeys(a, b) {
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return a[i] - b[i];
   }
-  if (res === 'contradiction') return false;
-
-  var unit = pickUnit(st);
-  if (!unit) return false;
-
-  for (var k = 0; k < unit.list.length; k++) {
-    if (metrics.nodes >= BRANCH_NODE_LIMIT) {
-      metrics.truncated = true;
-      return false;
-    }
-    metrics.nodes++;
-    var trial = cloneState(st);
-    var idx = unit.list[k];
-    if (!place(trial, Math.floor(idx / st.n), idx % st.n)) continue;
-    if (search(trial, depth + 1, metrics)) {
-      if (depth + 1 > metrics.branchCount) metrics.branchCount = depth + 1;
-      if (depth + 1 > metrics.maxDepth) metrics.maxDepth = depth + 1;
-      return true;
-    }
-    metrics.failedBranches++;
-  }
-  return false;
+  return 0;
 }
 
 /**
  * 对已确认唯一解的关卡做难度评级。
+ * givens 为预放猫的格子下标数组（可省略）。
+ *
+ * 同一布局旋转/镜像后规则与难度完全等价，但行→列→区的固定扫描顺序会让
+ * “先发现哪一步”产生差异。这里对 8 种对称各求一次人类推演，取最容易的
+ * 路径计分，保证镜像题面不会被评成两种难度；高亮格再映射回原盘。
+ *
  * 返回 null 表示求解超限或未解出（调用方应拒收）。
  */
-function analyzeDifficulty(n, region) {
-  var initial = makeState(n, region);
-  var initialMetrics = { propagations: 0 };
-  var initialRes = propagate(initial, initialMetrics);
-  if (initialRes === 'contradiction') return null;
-  var ratio = initial.cats / n;
-  var initialForced = initial.cats > 0;
+function analyzeDifficulty(n, region, givens) {
+  givens = (givens || []).slice().sort(function (a, b) { return a - b; });
+  var best = null;
+  var bestScore = 0;
+  var t, a, score, key;
 
-  var st = makeState(n, region);
-  var metrics = {
-    branchCount: 0,
-    failedBranches: 0,
-    maxDepth: 0,
-    propagations: 0,
-    nodes: 0,
-    truncated: false
-  };
-  var solved = search(st, 0, metrics);
-  if (!solved || metrics.truncated) return null;
+  for (t = 0; t < SYM.length; t++) {
+    var board = transformBoard(n, region, givens, t);
+    a = human.analyze(n, board.region, board.givens);
+    if (!a || !a.solved) continue;
+    score = scoreOf(n, a);
+    key = [score, a.branchCount, a.failedBranches, a.lockSteps,
+      a.marks, a.placements, a.firstMoveLockSteps, t];
+    if (!best || compareKeys(key, best.key) < 0) {
+      best = { key: key, t: t, a: a };
+      bestScore = score;
+    }
+  }
+  if (!best) return null;
 
-  var sizeF = (n - 4) / 5;
-  var branchF = Math.min(metrics.branchCount / 3, 1);
-  var failF = Math.min(metrics.failedBranches / 4, 1);
-  var propF = 1 - ratio;
-  var score = Math.round(100 * (0.58 * sizeF + 0.26 * branchF +
-    0.10 * failF + 0.06 * propF));
+  a = best.a;
+  score = bestScore;
   var tier = tierFromScore(score);
-  if (tier < minTierOf(n)) tier = minTierOf(n);
-  if (tier > maxTierOf(n)) tier = maxTierOf(n);
+  var lo = minTierOf(n);
+  var hi = maxTierOf(n);
+  if (tier < lo) tier = lo;
+  if (tier > hi) tier = hi;
+
+  var firstMove = a.firstMove;
+  var firstGuess = a.firstGuess;
+  if (firstMove >= 0) {
+    var fr = Math.floor(firstMove / n);
+    var fc = firstMove % n;
+    var p = SYM[best.t](fr, fc, n);
+    firstMove = p[0] * n + p[1];
+  }
+  if (firstGuess >= 0) {
+    var gr = Math.floor(firstGuess / n);
+    var gc = firstGuess % n;
+    var gp = SYM[best.t](gr, gc, n);
+    firstGuess = gp[0] * n + gp[1];
+  }
+  var firstRule = mapRule(a.firstRule, SYM_SWAP[best.t]);
 
   return {
     tier: tier,
     score: score,
-    branchCount: metrics.branchCount,
-    failedBranches: metrics.failedBranches,
-    propagationRatio: ratio,
-    initialForced: initialForced,
-    nodes: metrics.nodes,
-    maxDepth: maxDepthOf(metrics)
+    branchCount: a.branchCount,
+    failedBranches: a.failedBranches,
+    propagationRatio: a.guessFree ? 1 : Math.max(0, 1 - a.branchCount / Math.max(1, a.playable)),
+    initialForced: a.initial.forcedUnits > 0 || a.initial.nakedSingles > 0,
+    nodes: a.nodes,
+    maxDepth: a.branchCount,
+    // 新指标体系
+    givenCount: a.givenCount,
+    playable: a.playable,
+    placements: a.placements,
+    marks: a.marks,
+    lockSteps: a.lockSteps,
+    lockMarks: a.lockMarks,
+    singles: a.singles,
+    guesses: a.guesses,
+    guessFree: a.guessFree,
+    usesLock: a.usesLock,
+    hintsNeeded: a.hintsNeeded,
+    firstMove: firstMove,
+    firstRule: firstRule,
+    firstMoveLockSteps: a.firstMoveLockSteps,
+    firstGuess: firstGuess,
+    initial: a.initial
   };
 }
 
-function maxDepthOf(metrics) {
-  return metrics.maxDepth || metrics.branchCount;
+/** 报告用：一行可读的推理画像 */
+function describe(n, analysis) {
+  if (!analysis) return '求解失败';
+  var a = analysis;
+  return [
+    n + '×' + n,
+    '预放 ' + a.givenCount,
+    '推理 ' + a.placements + ' 步',
+    '打叉 ' + a.marks,
+    '锁定 ' + a.lockSteps,
+    '假设 ' + a.branchCount,
+    '难度 ' + a.score + ' (T' + a.tier + ')'
+  ].join(' · ');
 }
 
 /* ---------------- 布局规范签名 ---------------- */
@@ -398,10 +273,13 @@ module.exports = {
   SCORE_T2: SCORE_T2,
   SCORE_T3: SCORE_T3,
   SCORE_T4: SCORE_T4,
+  SCORE_GUESS_FLOOR: SCORE_GUESS_FLOOR,
   BRANCH_NODE_LIMIT: BRANCH_NODE_LIMIT,
   minTierOf: minTierOf,
   maxTierOf: maxTierOf,
   tierFromScore: tierFromScore,
+  scoreOf: scoreOf,
   analyzeDifficulty: analyzeDifficulty,
+  describe: describe,
   canonicalSignature: canonicalSignature
 };

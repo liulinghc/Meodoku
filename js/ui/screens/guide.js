@@ -1,19 +1,27 @@
 /**
  * 玩法说明：以弹窗形式覆盖在当前场景上（背景保留并压暗），不整屏切换。
  * 首次启动自动展示，也可从首页 / 对局右上角随时打开。
- * 说明内容只描述真实操作：单击打叉 → 再点放猫 → 再点清空。
+ *
+ * 规则分 3 页展示，不再一次性铺满：
+ *   1. 目标（每行每列每区各 1 只，猫不相邻）
+ *   2. 操作（单击打叉 → 再点放猫 → 再点清空）
+ *   3. 工具与新手保护（撤销/重开/提示、免费提示、带锁的预放猫）
  */
 var draw = require('../draw');
 var copy = require('../../data/copy');
 var hit = require('../hit');
 
+var PAGE_COUNT = 3;
+
 function GuideScene(app) {
   this.app = app;
   this.L = null;
+  this.page = 0;
 }
 
 GuideScene.prototype.enter = function () {
   this.L = null;
+  this.page = 0;
 };
 
 GuideScene.prototype.render = function (r) {
@@ -39,15 +47,15 @@ GuideScene.prototype.render = function (r) {
   r.roundRect(c.x, c.y, c.w, c.h, th.radius.board, th.color.card);
 
   this._renderHeader(r, L);
-  this._renderGoal(r, L);
-  this._renderTap(r, L);
-  this._renderTip(r, L);
+  if (this.page === 0) this._renderGoal(r, L);
+  else if (this.page === 1) this._renderTap(r, L);
+  else this._renderGuard(r, L);
+  this._renderDots(r, L);
   this._renderCta(r, L);
 };
 
 GuideScene.prototype._renderHeader = function (r, L) {
   var th = this.app.theme;
-  var s = this.app.layout.s;
   var c = L.close;
 
   r.text(copy.guideTitle, r.w / 2, L.titleY, {
@@ -78,12 +86,12 @@ GuideScene.prototype._renderGoal = function (r, L) {
     weight: '700',
     color: th.color.text
   });
-  r.text(copy.guideGoalLine1, g.x, g.y + 44 * s, {
+  r.text(copy.guideGoalLine1, g.x, g.y + 50 * s, {
     size: th.font.small,
     color: th.color.textSoft,
     maxWidth: g.w
   });
-  r.text(copy.guideGoalLine2, g.x, g.y + 62 * s, {
+  r.text(copy.guideGoalLine2, g.x, g.y + 70 * s, {
     size: th.font.small,
     color: th.color.textSoft,
     maxWidth: g.w
@@ -132,28 +140,34 @@ GuideScene.prototype._renderTap = function (r, L) {
   }
 };
 
-GuideScene.prototype._renderTip = function (r, L) {
+GuideScene.prototype._renderGuard = function (r, L) {
   var th = this.app.theme;
   var s = this.app.layout.s;
   var t = L.tip;
 
   r.roundRect(t.x, t.y, t.w, t.h, th.radius.card, th.color.bgSunken);
 
-  r.text(copy.guideTipTitle, t.x + 14 * s, t.y + 18 * s, {
+  r.text(copy.guideGuardTitle, t.x + 14 * s, t.y + 22 * s, {
     size: th.font.small,
     weight: '700',
     color: th.color.text
   });
-  r.text(copy.guideTipLine1, t.x + 14 * s, t.y + 36 * s, {
-    size: th.font.small,
-    color: th.color.textSoft,
-    maxWidth: t.w - 28 * s
-  });
-  r.text(copy.guideTipLine2, t.x + 14 * s, t.y + 51 * s, {
-    size: th.font.small,
-    color: th.color.textSoft,
-    maxWidth: t.w - 28 * s
-  });
+  var lines = [copy.guideGuardLine1, copy.guideGuardLine2, copy.guideGuardLine3];
+  for (var i = 0; i < lines.length; i++) {
+    r.text(lines[i], t.x + 14 * s, t.y + 44 * s + i * 20 * s, {
+      size: th.font.micro,
+      color: th.color.textSoft,
+      maxWidth: t.w - 28 * s
+    });
+  }
+};
+
+GuideScene.prototype._renderDots = function (r, L) {
+  var th = this.app.theme;
+  for (var i = 0; i < L.dots.length; i++) {
+    var d = L.dots[i];
+    r.circle(d.cx, d.cy, d.r, i === this.page ? th.color.cta : th.color.border);
+  }
 };
 
 GuideScene.prototype._renderCta = function (r, L) {
@@ -162,20 +176,32 @@ GuideScene.prototype._renderCta = function (r, L) {
 
   draw.softShadow(r, c.x, c.y, c.w, c.h, c.h / 2);
   r.roundRect(c.x, c.y, c.w, c.h, c.h / 2, th.color.cta);
-  r.text(copy.guideDone, c.x + c.w / 2, c.y + c.h / 2 + 1, {
-    size: th.font.banner,
-    weight: '700',
-    color: th.color.textOnColor,
-    align: 'center'
-  });
+  r.text(this.page < PAGE_COUNT - 1 ? copy.guideNext : copy.guideDone,
+    c.x + c.w / 2, c.y + c.h / 2 + 1, {
+      size: th.font.banner,
+      weight: '700',
+      color: th.color.textOnColor,
+      align: 'center'
+    });
 };
 
 GuideScene.prototype.onTouchEnd = function (x, y, isTap) {
   if (!isTap) return;
   var L = this.L || this.app.layout.guide();
 
-  if (hit.inCircleLoose(x, y, L.close, 6) || hit.inRect(x, y, L.cta)) {
+  if (hit.inCircleLoose(x, y, L.close, 6)) {
     this._close();
+    return;
+  }
+  for (var i = 0; i < L.dots.length; i++) {
+    if (hit.inCircleLoose(x, y, L.dots[i], 8)) {
+      this.page = i;
+      return;
+    }
+  }
+  if (hit.inRect(x, y, L.cta)) {
+    if (this.page < PAGE_COUNT - 1) this.page++;
+    else this._close();
   }
 };
 

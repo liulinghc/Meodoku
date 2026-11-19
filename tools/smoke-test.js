@@ -165,9 +165,10 @@ check('300 关布局无重复（含对称/重编号）', duplicateCount === 0, '
 check('索引从 1 开始且连续', levelsIndex.get(1) === pack.levels[0] && levelsIndex.get(300) === pack.levels[299],
   'get(300)=' + (levelsIndex.get(300) && levelsIndex.get(300).id));
 check('越界返回 null', levelsIndex.get(0) === null && levelsIndex.get(301) === null);
-check('旧关卡 ID 在新序号中可查', levelsIndex.indexOfId('L001') === 1 &&
-  levelsIndex.indexOfId('L200') > 0 && levelsIndex.indexOfId('L999') === 0,
-  'L200→' + levelsIndex.indexOfId('L200'));
+check('稳定 ID 可跨重排查询', levelsIndex.indexOfId('E001') === 1 &&
+  levelsIndex.indexOfId('L031') > 0 && levelsIndex.indexOfId('L001') === 0 &&
+  levelsIndex.indexOfId('L999') === 0,
+  'L031→' + levelsIndex.indexOfId('L031') + ' L001→' + levelsIndex.indexOfId('L001'));
 check('尺寸覆盖 4/5/6/7/8/9', (function () {
   var set = {};
   for (var k = 0; k < pack.levels.length; k++) set[pack.levels[k].n] = true;
@@ -177,27 +178,49 @@ check('首关为 4×4 教学关', levelsIndex.get(1).n === 4, 'n=' + levelsIndex
 check('前 10 关均为 4×4 / T1 / 零分支', (function () {
   for (var k = 0; k < 10; k++) {
     var l = pack.levels[k];
-    if (l.n !== 4 || l.t !== 1 || l.d !== 0 || l.b !== 0) return false;
+    if (l.n !== 4 || l.t !== 1 || l.b !== 0) return false;
   }
   return true;
 })(), pack.levels.slice(0, 10).map(function (l) {
   return l.n + '/' + l.t + '/' + l.d + '/' + l.b;
 }).join(' '));
-check('前 10 关稳定 ID 与播放顺序不变', (function () {
-  var ids = ['L001', 'L202', 'L002', 'L003', 'L004',
-    'L005', 'L203', 'L006', 'L201', 'L206'];
-  for (var k = 0; k < ids.length; k++) {
-    if (!pack.levels[k] || pack.levels[k].id !== ids[k]) return false;
+check('前 30 关稳定 ID 为 E001–E030', (function () {
+  for (var k = 0; k < 30; k++) {
+    if (!pack.levels[k] || pack.levels[k].id !== 'E' + String(k + 1).padStart(3, '0')) return false;
   }
   return true;
-})(), pack.levels.slice(0, 10).map(function (l) { return l.id; }).join(','));
-check('第 11 关起进入 5×5', levelsIndex.get(11).n === 5 &&
-  levelsIndex.get(11).difficulty === 12,
-  'n=' + levelsIndex.get(11).n + ' d=' + levelsIndex.get(11).difficulty);
-check('档位分布 30/75/105/60/30', (function () {
+})(), pack.levels[0].id + '…' + pack.levels[29].id);
+check('L1–3 预放 3/2/1 只答案猫', (function () {
+  for (var k = 0; k < 3; k++) {
+    var l = levelsIndex.get(k + 1);
+    if (l.givens.length !== 3 - k) return false;
+    for (var g = 0; g < l.givens.length; g++) {
+      var idx = l.givens[g];
+      if (l.solution[Math.floor(idx / l.n)] !== idx % l.n) return false;
+    }
+  }
+  return true;
+})());
+check('L4 高亮真实突破口，L5 起不再高亮', (function () {
+  var l4 = levelsIndex.get(4);
+  return l4.focus >= 0 && l4.givens.length === 0 &&
+    levelsIndex.get(5).focus === -1;
+})());
+check('前 30 关难度分不倒挂且全部零分支', (function () {
+  var last = -1;
+  for (var k = 0; k < 30; k++) {
+    var l = pack.levels[k];
+    if (l.d < last || l.b !== 0 || l.t !== 1) return false;
+    last = l.d;
+  }
+  return true;
+})(), pack.levels.slice(0, 30).map(function (l) { return l.d; }).join(','));
+check('第 11 关起进入 5×5', levelsIndex.get(11).n === 5,
+  'n=' + levelsIndex.get(11).n);
+check('档位分布 30/97/131/24/18', (function () {
   var c = {};
   for (var k = 0; k < pack.levels.length; k++) c[pack.levels[k].t] = (c[pack.levels[k].t] || 0) + 1;
-  return c[1] === 30 && c[2] === 75 && c[3] === 105 && c[4] === 60 && c[5] === 30;
+  return c[1] === 30 && c[2] === 97 && c[3] === 131 && c[4] === 24 && c[5] === 18;
 })());
 check('紧凑关卡已解码为 regions/solution', (function () {
   var a = levelsIndex.get(1);
@@ -209,8 +232,9 @@ check('每关档位与难度分由同一判据产生', (function () {
   var badTier = 0;
   for (var k = 0; k < pack.levels.length; k++) {
     var l = pack.levels[k];
-    var a = diff.analyzeDifficulty(l.n, gen.decodeRegionString(l.r, l.n));
-    if (!a || a.tier !== l.t || a.score !== l.d) badTier++;
+    var dec = levelsIndex.get(k + 1);
+    var a = diff.analyzeDifficulty(l.n, gen.decodeRegionString(l.r, l.n), dec.givens);
+    if (!a || a.tier !== l.t || a.score !== l.d || a.branchCount !== l.b) badTier++;
   }
   return badTier === 0;
 })());
@@ -269,9 +293,21 @@ check('弹窗下方保留首页画面',
   app.renderer.ctx.texts.indexOf(copyMod.title) !== -1 &&
   app.renderer.ctx.texts.indexOf(copyMod.guideTitle) !== -1);
 check('玩法说明按钮在屏内', guideL.cta.y + guideL.cta.h <= 812 + 0.5);
+check('规则分页展示，首页不铺全部操作说明',
+  app.sm.top().page === 0 &&
+  app.renderer.ctx.texts.indexOf(copyMod.guideTap1) === -1 &&
+  app.renderer.ctx.texts.indexOf(copyMod.guideGuardLine1) === -1);
+tap(guideL.cta.x + guideL.cta.w / 2, guideL.cta.y + guideL.cta.h / 2);
+frames(app, 1);
+check('第二页展示三态点击', app.sm.top().page === 1 &&
+  app.renderer.ctx.texts.indexOf(copyMod.guideTap1) !== -1);
+tap(guideL.cta.x + guideL.cta.w / 2, guideL.cta.y + guideL.cta.h / 2);
+frames(app, 1);
+check('第三页展示新手保护', app.sm.top().page === 2 &&
+  app.renderer.ctx.texts.indexOf(copyMod.guideGuardLine1) !== -1);
 tap(guideL.cta.x + guideL.cta.w / 2, guideL.cta.y + guideL.cta.h / 2);
 frames(app, 2);
-check('关闭玩法说明回到首页', sceneName(app) === 'home');
+check('读完三页关闭玩法说明回到首页', sceneName(app) === 'home');
 check('玩法说明已记入存档', app.save.data.guideSeen === true);
 check('首页有绘制调用', app.renderer.ctx.ops > 100, 'ops=' + app.renderer.ctx.ops);
 check('新档只解锁第 1 关', app.progress.isUnlocked(1) && !app.progress.isUnlocked(2) &&
@@ -302,28 +338,64 @@ tap(nodes[0].x, nodes[0].y);
 frames(app, 1);
 check('地图 → 对局', sceneName(app) === 'game');
 
-var gameL0 = app.layout.game(app.sm.top().n);
-tap(gameL0.help.cx, gameL0.help.cy);
+var gameL0 = app.sm.top();
+check('L1 首次进入展示“带锁的猫”规则卡',
+  !!gameL0.coach && gameL0.coach.id === 'given');
+frames(app, 5);
+check('规则卡显示期间暂停计时', gameL0.elapsed === 0, 'elapsed=' + gameL0.elapsed);
+var coachL = app.layout.coach();
+tap(coachL.cta.x + coachL.cta.w / 2, coachL.cta.y + coachL.cta.h / 2);
+frames(app, 2);
+check('规则卡读完后关闭', !gameL0.coach &&
+  app.progress.coachSeen('given') === true);
+
+var gameLx = app.layout.game(gameL0.n);
+tap(gameLx.help.cx, gameLx.help.cy);
 frames(app, 1);
 check('对局内可打开玩法说明', sceneName(app) === 'guide');
 var guideL3 = app.layout.guide();
-tap(guideL3.cta.x + guideL3.cta.w / 2, guideL3.cta.y + guideL3.cta.h / 2);
+tap(guideL3.close.cx, guideL3.close.cy);
 frames(app, 1);
 check('关闭说明后回到对局', sceneName(app) === 'game');
 
 /* ---------------- 4. 棋盘交互、计时与提示 ---------------- */
 
 console.log('[4] 对局交互 / 计时 / 提示');
+var copy = require('../js/data/copy');
+
+// L1：预放猫只读
+var l1 = app.sm.top();
+check('L1 预放 3 只猫且都来自答案', (function () {
+  if (l1.givens.length !== 3) return false;
+  for (var g = 0; g < l1.givens.length; g++) {
+    var idx = l1.givens[g];
+    if (l1.cells[idx] !== 2) return false;
+    if (l1.level.solution[Math.floor(idx / l1.n)] !== idx % l1.n) return false;
+  }
+  return true;
+})());
+var givenCell = l1.givens[0];
+var movesAtLock = l1.moves;
+tapCell(app, l1, Math.floor(givenCell / l1.n), givenCell % l1.n);
+check('预放猫点击无效，不能删除', l1.cells[givenCell] === 2 &&
+  l1.moves === movesAtLock && app.toast.text === copy.toastGivenLocked,
+  'cell=' + l1.cells[givenCell] + ' moves=' + l1.moves + ' toast=' + app.toast.text);
+
+// 切到第 7 关（无预放、无规则卡）测通用三态交互
+app.sm.pop();
+frames(app, 1);
+app.sm.push('game', { levelIndex: 7 });
+frames(app, 1);
 var game = app.sm.top();
 var n = game.n;
 var G = app.layout.game(n);
 
+check('通用交互关卡无预放/无高亮/无规则卡', game.index === 7 &&
+  game.givens.length === 0 && game.focus === -1 && !game.coach);
 check('静态棋盘图层已生成', !!game.boardLayer);
 check('棋盘不越界（底部色带之上）', G.board.y + G.board.size <= G.band.y + 0.5,
   'bottom=' + (G.board.y + G.board.size).toFixed(1) + ' band=' + G.band.y.toFixed(1));
 check('所有棋盘格子边长 ≥ 28px', G.geom.tile >= 28, 'tile=' + G.geom.tile.toFixed(1));
-
-var copy = require('../js/data/copy');
 
 tapCell(app, game, 0, 0);
 check('点一次 → X 标记', game.cells[0] === 1, 'cell=' + game.cells[0]);
@@ -370,8 +442,10 @@ check('对局计时在推进', game.elapsed > 0.4, 'elapsed=' + game.elapsed.toF
 var ticketsBefore = app.progress.tickets();
 var catsBefore = countCells(game, 2);
 tap(hintBtn.cx, hintBtn.cy);
-check('提示扣 1 张提示券', app.progress.tickets() === ticketsBefore - 1,
+check('前 10 关提示免费，不扣提示券', app.progress.tickets() === ticketsBefore,
   'tickets=' + app.progress.tickets());
+check('免费提示有明确文案', app.toast.text === copy.toastHintFree,
+  'toast=' + app.toast.text);
 check('提示只放下一只猫', countCells(game, 2) === catsBefore + 1);
 check('提示落在答案格', (function () {
   for (var k = 0; k < game.cells.length; k++) {
@@ -383,7 +457,8 @@ check('提示落在答案格', (function () {
   return false;
 })());
 check('提示后盘面无冲突', !hasConflict(game));
-check('提示计入本局统计', game.hintsUsed === 1 && app.progress.d().stats.hintsUsed === 1);
+check('提示计入本局统计', game.hintsUsed === 1 &&
+  app.progress.d().stats.hintsUsed >= 1);
 
 /* ---------------- 4b. 切后台与中断续玩 ---------------- */
 
@@ -416,7 +491,20 @@ check('续玩有提示文案', app.toast.text === copy.toastResumed, 'toast=' + 
 /* ---------------- 5. 通关、结算与下一关 ---------------- */
 
 console.log('[5] 通关与结算');
-fillSolution(app, game);
+
+// 回到第 1 关：预放猫 + 免费提示直接补齐最后一只
+app.sm.pop();
+frames(app, 1);
+app.progress.clearResume();
+app.sm.push('game', { levelIndex: 1 });
+frames(app, 1);
+game = app.sm.top();
+check('重进 L1 仍保留预放猫，且规则卡不再重复', game.givens.length === 3 &&
+  countCells(game, 2) === 3 && !game.coach);
+var l1Tickets = app.progress.tickets();
+var l1Hint = game.L.tools[2];
+tap(l1Hint.cx, l1Hint.cy);
+check('L1 免费提示不扣券', app.progress.tickets() === l1Tickets);
 check('按答案摆放后判定通关', game.solvedFlag === true);
 check('结算前记录用时', game.timeMs > 0, 'timeMs=' + game.timeMs);
 check('用过提示 → 1 猫爪', game.resultInfo && game.resultInfo.paws === 1);
@@ -430,7 +518,7 @@ frames(app, 50);
 check('通关后进入结算页', sceneName(app) === 'result');
 var result = app.sm.top();
 check('结算数据带下一关', result.info.nextIndex === 2, 'next=' + result.info.nextIndex);
-check('结算数据含步数', result.info.moves > 0, 'moves=' + result.info.moves);
+check('结算数据含步数', result.info.moves === game.moves, 'moves=' + result.info.moves);
 check('结算页不残留提示 toast', app.toast.text === '');
 check('结算副标题占位符全部填充', (function () {
   var fmt = require('../js/core/format');
@@ -447,6 +535,12 @@ check('下一关 → 新对局', sceneName(app) === 'game' && app.sm.top().index
 check('新对局计时重置', app.sm.top().elapsed < 0.2, 'elapsed=' + app.sm.top().elapsed.toFixed(2));
 
 var game2 = app.sm.top();
+check('L2 规则卡换成“行列各一只”', !!game2.coach && game2.coach.id === 'rowcol');
+if (game2.coach) {
+  var coach2 = app.layout.coach();
+  tap(coach2.cta.x + coach2.cta.w / 2, coach2.cta.y + coach2.cta.h / 2);
+  frames(app, 1);
+}
 tap(G.back.cx, G.back.cy);
 frames(app, 2);
 check('对局 → 地图', sceneName(app) === 'levelmap');
@@ -516,22 +610,20 @@ var data2 = save2.load();
 check('重新载入后进度仍在', !!data2.completed['1'] && !!data2.completed['2']);
 check('重新载入后猫爪仍在', data2.completed['1'].paws === 1 && data2.completed['2'].paws === 3);
 check('重新载入后最佳用时仍在', data2.completed['2'].bestTimeMs > 0);
-check('重新载入后资源仍在', data2.coins === 150 && data2.tickets === 2,
+check('重新载入后资源仍在（教学提示免费）', data2.coins === 150 && data2.tickets === 3,
   'coins=' + data2.coins + ' tickets=' + data2.tickets);
-check('统计包含提示与对局时长', data2.stats.hintsUsed === 1 && data2.stats.playedMs > 0);
-check('schema 校验生效', data2.schema === 3);
+check('统计包含提示与对局时长', data2.stats.hintsUsed === 2 && data2.stats.playedMs > 0,
+  'hints=' + data2.stats.hintsUsed);
+check('schema 校验生效', data2.schema === 4);
 
 var save3 = new Save();
 store['md:save:v1'] = 'not-json-object';
 save3.load();
-check('主槽损坏时回退备份', save3.data.schema === 3 && !!save3.data.completed['2']);
+check('主槽损坏时回退备份', save3.data.schema === 4 && !!save3.data.completed['2']);
 store['md:save:v1'] = app.save.data;
 
-// schema 1（旧 200 关）→ schema 3（300 关 + S5）：完成记录/解锁前沿按稳定 ID 迁移
-var m1 = levelsIndex.indexOfId('L001');
-var m2 = levelsIndex.indexOfId('L002');
-var m3 = levelsIndex.indexOfId('L003');
-var migrated = Save.normalize({
+// schema 1（旧 200 关）→ schema 4：旧前 30 关已被教学曲线替换
+var dropped = Save.normalize({
   schema: 1,
   coins: 77,
   tickets: 2,
@@ -544,7 +636,27 @@ var migrated = Save.normalize({
   },
   stats: { catsPlaced: 10 }
 });
-check('旧档 schema1 迁移到 schema3', migrated.schema === 3 && migrated.coins === 77);
+check('旧档 schema1 迁移到 schema4', dropped.schema === 4 && dropped.coins === 77);
+check('旧档前 30 关不误挂到新题面', Object.keys(dropped.completed).length === 0 &&
+  dropped.unlocked === 31 && dropped.lastLevel === 1,
+  'completed=' + Object.keys(dropped.completed).length +
+  ' unlocked=' + dropped.unlocked + ' last=' + dropped.lastLevel);
+
+// 保留内容的旧关（L031 起）仍按稳定 ID 映射
+var m1 = levelsIndex.indexOfId('L031');
+var m2 = levelsIndex.indexOfId('L032');
+var m3 = levelsIndex.indexOfId('L033');
+var migrated = Save.normalize({
+  schema: 1,
+  coins: 77,
+  unlocked: 34,
+  lastLevel: 33,
+  completed: {
+    '31': { at: 1, tries: 1, paws: 2, bestTimeMs: 1000 },
+    '32': { at: 2, tries: 1, paws: 3, bestTimeMs: 900 },
+    '33': { at: 3, tries: 1, paws: 1, bestTimeMs: 800 }
+  }
+});
 check('旧档完成记录按关卡 ID 重映射', !!migrated.completed[m1] && !!migrated.completed[m2] &&
   !!migrated.completed[m3] && migrated.completed[m2].paws === 3,
   'mapped=' + m1 + ',' + m2 + ',' + m3);
@@ -561,19 +673,27 @@ check('旧档全通后解锁到 L200 的新位置之后',
   fullLegacy.unlocked === levelsIndex.indexOfId('L200') + 1,
   'unlocked=' + fullLegacy.unlocked + ' L200@' + levelsIndex.indexOfId('L200'));
 
-var lv1 = levelsIndex.get(1);
+// schema 2/3 的续玩下标是旧播放序号：31 → legacy-order[30] → 新序号
+var legacyOrder = require('../levels/legacy-order');
+var oldResumeIndex = 31;
+var legacyId = legacyOrder[oldResumeIndex - 1];
+var lvResumeIndex = levelsIndex.indexOfId(legacyId);
+var lvResume = levelsIndex.get(lvResumeIndex);
 var cleanCells = [];
-for (var ci = 0; ci < lv1.n * lv1.n; ci++) cleanCells.push(ci % 3);
+for (var ci = 0; ci < lvResume.n * lvResume.n; ci++) cleanCells.push(ci % 3);
 var resumedData = Save.normalize({
   schema: 2,
-  resume: { index: 1, n: lv1.n, cells: cleanCells, timeMs: 1234, moves: 5, mistakes: 1, hintsUsed: 0 }
+  resume: { index: oldResumeIndex, n: lvResume.n, cells: cleanCells,
+    timeMs: 1234, moves: 5, mistakes: 1, hintsUsed: 0 }
 });
-check('合法续玩数据可通过存档校验', resumedData.resume.index === 1 &&
-  resumedData.resume.cells.length === lv1.n * lv1.n && resumedData.resume.timeMs === 1234 &&
-  resumedData.resume.moves === 5);
+check('合法续玩数据可通过存档校验', resumedData.resume.index === lvResumeIndex &&
+  resumedData.resume.cells.length === lvResume.n * lvResume.n && resumedData.resume.timeMs === 1234 &&
+  resumedData.resume.moves === 5,
+  'legacy=' + legacyId + ' new=' + lvResumeIndex);
 var badResumeData = Save.normalize({
   schema: 2,
-  resume: { index: 1, n: lv1.n, cells: [9, 9], timeMs: 1, moves: 1, mistakes: 0, hintsUsed: 0 }
+  resume: { index: oldResumeIndex, n: lvResume.n, cells: [9, 9],
+    timeMs: 1, moves: 1, mistakes: 0, hintsUsed: 0 }
 });
 check('非法续玩数据被丢弃', badResumeData.resume.index === 0 && badResumeData.resume.cells.length === 0);
 
@@ -925,7 +1045,7 @@ console.log('[6b] S5 服务层（每日 / 签到 / 图鉴 / 成就 / 商店）')
 /* ---------------- 6c. S5 存档 ---------------- */
 
 console.log('[6c] S5 存档迁移与清洗');
-check('默认 schema 为 3', Save.defaults().schema === 3);
+check('默认 schema 为 4', Save.defaults().schema === 4);
 check('默认未看过玩法说明', Save.defaults().guideSeen === false);
 check('玩法说明状态按布尔清洗',
   Save.normalize({ schema: 3, guideSeen: true }).guideSeen === true &&
@@ -937,7 +1057,7 @@ check('日历日期校验拒绝不存在的日期',
 
 var mig3 = Save.normalize({ schema: 2, coins: 321, tickets: 7 });
 check('schema2 存档补全 S5 默认结构',
-  mig3.schema === 3 && mig3.coins === 321 && mig3.tickets === 7 &&
+  mig3.schema === 4 && mig3.coins === 321 && mig3.tickets === 7 &&
   mig3.makeupCards === 0 && mig3.fragments === 0 &&
   !!mig3.daily && !!mig3.signin && !!mig3.collection &&
   !!mig3.achievements && mig3.cosmetics.current === 'cream');
@@ -997,7 +1117,7 @@ store['md:save:v1'] = JSON.stringify(s5Persist);
 var reloadS5 = new Save();
 var rd5 = reloadS5.load();
 check('S5 状态经 JSON 落盘后可完整重载',
-  rd5.schema === 3 && rd5.coins === 222 && rd5.tickets === 9 &&
+  rd5.schema === 4 && rd5.coins === 222 && rd5.tickets === 9 &&
   rd5.makeupCards === 2 && rd5.fragments === 4 &&
   rd5.daily.streak === 4 && rd5.daily.bestStreak === 6 &&
   rd5.daily.history['2026-11-19'].coins === 110 &&
@@ -1308,10 +1428,16 @@ check('小屏玩法说明弹窗在安全区内',
   'card=' + [SGUIDE.card.x, SGUIDE.card.y, SGUIDE.card.w, SGUIDE.card.h].map(function (v) {
     return v.toFixed(1);
   }).join(','));
+var guideDotsTop = SGUIDE.dots[0].cy - SGUIDE.dots[0].r;
 check('小屏玩法说明各区块不重叠',
-  SGUIDE.goal.y + SGUIDE.goal.h <= SGUIDE.tap.y &&
-  SGUIDE.tap.y + SGUIDE.tap.h <= SGUIDE.tip.y &&
-  SGUIDE.tip.y + SGUIDE.tip.h <= SGUIDE.cta.y &&
+  SGUIDE.dividerY <= SGUIDE.goal.y &&
+  SGUIDE.dividerY <= SGUIDE.tap.y &&
+  SGUIDE.dividerY <= SGUIDE.tip.y &&
+  SGUIDE.goal.y + SGUIDE.goal.h <= guideDotsTop &&
+  SGUIDE.tap.y + SGUIDE.tap.h <= guideDotsTop &&
+  SGUIDE.tip.y + SGUIDE.tip.h <= guideDotsTop &&
+  SGUIDE.tap.rows[2].y + SGUIDE.tap.rows[2].size <= SGUIDE.tap.y + SGUIDE.tap.h &&
+  SGUIDE.dots[0].cy + SGUIDE.dots[0].r <= SGUIDE.cta.y &&
   SGUIDE.cta.y + SGUIDE.cta.h <= SGUIDE.card.y + SGUIDE.card.h);
 check('小屏玩法说明关闭按钮在卡内',
   SGUIDE.close.cx - SGUIDE.close.r >= SGUIDE.card.x &&
