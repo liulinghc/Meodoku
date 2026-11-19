@@ -146,6 +146,10 @@ var RUNTIME = String.raw`
       };
     },
     getSystemInfoSync: function () { return window.wx.getWindowInfo(); },
+    // 与 375×812 真机胶囊同尺寸，预览也必须验证“顶栏让开胶囊”
+    getMenuButtonBoundingClientRect: function () {
+      return { width: 87, height: 32, top: 48, right: 365, bottom: 80, left: 278 };
+    },
     getStorageSync: function (k) {
       return Object.prototype.hasOwnProperty.call(storage, k) ? storage[k] : '';
     },
@@ -288,12 +292,30 @@ var HTML = [
   '<style>',
   '  html, body { margin: 0; padding: 0; height: 100%; background: #241f1b; }',
   '  body { display: flex; align-items: center; justify-content: center; }',
-  '  #game { display: block; width: 375px; height: 812px; background: #FDF4E7;',
-  '          box-shadow: 0 0 48px rgba(0,0,0,0.55); }',
+  '  #stage { position: relative; width: 375px; height: 812px;',
+  '           box-shadow: 0 0 48px rgba(0,0,0,0.55); }',
+  '  #game { display: block; width: 375px; height: 812px; background: #FDF4E7; }',
+  '  /* 预览专用：模拟微信右上角胶囊，验证游戏 UI 不与其重叠 */',
+  '  #capsule { position: absolute; top: 48px; right: 10px; width: 87px; height: 32px;',
+  '             box-sizing: border-box; border-radius: 16px;',
+  '             background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.16);',
+  '             display: flex; align-items: center; justify-content: center; gap: 8px;',
+  '             pointer-events: none; }',
+  '  #capsule .dots { display: flex; gap: 4px; }',
+  '  #capsule i { display: block; width: 5px; height: 5px; border-radius: 50%; background: #fff; }',
+  '  #capsule .sep { width: 1px; height: 18px; background: rgba(255,255,255,0.28); }',
+  '  #capsule .ring { width: 15px; height: 15px; border: 2px solid #fff; border-radius: 50%; }',
   '</style>',
   '</head>',
   '<body>',
-  '<canvas id="game" width="375" height="812"></canvas>',
+  '<div id="stage">',
+  '  <canvas id="game" width="375" height="812"></canvas>',
+  '  <div id="capsule">',
+  '    <span class="dots"><i></i><i></i><i></i></span>',
+  '    <span class="sep"></span>',
+  '    <span class="ring"></span>',
+  '  </div>',
+  '</div>',
   '<script src="./bundle.js"></script>',
   '</body>',
   '</html>'

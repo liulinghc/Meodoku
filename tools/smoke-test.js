@@ -52,6 +52,9 @@ global.wx = {
       platform: 'devtools'
     };
   },
+  getMenuButtonBoundingClientRect: function () {
+    return { width: 87, height: 32, top: 48, right: 365, bottom: 80, left: 278 };
+  },
   getStorageSync: function (k) { return store[k] === undefined ? '' : store[k]; },
   setStorageSync: function (k, v) { store[k] = v; },
   removeStorageSync: function (k) { delete store[k]; },
@@ -277,6 +280,8 @@ var copyMod = require('../js/data/copy');
 var app = new App();
 app.start();
 frames(app, 3);
+var menuCap = app.env.menu;
+var capBottom = menuCap ? menuCap.bottom : 0;
 check('首次启动自动展示玩法说明', sceneName(app) === 'guide');
 check('玩法说明覆盖首页入栈', app.sm.stack[0] && app.sm.stack[0].sceneName === 'home');
 check('玩法说明有绘制调用', app.renderer.ctx.ops > 100, 'ops=' + app.renderer.ctx.ops);
@@ -292,6 +297,8 @@ check('玩法说明以弹窗展示（不整屏）',
 check('弹窗下方保留首页画面',
   app.renderer.ctx.texts.indexOf(copyMod.title) !== -1 &&
   app.renderer.ctx.texts.indexOf(copyMod.guideTitle) !== -1);
+check('玩法说明卡片避开胶囊区', guideL.card.y >= capBottom,
+  'cardY=' + guideL.card.y + ' capBottom=' + capBottom);
 check('玩法说明按钮在屏内', guideL.cta.y + guideL.cta.h <= 812 + 0.5);
 check('规则分页展示，首页不铺全部操作说明',
   app.sm.top().page === 0 &&
@@ -315,6 +322,35 @@ check('新档只解锁第 1 关', app.progress.isUnlocked(1) && !app.progress.is
 check('DPR 上限为 2', app.env.dpr === 2, 'dpr=' + app.env.dpr);
 check('主画布按 DPR 放大', app.renderer.canvas.width === 750, 'width=' + app.renderer.canvas.width);
 
+/* 微信右上角胶囊：系统绘制在画布之上，游戏顶栏必须整体让开 */
+check('读取右上角胶囊区域', !!menuCap && menuCap.left === 278 &&
+  menuCap.right === 365 && menuCap.bottom === 80,
+  menuCap ? JSON.stringify(menuCap) : 'null');
+var capHome = app.layout.home();
+function circleTop(c) { return c.cy - c.r; }
+check('首页顶栏整体位于胶囊下方', capHome.topBar.y >= capBottom,
+  'top=' + capHome.topBar.y + ' capBottom=' + capBottom);
+check('首页顶部按钮不与胶囊重叠',
+  capHome.coin.y >= capBottom &&
+  circleTop(capHome.help) >= capBottom &&
+  circleTop(capHome.checkin) >= capBottom &&
+  circleTop(capHome.gear) >= capBottom);
+var capPage = app.layout.page();
+check('子页面页头位于胶囊下方',
+  capPage.topBar.y >= capBottom &&
+  circleTop(capPage.back) >= capBottom);
+
+var envMod = require('../js/platform/env');
+var realMenuApi = wx.getMenuButtonBoundingClientRect;
+wx.getMenuButtonBoundingClientRect = function () { throw new Error('unsupported'); };
+var noMenuEnv = envMod.read();
+wx.getMenuButtonBoundingClientRect = realMenuApi;
+var LayoutNoMenu = require('../js/ui/layout');
+var noMenuLayout = new LayoutNoMenu(noMenuEnv);
+check('胶囊 API 异常时安全降级', noMenuEnv.menu === null &&
+  Math.abs(noMenuLayout.topInset() -
+    (noMenuEnv.safeTop + 8 * noMenuLayout.s)) < 0.001);
+
 /* ---------------- 3. 页面跳转 ---------------- */
 
 console.log('[3] 导航');
@@ -327,6 +363,11 @@ var guideL2 = app.layout.guide();
 tap(guideL2.close.cx, guideL2.close.cy);
 frames(app, 1);
 check('玩法说明关闭按钮返回首页', sceneName(app) === 'home');
+tap((menuCap.left + menuCap.right) / 2, (menuCap.top + menuCap.bottom) / 2);
+frames(app, 1);
+check('点击胶囊区域不会误触游戏顶部按钮',
+  sceneName(app) === 'home' && app.toast.text !== copyMod.toastGear,
+  'scene=' + sceneName(app) + ' toast=' + app.toast.text);
 tap(homeL.cta.x + homeL.cta.w / 2, homeL.cta.y + homeL.cta.h / 2);
 frames(app, 1);
 check('首页 → 关卡地图', sceneName(app) === 'levelmap');
@@ -344,12 +385,20 @@ check('L1 首次进入展示“带锁的猫”规则卡',
 frames(app, 5);
 check('规则卡显示期间暂停计时', gameL0.elapsed === 0, 'elapsed=' + gameL0.elapsed);
 var coachL = app.layout.coach();
+check('首次规则卡避开胶囊区', coachL.card.y >= capBottom,
+  'cardY=' + coachL.card.y + ' capBottom=' + capBottom);
 tap(coachL.cta.x + coachL.cta.w / 2, coachL.cta.y + coachL.cta.h / 2);
 frames(app, 2);
 check('规则卡读完后关闭', !gameL0.coach &&
   app.progress.coachSeen('given') === true);
 
 var gameLx = app.layout.game(gameL0.n);
+check('对局顶栏与按钮均避开胶囊区',
+  gameLx.topBar.y >= capBottom &&
+  circleTop(gameLx.back) >= capBottom &&
+  circleTop(gameLx.help) >= capBottom &&
+  circleTop(gameLx.gear) >= capBottom,
+  'top=' + gameLx.topBar.y + ' capBottom=' + capBottom);
 tap(gameLx.help.cx, gameLx.help.cy);
 frames(app, 1);
 check('对局内可打开玩法说明', sceneName(app) === 'guide');
@@ -528,6 +577,8 @@ check('结算副标题占位符全部填充', (function () {
 var R = app.layout.result();
 check('结算按钮在安全区内', R.cta.y + R.cta.h <= app.env.height - app.env.safeBottom + 0.5);
 check('结算信息卡不与按钮重叠', R.stats.y + R.stats.h < R.cta.y);
+check('结算内容避开胶囊区', R.cat.cy - R.cat.r >= capBottom,
+  'catTop=' + (R.cat.cy - R.cat.r) + ' capBottom=' + capBottom);
 
 tap(R.cta.x + R.cta.w / 2, R.cta.y + R.cta.h / 2);
 frames(app, 2);
@@ -1261,6 +1312,8 @@ var album7 = app.sm.top();
 var AL7 = app.layout.album();
 check('图鉴展示 16 只猫、4 列网格',
   album7.cells.length === 16 && AL7.grid.cols === 4);
+check('图鉴详情卡避开胶囊区', AL7.detail.y >= capBottom,
+  'detailY=' + AL7.detail.y + ' capBottom=' + capBottom);
 check('墨墨已解锁、奶糖仍锁定',
   app.collection.isUnlocked('mo') && !app.collection.isUnlocked('naitang'));
 
@@ -1385,6 +1438,23 @@ check('小屏 9×9 棋盘不越界', S9.board.y + S9.board.size <= S9.band.y + 0
 check('小屏 9×9 格子边长 ≥ 24px', S9.geom.tile >= 24, 'tile=' + S9.geom.tile.toFixed(1));
 check('小屏 9×9 图例不溢出', S9.legend.item * 9 + S9.legend.gap * 8 <= 320,
   'legend=' + (S9.legend.item * 9 + S9.legend.gap * 8).toFixed(1));
+
+// 320×568 且带胶囊：顶栏让位后棋盘仍要可用
+var smallMenu = new Layout({
+  width: 320, height: 568, dpr: 2, safeTop: 20, safeBottom: 0,
+  menu: { left: 223, top: 24, right: 310, bottom: 56, width: 87, height: 32 }
+});
+var SM9 = smallMenu.game(9);
+check('小屏胶囊下顶栏避开胶囊', SM9.topBar.y >= 56,
+  'top=' + SM9.topBar.y.toFixed(1));
+check('小屏胶囊下 9×9 棋盘不越界',
+  SM9.board.y + SM9.board.size <= SM9.band.y + 0.5,
+  'bottom=' + (SM9.board.y + SM9.board.size).toFixed(1) +
+  ' band=' + SM9.band.y.toFixed(1));
+check('小屏胶囊下 9×9 格子边长 ≥ 24px', SM9.geom.tile >= 24,
+  'tile=' + SM9.geom.tile.toFixed(1));
+check('小屏胶囊下 4×4 格子边长 ≥ 40px', smallMenu.game(4).geom.tile >= 40,
+  'tile=' + smallMenu.game(4).geom.tile.toFixed(1));
 
 // S5 五个子页面：320×568 全部不越界、不重叠
 var SDAILY = small.daily();

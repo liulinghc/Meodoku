@@ -14,10 +14,25 @@ function Layout(env) {
   this.dpr = env.dpr;
   this.safeTop = env.safeTop;
   this.safeBottom = env.safeBottom;
+  this.menu = env.menu || null;
   this.s = clamp(env.width / BASE_W, 0.9, 1.15);
 }
 
 Layout.prototype.sp = function (v) { return v * this.s; };
+
+/**
+ * 顶部内容的起点。
+ *
+ * 微信右上角胶囊由系统绘制，永远压在画布最上层。游戏自绘的返回键、金币、
+ * 帮助/签到/设置等如果放在安全区顶部就会和胶囊重叠（截图里的问题）。
+ * 有胶囊信息时，整条自定义顶栏让到胶囊下方；没有胶囊信息时维持原来
+ * 的“安全区 + 8”行为，老版本基础库也不会被顶开。
+ */
+Layout.prototype.topInset = function () {
+  var base = this.safeTop + 8 * this.s;
+  if (!this.menu) return base;
+  return Math.max(base, this.menu.bottom + 10 * this.s);
+};
 
 /* ---------------- 棋盘几何 ---------------- */
 
@@ -47,11 +62,14 @@ Layout.prototype.game = function (n) {
   var margin = 16 * s;
   var collapsed = n >= 8;
 
-  var topY = this.safeTop + 8 * s;
-  var topH = 52 * s;
+  // 矮屏（如 320×568 / 375×667）压缩页头与图例，把高度还给棋盘，
+  // 否则胶囊让位后 9×9 格子会掉到 24–28px 的可读阈值以下。
+  var short = h < 700;
+  var topY = this.topInset();
+  var topH = (short ? 46 : 52) * s;
 
   var legendY = topY + topH + 2 * s;
-  var legendH = 30 * s;
+  var legendH = (short ? 26 : 30) * s;
 
   var rulesY = legendY + legendH + 6 * s;
   var rulesH = (collapsed ? 32 : 66) * s;
@@ -112,7 +130,7 @@ Layout.prototype.home = function () {
   var h = this.h;
   var margin = 16 * s;
 
-  var topY = this.safeTop + 8 * s;
+  var topY = this.topInset();
   var topH = 44 * s;
 
   var titleY = topY + 72 * s;
@@ -157,11 +175,12 @@ Layout.prototype.guide = function () {
   var pad = 18 * s;
   var ctaH = 46 * s;
 
-  // 弹窗：不铺满整屏，居中显示在当前场景之上
+  // 弹窗：不铺满整屏，居中显示在当前场景之上；顶部同样让开胶囊
+  var top = this.topInset();
   var cardW = Math.min(w - 2 * margin, 360 * s);
-  var cardH = Math.min(414 * s, h - this.safeTop - this.safeBottom - 24 * s);
+  var cardH = Math.min(414 * s, h - top - this.safeBottom - 24 * s);
   var x = (w - cardW) / 2;
-  var y = this.safeTop + Math.max(6 * s, (h - this.safeTop - this.safeBottom - cardH) / 2);
+  var y = top + Math.max(6 * s, (h - top - this.safeBottom - cardH) / 2);
 
   var contentX = x + pad;
   var contentW = cardW - 2 * pad;
@@ -205,7 +224,7 @@ Layout.prototype.coach = function () {
   var cardW = Math.min(w - 2 * margin, 336 * s);
   var cardH = 196 * s;
   var x = (w - cardW) / 2;
-  var y = Math.max(this.safeTop + 36 * s, h * 0.5 - cardH * 0.62);
+  var y = Math.max(this.topInset() + 28 * s, h * 0.5 - cardH * 0.62);
   var btnH = 42 * s;
 
   return {
@@ -228,7 +247,7 @@ Layout.prototype.result = function () {
   var h = this.h;
   var margin = 24 * s;
 
-  var topY = this.safeTop + 8 * s;
+  var topY = this.topInset();
   var ctaH = 54 * s;
   var mapH = 44 * s;
   var gap = 12 * s;
@@ -263,7 +282,7 @@ Layout.prototype.result = function () {
 Layout.prototype.levelmap = function () {
   var s = this.s;
   var margin = 16 * s;
-  var topY = this.safeTop + 8 * s;
+  var topY = this.topInset();
   var topH = 52 * s;
   var chapterY = topY + topH + 6 * s;
   var chapterH = 34 * s;
@@ -291,7 +310,7 @@ Layout.prototype.levelmap = function () {
 Layout.prototype.page = function () {
   var s = this.s;
   var margin = 16 * s;
-  var topY = this.safeTop + 8 * s;
+  var topY = this.topInset();
   var topH = 52 * s;
   return {
     s: s,
@@ -443,7 +462,7 @@ Layout.prototype.album = function () {
 
   var dCardX = 24 * s;
   var dCardW = p.w - 48 * s;
-  var dCardY = this.safeTop + 64 * s;
+  var dCardY = this.topInset() + 56 * s;
   var dCardH = Math.min(520 * s, this.h - this.safeBottom - 20 * s - dCardY);
 
   return {

@@ -64,7 +64,7 @@ Debug.prototype.render = function (r) {
   w += padX * 2;
   var h = lines.length * lh + 8 * s;
   var x = 8 * s;
-  var y = env.safeTop + 6 * s;
+  var y = app.layout.topInset() + 6 * s;
 
   r.save();
   r.ctx.globalAlpha = 0.78;

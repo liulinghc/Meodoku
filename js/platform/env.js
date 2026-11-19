@@ -3,6 +3,38 @@
  */
 var logger = require('../core/logger');
 
+/**
+ * 右上角胶囊按钮（微信原生菜单）的位置，逻辑像素，原点为屏幕左上角。
+ * 基础库 2.1.0 起支持；低版本或读取失败时返回 null，布局退回安全区。
+ * 自定义顶部栏必须让到胶囊下方，不能与它抢同一块区域。
+ */
+function readMenu(width, height) {
+  var m = null;
+  try {
+    if (typeof wx !== 'undefined' && wx.getMenuButtonBoundingClientRect) {
+      m = wx.getMenuButtonBoundingClientRect();
+    }
+  } catch (e) {
+    logger.warn('读取胶囊区域失败，顶部栏退回安全区');
+  }
+  if (!m || !(m.width > 0) || !(m.height > 0) || !(m.bottom > m.top)) return null;
+
+  var left = Math.max(0, Math.min(width, m.left));
+  var right = Math.max(0, Math.min(width, m.right));
+  var top = Math.max(0, Math.min(height, m.top));
+  var bottom = Math.max(0, Math.min(height, m.bottom));
+  if (right <= left || bottom <= top) return null;
+
+  return {
+    left: left,
+    top: top,
+    right: right,
+    bottom: bottom,
+    width: right - left,
+    height: bottom - top
+  };
+}
+
 function read() {
   var info = null;
   try {
@@ -41,6 +73,7 @@ function read() {
     statusBarHeight: statusBar,
     safeTop: safeTop,
     safeBottom: safeBottom,
+    menu: readMenu(width, height),
     platform: info.platform || 'devtools',
     isIOS: (info.platform || '') === 'ios'
   };
