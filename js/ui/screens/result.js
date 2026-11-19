@@ -323,7 +323,6 @@ ResultScene.prototype.onTouchEnd = function (x, y, isTap) {
   var info = this.info || {};
 
   if (hit.inRect(x, y, L.cta)) {
-    this.app.haptic();
     if (info.daily) this._toHome();
     else if (info.nextIndex) this._next();
     else this._toMap();
@@ -331,7 +330,6 @@ ResultScene.prototype.onTouchEnd = function (x, y, isTap) {
   }
 
   if (!info.daily && info.nextIndex && hit.inRect(x, y, L.map)) {
-    this.app.haptic();
     this._toMap();
   }
 };

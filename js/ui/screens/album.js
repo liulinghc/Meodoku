@@ -313,13 +313,11 @@ AlbumScene.prototype.onTouchEnd = function (x, y, isTap) {
       var cat = cats.get(this.selected);
       if (this.detailAction === 'equip') {
         if (app.collection.equip(cat.id)) {
-          app.haptic();
           app.toast.show(format(copy.toastCatEquipped, cat.name));
         }
       } else if (this.detailAction === 'craft') {
         var res = app.collection.craft(cat.id);
         if (res.ok) {
-          app.haptic();
           app.metaRefresh();
           app.toast.show(format(copy.toastCatCrafted, cat.name));
         } else {
@@ -335,7 +333,6 @@ AlbumScene.prototype.onTouchEnd = function (x, y, isTap) {
     return;
   }
   if (hit.inRect(x, y, L.ach)) {
-    app.haptic();
     app.sm.push('achievements');
     return;
   }
@@ -343,7 +340,6 @@ AlbumScene.prototype.onTouchEnd = function (x, y, isTap) {
   for (var i = 0; i < this.cells.length; i++) {
     var cell = this.cells[i];
     if (hit.inRect(x, y, cell)) {
-      app.haptic();
       this.selected = cell.cat.id;
       return;
     }

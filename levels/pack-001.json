@@ -16,102 +16,102 @@
     {
       "id": "L001",
       "n": 4,
-      "r": "baaabbdabddcddcc",
+      "r": "baaabaaabcccddcc",
       "s": "2031",
       "t": 1,
-      "d": 15,
-      "b": 1,
-      "seed": 3340243743
+      "d": 0,
+      "b": 0,
+      "seed": 3776398442
     },
     {
       "id": "L202",
       "n": 4,
-      "r": "aaabaabbcccbcddd",
+      "r": "baaabbabcbbbcddd",
       "s": "1302",
       "t": 1,
-      "d": 15,
-      "b": 1,
-      "seed": 3932599064
+      "d": 0,
+      "b": 0,
+      "seed": 3367279117
     },
     {
       "id": "L002",
       "n": 4,
-      "r": "baaabbaabdccdddc",
+      "r": "baaabdddddccddcc",
       "s": "2031",
       "t": 1,
-      "d": 17,
-      "b": 1,
-      "seed": 2807976201
+      "d": 0,
+      "b": 0,
+      "seed": 2214244716
     },
     {
       "id": "L003",
       "n": 4,
-      "r": "baaabbacdbacddcc",
-      "s": "2031",
+      "r": "aaabcaabcaadccdd",
+      "s": "1302",
       "t": 1,
-      "d": 20,
-      "b": 1,
-      "seed": 1376160748
+      "d": 0,
+      "b": 0,
+      "seed": 2136307168
     },
     {
       "id": "L004",
       "n": 4,
-      "r": "baaabbaabdccddcc",
+      "r": "bbaabbaaaaacddcc",
       "s": "2031",
       "t": 1,
-      "d": 20,
-      "b": 1,
-      "seed": 3291667630
+      "d": 0,
+      "b": 0,
+      "seed": 692067311
     },
     {
       "id": "L005",
       "n": 4,
-      "r": "baaabbcabdccdddc",
-      "s": "2031",
+      "r": "aaabacabccadccdd",
+      "s": "1302",
       "t": 1,
-      "d": 20,
-      "b": 1,
-      "seed": 4237391757
+      "d": 0,
+      "b": 0,
+      "seed": 496010590
     },
     {
       "id": "L203",
       "n": 4,
-      "r": "aabbaabbcccdcddd",
-      "s": "1302",
+      "r": "baaabbaabaacdddc",
+      "s": "2031",
       "t": 1,
-      "d": 22,
-      "b": 1,
-      "seed": 2889808454
+      "d": 0,
+      "b": 0,
+      "seed": 3643126616
     },
     {
       "id": "L006",
       "n": 4,
-      "r": "baaabbacddacddcc",
-      "s": "2031",
+      "r": "aaabababcbbbccdd",
+      "s": "1302",
       "t": 1,
-      "d": 22,
-      "b": 1,
-      "seed": 2937787608
+      "d": 0,
+      "b": 0,
+      "seed": 2748659757
     },
     {
       "id": "L201",
       "n": 4,
-      "r": "baaabbaaddccddcc",
+      "r": "baaabaacaaccddcc",
       "s": "2031",
       "t": 1,
-      "d": 22,
-      "b": 1,
-      "seed": 4011715515
+      "d": 0,
+      "b": 0,
+      "seed": 3965056599
     },
     {
       "id": "L206",
-      "n": 5,
-      "r": "bbbacbbbacebdcceedddeeedd",
-      "s": "31420",
+      "n": 4,
+      "r": "aaabaaabcbbbcddd",
+      "s": "1302",
       "t": 1,
-      "d": 12,
+      "d": 0,
       "b": 0,
-      "seed": 882951461
+      "seed": 3293365501
     },
     {
       "id": "L007",

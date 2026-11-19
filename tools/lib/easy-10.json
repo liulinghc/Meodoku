@@ -1,0 +1,98 @@
+{
+  "schema": 1,
+  "generator": "md-easy/1",
+  "note": "前 10 关教学池：4×4、T1、零分支；由 tools/gen-easy.js 枚举生成，勿手改。",
+  "total": 10,
+  "levels": [
+    {
+      "n": 4,
+      "r": "baaabaaabcccddcc",
+      "s": "2031",
+      "t": 1,
+      "d": 0,
+      "b": 0,
+      "seed": 3776398442
+    },
+    {
+      "n": 4,
+      "r": "baaabbabcbbbcddd",
+      "s": "1302",
+      "t": 1,
+      "d": 0,
+      "b": 0,
+      "seed": 3367279117
+    },
+    {
+      "n": 4,
+      "r": "baaabdddddccddcc",
+      "s": "2031",
+      "t": 1,
+      "d": 0,
+      "b": 0,
+      "seed": 2214244716
+    },
+    {
+      "n": 4,
+      "r": "aaabcaabcaadccdd",
+      "s": "1302",
+      "t": 1,
+      "d": 0,
+      "b": 0,
+      "seed": 2136307168
+    },
+    {
+      "n": 4,
+      "r": "bbaabbaaaaacddcc",
+      "s": "2031",
+      "t": 1,
+      "d": 0,
+      "b": 0,
+      "seed": 692067311
+    },
+    {
+      "n": 4,
+      "r": "aaabacabccadccdd",
+      "s": "1302",
+      "t": 1,
+      "d": 0,
+      "b": 0,
+      "seed": 496010590
+    },
+    {
+      "n": 4,
+      "r": "baaabbaabaacdddc",
+      "s": "2031",
+      "t": 1,
+      "d": 0,
+      "b": 0,
+      "seed": 3643126616
+    },
+    {
+      "n": 4,
+      "r": "aaabababcbbbccdd",
+      "s": "1302",
+      "t": 1,
+      "d": 0,
+      "b": 0,
+      "seed": 2748659757
+    },
+    {
+      "n": 4,
+      "r": "baaabaacaaccddcc",
+      "s": "2031",
+      "t": 1,
+      "d": 0,
+      "b": 0,
+      "seed": 3965056599
+    },
+    {
+      "n": 4,
+      "r": "aaabaaabcbbbcddd",
+      "s": "1302",
+      "t": 1,
+      "d": 0,
+      "b": 0,
+      "seed": 3293365501
+    }
+  ]
+}

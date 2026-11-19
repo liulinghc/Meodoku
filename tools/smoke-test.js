@@ -174,6 +174,26 @@ check('尺寸覆盖 4/5/6/7/8/9', (function () {
   return set[4] && set[5] && set[6] && set[7] && set[8] && set[9];
 })());
 check('首关为 4×4 教学关', levelsIndex.get(1).n === 4, 'n=' + levelsIndex.get(1).n);
+check('前 10 关均为 4×4 / T1 / 零分支', (function () {
+  for (var k = 0; k < 10; k++) {
+    var l = pack.levels[k];
+    if (l.n !== 4 || l.t !== 1 || l.d !== 0 || l.b !== 0) return false;
+  }
+  return true;
+})(), pack.levels.slice(0, 10).map(function (l) {
+  return l.n + '/' + l.t + '/' + l.d + '/' + l.b;
+}).join(' '));
+check('前 10 关稳定 ID 与播放顺序不变', (function () {
+  var ids = ['L001', 'L202', 'L002', 'L003', 'L004',
+    'L005', 'L203', 'L006', 'L201', 'L206'];
+  for (var k = 0; k < ids.length; k++) {
+    if (!pack.levels[k] || pack.levels[k].id !== ids[k]) return false;
+  }
+  return true;
+})(), pack.levels.slice(0, 10).map(function (l) { return l.id; }).join(','));
+check('第 11 关起进入 5×5', levelsIndex.get(11).n === 5 &&
+  levelsIndex.get(11).difficulty === 12,
+  'n=' + levelsIndex.get(11).n + ' d=' + levelsIndex.get(11).difficulty);
 check('档位分布 30/75/105/60/30', (function () {
   var c = {};
   for (var k = 0; k < pack.levels.length; k++) c[pack.levels[k].t] = (c[pack.levels[k].t] || 0) + 1;
@@ -229,10 +249,30 @@ check('运行时规则判定全部答案通关', runtimeBad.length === 0, runtim
 console.log('[2] 启动与三场景渲染');
 var App = require('../js/app');
 var levelsSvc = require('../js/services/levels');
+var copyMod = require('../js/data/copy');
 var app = new App();
 app.start();
 frames(app, 3);
-check('入口场景为 home', sceneName(app) === 'home');
+check('首次启动自动展示玩法说明', sceneName(app) === 'guide');
+check('玩法说明覆盖首页入栈', app.sm.stack[0] && app.sm.stack[0].sceneName === 'home');
+check('玩法说明有绘制调用', app.renderer.ctx.ops > 100, 'ops=' + app.renderer.ctx.ops);
+checkNoBadText('玩法说明');
+var guideL = app.layout.guide();
+check('玩法说明以弹窗展示（不整屏）',
+  guideL.card.x > 0 && guideL.card.y > 0 &&
+  guideL.card.x + guideL.card.w < app.env.width &&
+  guideL.card.y + guideL.card.h < app.env.height,
+  'card=' + [guideL.card.x, guideL.card.y, guideL.card.w, guideL.card.h].map(function (v) {
+    return v.toFixed(1);
+  }).join(','));
+check('弹窗下方保留首页画面',
+  app.renderer.ctx.texts.indexOf(copyMod.title) !== -1 &&
+  app.renderer.ctx.texts.indexOf(copyMod.guideTitle) !== -1);
+check('玩法说明按钮在屏内', guideL.cta.y + guideL.cta.h <= 812 + 0.5);
+tap(guideL.cta.x + guideL.cta.w / 2, guideL.cta.y + guideL.cta.h / 2);
+frames(app, 2);
+check('关闭玩法说明回到首页', sceneName(app) === 'home');
+check('玩法说明已记入存档', app.save.data.guideSeen === true);
 check('首页有绘制调用', app.renderer.ctx.ops > 100, 'ops=' + app.renderer.ctx.ops);
 check('新档只解锁第 1 关', app.progress.isUnlocked(1) && !app.progress.isUnlocked(2) &&
   !app.progress.isUnlocked(300));
@@ -243,6 +283,14 @@ check('主画布按 DPR 放大', app.renderer.canvas.width === 750, 'width=' + a
 
 console.log('[3] 导航');
 var homeL = app.layout.home();
+check('首页保留玩法说明入口', !!homeL.help);
+tap(homeL.help.cx, homeL.help.cy);
+frames(app, 1);
+check('首页可再次打开玩法说明', sceneName(app) === 'guide');
+var guideL2 = app.layout.guide();
+tap(guideL2.close.cx, guideL2.close.cy);
+frames(app, 1);
+check('玩法说明关闭按钮返回首页', sceneName(app) === 'home');
 tap(homeL.cta.x + homeL.cta.w / 2, homeL.cta.y + homeL.cta.h / 2);
 frames(app, 1);
 check('首页 → 关卡地图', sceneName(app) === 'levelmap');
@@ -253,6 +301,15 @@ check('地图节点数与关卡数一致', nodes.length === 20, '实际 ' + node
 tap(nodes[0].x, nodes[0].y);
 frames(app, 1);
 check('地图 → 对局', sceneName(app) === 'game');
+
+var gameL0 = app.layout.game(app.sm.top().n);
+tap(gameL0.help.cx, gameL0.help.cy);
+frames(app, 1);
+check('对局内可打开玩法说明', sceneName(app) === 'guide');
+var guideL3 = app.layout.guide();
+tap(guideL3.cta.x + guideL3.cta.w / 2, guideL3.cta.y + guideL3.cta.h / 2);
+frames(app, 1);
+check('关闭说明后回到对局', sceneName(app) === 'game');
 
 /* ---------------- 4. 棋盘交互、计时与提示 ---------------- */
 
@@ -869,6 +926,10 @@ console.log('[6b] S5 服务层（每日 / 签到 / 图鉴 / 成就 / 商店）')
 
 console.log('[6c] S5 存档迁移与清洗');
 check('默认 schema 为 3', Save.defaults().schema === 3);
+check('默认未看过玩法说明', Save.defaults().guideSeen === false);
+check('玩法说明状态按布尔清洗',
+  Save.normalize({ schema: 3, guideSeen: true }).guideSeen === true &&
+  Save.normalize({ schema: 3, guideSeen: 'yes' }).guideSeen === false);
 check('日历日期校验拒绝不存在的日期',
   require('../js/core/date').isKey('2026-02-30') === false &&
   require('../js/core/date').isKey('2026-13-40') === false &&
@@ -929,7 +990,8 @@ var s5Persist = Save.normalize({
   },
   collection: { unlocked: { mo: 1, naitang: 2 }, equipped: 'naitang' },
   achievements: { first_clear: { unlockedAt: 5, claimedAt: 6 } },
-  cosmetics: { skins: { cream: true, 'skin-mint': true }, current: 'skin-mint' }
+  cosmetics: { skins: { cream: true, 'skin-mint': true }, current: 'skin-mint' },
+  guideSeen: true
 });
 store['md:save:v1'] = JSON.stringify(s5Persist);
 var reloadS5 = new Save();
@@ -942,7 +1004,7 @@ check('S5 状态经 JSON 落盘后可完整重载',
   rd5.signin.totalDays === 12 && rd5.signin.claimedMilestones['7'] === true &&
   rd5.collection.equipped === 'naitang' &&
   rd5.achievements.first_clear.claimedAt === 6 &&
-  rd5.cosmetics.current === 'skin-mint');
+  rd5.cosmetics.current === 'skin-mint' && rd5.guideSeen === true);
 store['md:save:v1'] = app.save.data;
 
 /* ---------------- 7. 返回与调试浮层 ---------------- */
@@ -1238,6 +1300,26 @@ check('小屏商店 5 个商品在屏内',
   SSHOP.list.y + SSHOP.list.rowH * 5 + SSHOP.list.gap * 4 <= 568 + 0.5,
   'bottom=' + (SSHOP.list.y + SSHOP.list.rowH * 5 + SSHOP.list.gap * 4).toFixed(1));
 check('小屏商店行高可读', SSHOP.list.rowH >= 52, 'rowH=' + SSHOP.list.rowH.toFixed(1));
+
+var SGUIDE = small.guide();
+check('小屏玩法说明弹窗在安全区内',
+  SGUIDE.card.x >= 0 && SGUIDE.card.x + SGUIDE.card.w <= 320 + 0.5 &&
+  SGUIDE.card.y >= 20 - 0.5 && SGUIDE.card.y + SGUIDE.card.h <= 568 + 0.5,
+  'card=' + [SGUIDE.card.x, SGUIDE.card.y, SGUIDE.card.w, SGUIDE.card.h].map(function (v) {
+    return v.toFixed(1);
+  }).join(','));
+check('小屏玩法说明各区块不重叠',
+  SGUIDE.goal.y + SGUIDE.goal.h <= SGUIDE.tap.y &&
+  SGUIDE.tap.y + SGUIDE.tap.h <= SGUIDE.tip.y &&
+  SGUIDE.tip.y + SGUIDE.tip.h <= SGUIDE.cta.y &&
+  SGUIDE.cta.y + SGUIDE.cta.h <= SGUIDE.card.y + SGUIDE.card.h);
+check('小屏玩法说明关闭按钮在卡内',
+  SGUIDE.close.cx - SGUIDE.close.r >= SGUIDE.card.x &&
+  SGUIDE.close.cx + SGUIDE.close.r <= SGUIDE.card.x + SGUIDE.card.w &&
+  SGUIDE.close.cy - SGUIDE.close.r >= SGUIDE.card.y &&
+  SGUIDE.close.cy + SGUIDE.close.r <= SGUIDE.card.y + SGUIDE.card.h);
+check('小屏玩法说明点击示例在卡内',
+  SGUIDE.tap.rows[2].y + SGUIDE.tap.rows[2].size <= SGUIDE.tap.y + SGUIDE.tap.h + 0.5);
 
 /* ---------------- 9. 连续帧 ---------------- */
 

@@ -269,7 +269,6 @@ DailyScene.prototype.onTouchEnd = function (x, y, isTap) {
       app.toast.show(copy.toastTimeGuarded);
       return;
     }
-    app.haptic();
     app.sm.push('game', { mode: 'daily' });
   }
 };

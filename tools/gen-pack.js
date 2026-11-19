@@ -8,7 +8,8 @@
  *
  * 已有 S3 的 200 关作为基线（tools/lib/base-200.json），保留其 ID 与盘面，
  * 新增 100 关后按（档位，尺寸，难度分，seed）重新排序成 15 章。
- * 旧进度按关卡 ID 迁移（见 js/services/save.js），因此前 200 关内容不变。
+ * 前 10 关使用 tools/lib/easy-10.json 的 4×4 零分支教学池，ID 与播放位置
+ * 保持不变（L001 仍在第 1 关），旧存档的下标不会错位；其余旧关内容不变。
  *
  * 300 槽位按档位配额先验固定；每关必须唯一解、结构合格、档位匹配、
  * 布局规范签名不重复，全部通过才写入。生成失败直接报错，不静默降级。
@@ -28,11 +29,18 @@ var ROOT = path.resolve(__dirname, '..');
 var JSON_OUT = path.join(ROOT, 'levels', 'pack-001.json');
 var JS_OUT = path.join(ROOT, 'levels', 'pack-001.js');
 var BASE_FILE = path.join(__dirname, 'lib', 'base-200.json');
+var EASY_FILE = path.join(__dirname, 'lib', 'easy-10.json');
 
 var TIER_NAMES = diff.TIER_NAMES;
 var TOTAL = 300;
 var BASE_TOTAL = 200;
 var QUOTAS = { 1: 30, 2: 75, 3: 105, 4: 60, 5: 30 };
+
+// 当前前 10 个播放位置的稳定 ID，按原顺序保留；只替换题面，不挪位置
+var EASY_SLOTS = ['L001', 'L202', 'L002', 'L003', 'L004',
+  'L005', 'L203', 'L006', 'L201', 'L206'];
+var EASY_SET = {};
+for (var e = 0; e < EASY_SLOTS.length; e++) EASY_SET[EASY_SLOTS[e]] = true;
 
 // 在 S3 的 200 关基础上新增 100 关；与旧配额合并后为 30/75/105/60/30
 var EXT_PLAN = [
@@ -80,6 +88,47 @@ function compact(lv) {
     b: lv.b !== undefined ? lv.b : lv.branch,
     seed: lv.seed
   };
+}
+
+/** 前 10 关教学池：4×4、T1、零分支；由 tools/gen-easy.js 生成 */
+function loadEasy() {
+  if (!fs.existsSync(EASY_FILE)) {
+    throw new Error('缺少教学关卡 tools/lib/easy-10.json，请先运行 node tools/gen-easy.js');
+  }
+  var pack = JSON.parse(fs.readFileSync(EASY_FILE, 'utf8'));
+  if (pack.schema !== 1 || !pack.levels || pack.levels.length !== EASY_SLOTS.length) {
+    throw new Error('教学关卡池数量/结构非法');
+  }
+
+  var out = [];
+  var seen = {};
+  for (var i = 0; i < pack.levels.length; i++) {
+    var lv = compact(pack.levels[i]);
+    if (lv.n !== 4 || lv.t !== 1 || lv.d !== 0) {
+      throw new Error('教学关卡 #' + (i + 1) + ' 必须是 4×4 / T1 / D0');
+    }
+    var v = gen.validateLevel(lv);
+    if (!v.ok) {
+      throw new Error('教学关卡 #' + (i + 1) + ' 非法: ' + v.errors.join('|'));
+    }
+    var region = gen.decodeRegionString(lv.r, 4);
+    var a = diff.analyzeDifficulty(4, region);
+    if (!a || a.tier !== 1 || a.score !== 0 || a.branchCount !== 0) {
+      throw new Error('教学关卡 #' + (i + 1) + ' 不是零分支难度');
+    }
+    var sig = diff.canonicalSignature(4, region);
+    if (seen[sig]) throw new Error('教学关卡 #' + (i + 1) + ' 布局重复');
+    seen[sig] = true;
+    out.push(lv);
+  }
+  return out;
+}
+
+function compareLevels(a, b) {
+  if (a.t !== b.t) return a.t - b.t;
+  if (a.n !== b.n) return a.n - b.n;
+  if (a.d !== b.d) return a.d - b.d;
+  return a.seed - b.seed;
 }
 
 function seedOf(prefix, tier, n, slot, attempt) {
@@ -155,13 +204,28 @@ function build() {
       ' 完成 ' + made + ' 关');
   }
 
-  // 档位内先小后大、再按难度升序；旧关卡保持原 ID，位置按新曲线重排
-  levels.sort(function (a, b) {
-    if (a.t !== b.t) return a.t - b.t;
-    if (a.n !== b.n) return a.n - b.n;
-    if (a.d !== b.d) return a.d - b.d;
-    return a.seed - b.seed;
-  });
+  // 前 10 关换为零分支 4×4 教学池：ID 与播放位置固定，存档下标不错位
+  var easy = loadEasy();
+  var byId = {};
+  for (i = 0; i < levels.length; i++) byId[levels[i].id] = levels[i];
+
+  var early = [];
+  for (i = 0; i < EASY_SLOTS.length; i++) {
+    if (!byId[EASY_SLOTS[i]]) {
+      throw new Error('缺少教学槽位 ' + EASY_SLOTS[i]);
+    }
+    var easyLv = easy[i];
+    easyLv.id = EASY_SLOTS[i];
+    early.push(easyLv);
+  }
+
+  var rest = [];
+  for (i = 0; i < levels.length; i++) {
+    if (!EASY_SET[levels[i].id]) rest.push(levels[i]);
+  }
+  // 其余关卡仍按档位、尺寸、难度升序排列
+  rest.sort(compareLevels);
+  levels = early.concat(rest);
 
   var sizeCount = {};
   for (i = 0; i < levels.length; i++) {
@@ -186,9 +250,32 @@ function verifyBase(levels, base) {
       bad.push('旧关卡丢失 ' + old.id);
       continue;
     }
+    if (EASY_SET[old.id]) {
+      // 前 10 关教学池会随难度曲线调整题面；ID 与位置必须保持
+      if (cur.n !== 4 || cur.t !== 1 || cur.d !== 0) {
+        bad.push('教学关属性异常 ' + old.id);
+      }
+      continue;
+    }
     if (cur.n !== old.n || cur.r !== old.r || cur.s !== old.s ||
       cur.t !== old.t || cur.d !== old.d) {
       bad.push('旧关卡内容变化 ' + old.id);
+    }
+  }
+  return bad;
+}
+
+/** 前 10 关必须仍是原来的 ID/顺序，避免旧存档的播放下标错位 */
+function verifyEarly(levels) {
+  var bad = [];
+  for (var i = 0; i < EASY_SLOTS.length; i++) {
+    var lv = levels[i];
+    if (!lv || lv.id !== EASY_SLOTS[i]) {
+      bad.push('前 10 关 ID/顺序变化: ' + (lv ? lv.id : '缺失') + ' ≠ ' + EASY_SLOTS[i]);
+      continue;
+    }
+    if (lv.n !== 4 || lv.t !== 1 || lv.d !== 0 || lv.b !== 0) {
+      bad.push('教学关属性异常: ' + lv.id);
     }
   }
   return bad;
@@ -237,6 +324,8 @@ function verifyLevels(levels, opts) {
     var baseBad = verifyBase(levels, opts.base);
     for (var b = 0; b < baseBad.length; b++) bad.push(baseBad[b]);
   }
+  var earlyBad = verifyEarly(levels);
+  for (var eb = 0; eb < earlyBad.length; eb++) bad.push(earlyBad[eb]);
   var ms = Date.now() - t0;
   console.log('复验 ' + levels.length + ' 关：' + (bad.length ? '失败' : '通过') +
     '（' + ms + 'ms）');

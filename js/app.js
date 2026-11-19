@@ -10,13 +10,11 @@ var Input = require('./platform/input');
 var SceneManager = require('./core/scene-manager');
 var Ticker = require('./core/ticker');
 var lifecycle = require('./platform/lifecycle');
-var haptics = require('./platform/haptics');
 var clock = require('./core/clock');
 var logger = require('./core/logger');
 
 var Save = require('./services/save');
 var Progress = require('./services/progress');
-var settings = require('./services/settings');
 var Daily = require('./services/daily');
 var Signin = require('./services/signin');
 var Collection = require('./services/collection');
@@ -27,6 +25,7 @@ var Toast = require('./ui/widgets/toast');
 var Debug = require('./ui/debug');
 
 var HomeScene = require('./ui/screens/home');
+var GuideScene = require('./ui/screens/guide');
 var LevelmapScene = require('./ui/screens/levelmap');
 var GameScene = require('./ui/screens/game');
 var ResultScene = require('./ui/screens/result');
@@ -71,6 +70,7 @@ function App() {
 
 App.prototype._register = function () {
   this.sm.register('home', function (app) { return new HomeScene(app); });
+  this.sm.register('guide', function (app) { return new GuideScene(app); });
   this.sm.register('levelmap', function (app) { return new LevelmapScene(app); });
   this.sm.register('game', function (app) { return new GameScene(app); });
   this.sm.register('result', function (app) { return new ResultScene(app); });
@@ -116,6 +116,7 @@ App.prototype.start = function () {
   });
 
   this.sm.push('home');
+  if (!this.save.data.guideSeen) this.sm.push('guide');
 
   this.ticker = new Ticker(function (dt) { self.frame(dt); });
   this.ticker.start();
@@ -137,12 +138,6 @@ App.prototype.render = function () {
   this.sm.render(r);
   this.toast.render(r);
   this.debug.render(r);
-};
-
-/** 统一的触感入口，尊重设置开关 */
-App.prototype.haptic = function () {
-  if (!settings.get(this.save, 'haptic')) return;
-  haptics.light();
 };
 
 module.exports = App;

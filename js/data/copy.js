@@ -38,7 +38,24 @@ module.exports = {
   toolRestart: '重开',
   toolHint: '提示',
 
-  tagline: '今日目标：不看提示过 3 关',
+  tagline: '点一下打叉 · 再点放猫 · 再点清空',
+
+  // 玩法说明
+  guideTitle: '玩法说明',
+  guideGoalTitle: '怎么算赢？',
+  guideGoalLine1: '每行、每列、每个色区，各放 1 只猫。',
+  guideGoalLine2: '猫与猫不能相邻（横、竖、斜都不行）。',
+  guideTapTitle: '点一下格子会怎样',
+  guideTap1: '单击：打叉（X），这格不放猫',
+  guideTap2: '再点：放一只猫',
+  guideTap3: '再点：清空这一格',
+  guideEmptyMark: '空',
+  guideTipTitle: '卡住了？',
+  guideTipLine1: '底部工具：撤销 / 重开 / 提示。',
+  guideTipLine2: '提示会直接放下一只正确的猫。',
+  guideDone: '知道啦',
+  guideHelpMark: '?',
+  guideCloseMark: '×',
 
   toastDailyUnavailable: '今日题库暂不可用',
   toastLocked: '先完成前面的关卡',

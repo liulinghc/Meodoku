@@ -57,6 +57,7 @@ function defaults() {
     collection: { unlocked: {}, equipped: '' },
     achievements: {},
     cosmetics: { skins: { cream: true }, current: 'cream' },
+    guideSeen: false,
     settings: { haptic: true, debug: false }
   };
 }
@@ -317,6 +318,7 @@ function normalize(raw) {
   d.collection = normalizeCollection(raw.collection);
   d.achievements = normalizeAchievements(raw.achievements);
   d.cosmetics = normalizeCosmetics(raw.cosmetics);
+  d.guideSeen = bool(raw.guideSeen, false);
 
   var st = obj(raw.settings);
   if (st) {

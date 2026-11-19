@@ -6,7 +6,9 @@
 全部唯一解、结构合格、逻辑难度定档、布局去重；真实章节/关卡解锁链、
 中断续玩、旧存档迁移、地图猫爪评分已接入。S5 新增每日挑战（365 道日历池）、
 7 日签到与补签、16 只猫图鉴、9 个成就、金币商店与棋盘皮肤。
-三态标记、撤销/重开/提示、实时冲突反馈、计时步数与结算页均可直接运行。
+首次启动会自动弹出玩法说明（单击打叉 → 再点放猫 → 再点清空），
+首页和对局右上角也可随时重新打开。三态标记、撤销/重开/提示、实时冲突反馈、
+计时步数与结算页均可直接运行；全部点击不触发震动。
 
 ## 运行
 
@@ -18,12 +20,16 @@
 
 ## 核心玩法自测
 
-- 首关为 4×4 教学关；300 关尺寸分布：4×4×9、5×5×58、6×6×90、7×7×104、8×8×24、9×9×15
+- 玩法说明：弹窗形式（下层场景保留并压暗，不整屏切换）；首次启动自动弹出，
+  说明目标、点按三态（X → 猫 → 清空）和底部工具；
+  关闭后记入存档，不再自动打扰，可从首页或对局右上角 `?` 再次打开
+- 前 10 关为 4×4 / T1 / 零分支教学关（只需逐格排除即可推出），第 11 关起进入 5×5；
+  300 关尺寸分布：4×4×10、5×5×57、6×6×90、7×7×104、8×8×24、9×9×15
 - 档位分布：入门 30 / 简单 75 / 普通 105 / 困难 60 / 专家 30；每 20 关一章，共 15 章
 - 解锁：新档只开第 1 关；通关第 N 关解锁第 N+1 关；地图按章浏览，未解锁章显示锁标
 - 单击空格：空 → X → 猫 → 空；点已放置的猫可移除
-- 故意在同一行/列/区域或八邻格放第二只猫：应出现红色冲突描边、红波纹、
-  短震动和具体原因提示，并计入本局失误
+- 故意在同一行/列/区域或八邻格放第二只猫：应出现红色冲突描边、红波纹
+  和具体原因提示，并计入本局失误（无震动）
 - 撤销/重开：重开清空盘面并重置计时、步数、失误；已消耗的提示券不返还
 - 通关：每行、每列、每区域各一只猫且互不相邻（含对角）
 - 续玩：对局中切后台会保存盘面/用时/步数/失误/提示次数，重进同关自动恢复；
@@ -60,7 +66,7 @@ js/
   domain/solver.js      唯一解计数（构建期/运行时共用）
   domain/difficulty.js  人类技巧求解器、难度定档、布局规范签名
   domain/generate.js    生成管线（造解/生长/修补/定档；每日挑战可复用）
-  platform/             env storage input lifecycle haptics（wx API 全在这里）
+  platform/             env storage input lifecycle（wx API 全在这里）
   services/             save progress settings levels daily signin collection
                         achievements shop
   ui/
@@ -70,16 +76,18 @@ js/
     hit.js              命中测试
     widgets/toast.js    轻提示
     debug.js            调试浮层（首页版本号连点 5 次）
-    screens/            home levelmap game result daily checkin album
+    screens/            home guide levelmap game result daily checkin album
                         achievements shop
 tools/                  Node 侧工具（不打包）
   lib/generate.js       兼容转发到 js/domain/generate.js
   lib/base-200.json     旧 200 关基线（用于追加新关并保持 ID 稳定）
+  lib/easy-10.json      前 10 关 4×4 零分支教学池（由 gen-easy.js 生成，勿手改）
+  gen-easy.js           枚举 4×4 零分支教学布局 + --check 复验
   gen-pack.js           正式 300 关生成 + 全量复验 + JSON/JS 产物
   gen-daily.js          365 道每日挑战日历池生成 + 全量复验
   batch-test.js         1000 关批量生成/验证统计
   gen-mini.js           旧命令兼容入口（转发 gen-pack）
-  smoke-test.js         Node 冒烟测试（模拟 wx + Canvas 桩，260 项）
+  smoke-test.js         Node 冒烟测试（模拟 wx + Canvas 桩，282 项）
   build-preview.js      浏览器预览构建 → preview/（不打包）
 ```
 
@@ -87,6 +95,7 @@ tools/                  Node 侧工具（不打包）
 
 ```bash
 node tools/smoke-test.js          # 冒烟测试：关卡 / 交互 / 结算 / 存档 / S5 页面 / 小屏
+node tools/gen-easy.js --check    # 复验前 10 关：4×4 / T1 / 零分支 / 唯一解
 node tools/gen-pack.js            # 生成 300 关正式包（JSON + JS）并全量复验
 node tools/gen-pack.js --check    # 只复验正式包（唯一解/档位/去重/大小）
 node tools/gen-daily.js           # 生成 365 道每日挑战日历池并全量复验
@@ -101,7 +110,7 @@ node tools/build-preview.js       # 生成 preview/index.html（浏览器预览�
 open preview/index.html                     # 首页
 open "preview/index.html?scene=map"         # 关卡地图
 open "preview/index.html?scene=game&level=1"                 # 4×4 教学关
-open "preview/index.html?scene=game&level=21"                # 5×5（第 2 章起手）
+open "preview/index.html?scene=game&level=21"                # 5×5（第 2 章）
 open "preview/index.html?scene=game&level=300"               # 9×9 专家关
 open "preview/index.html?scene=game&level=1&demo=solve"      # 自动摆出答案 → 结算页
 open "preview/index.html?scene=game&level=1&demo=marks"      # 答案 + 两个 X
@@ -109,6 +118,7 @@ open "preview/index.html?scene=game&level=1&demo=hint"       # 用一次提示�
 open "preview/index.html?scene=game&level=1&demo=mistake"    # 放错再撤销，最后通关
 open "preview/index.html?scene=game&level=1&demo=conflict"   # 造一行两猫冲突
 open "preview/index.html?scene=map&demo=progress"            # 前 5 关已完成
+open "preview/index.html?scene=guide"                        # 玩法说明
 open "preview/index.html?scene=daily"                        # 每日挑战
 open "preview/index.html?scene=checkin"                      # 签到
 open "preview/index.html?scene=album"                        # 猫咪图鉴
@@ -133,7 +143,7 @@ open "preview/index.html?scene=shop"                         # 商店
 ## 完成度
 
 - [x] 核心玩法：4×4–9×9 棋盘、区域/行列/相邻实时判定、三态点击（X → 猫 → 空）、
-      撤销、重开、提示、合法放置波纹、冲突红波纹 + 震动 + 原因提示
+      撤销、重开、提示、合法放置波纹、冲突红波纹 + 原因提示（无震动）
 - [x] S1：目录骨架 / 三场景 / 场景栈、Canvas 分层（DPR≤2、静态棋盘离屏层）、
       规则判定、存档防抖双槽回退、唯一解关卡、小屏布局
 - [x] S2：对局计时/步数/失误统计、提示（提示券 → 金币兜底）、通关庆祝与结算页、
@@ -145,7 +155,8 @@ open "preview/index.html?scene=shop"                         # 商店
       schema 2 旧档迁移（按稳定关卡 ID 重映射）
 - [x] S5：每日挑战（365 道日历池 / 连胜 / 回拨止损）、7 日签到与补签、
       16 猫图鉴（解锁 / 出战 / 碎片合成）、9 个成就（手动领奖）、
-      金币商店（提示券 / 补签卡 / 3 款棋盘皮肤）、schema 3 旧档迁移
+      金币商店（提示券 / 补签卡 / 3 款棋盘皮肤）、schema 3 旧档迁移；
+      首次启动玩法说明弹窗（首页 / 对局内可再次打开）
 - [ ] S6：激励视频广告（提示券 / 复活 / 双倍奖励）
 - [ ] S7：设置页、音效与打磨
 
@@ -159,16 +170,33 @@ open "preview/index.html?scene=shop"                         # 商店
 ## S4 验证记录
 
 - 300 关全部唯一解/合法/连通，布局签名无重复；档位 30/75/105/60/30，
-  尺寸 4×4×9、5×5×58、6×6×90、7×7×104、8×8×24、9×9×15。
-- 旧 200 关内容与 ID 原样保留，新增 100 关；全局按档位/尺寸/难度分重排，
+  尺寸 4×4×10、5×5×57、6×6×90、7×7×104、8×8×24、9×9×15
+  （前 10 关为后调整的教学池，见下方「教学曲线调整」）。
+- 旧 200 关中仅 6 个题面被前 10 关教学池替换（ID 与播放位置不变），其余内容与 ID
+  原样保留；新增 100 关；全局按档位/尺寸/难度分重排，
   章节曲线为 T1 1–2 章、T2 2–6 章、T3 6–11 章、T4 11–14 章、T5 14–15 章。
 - 关卡数据 35KB（JS 包装 35KB，低于 40KB 目标）；生成 100 关新增部分约 8 秒
   （实测 7.6–8.2s），全量复验 300 关 < 30ms（实测 15–27ms）；
-  两次构建 SHA-256 一致，数据哈希 `d8d4feded5423e38`。
+  两次构建 SHA-256 一致，当前数据哈希 `ca7fb221760802f9`。
 - 冒烟测试 130 项全绿：300 关/15 章、解锁链、续玩恢复、schema 1→2 迁移、
   章节锁与爪印、小屏布局、300 帧无异常。
 - 旧档迁移：`completed` 按 L001…L200 稳定 ID 找回新序号，`unlocked` 取旧可玩
   前沿的最大新序号 +1，`lastLevel` 按 ID 映射；金币/券/统计/设置原样保留。
+
+## 教学曲线调整（前 10 关）
+
+- 问题：原前 10 关混入 4×4/5×5 但难度分 15–22，至少需要一次分支尝试，新手一进来就卡。
+- 做法：`tools/gen-easy.js` 穷举全部 4×4 布局，只收 4 个连通区域、唯一解、
+  难度分 0（R1–R4 传播直接推出、分支数 0）的题面，按形状差异挑 10 个；
+  偶数位做水平镜像，让 4×4 的两种合法解型都出现。
+- 装入方式：`tools/gen-pack.js` 读取 `tools/lib/easy-10.json`，替换前 10 个
+  **原槽位**（`L001 L202 L002 L003 L004 L005 L203 L006 L201 L206`，顺序不变），
+  只换题面不挪位置，旧存档的播放下标不会错位。
+- 曲线结果：第 1–10 关 4×4 / T1 / D0 / b0；第 11 关起 5×5（D12）；第 15 关出现
+  首个分支题；档位配额 30/75/105/60/30 不变，300 关总数不变。
+- 校验：`gen-easy --check` 10/10 通过；`gen-pack --check` 300/300 唯一解、
+  0 重复、0 降级，哈希 `ca7fb221760802f9`；冒烟测试 282 项全绿
+  （新增前 10 关属性、稳定 ID/顺序、第 11 关进入 5×5 三项断言）。
 
 ## S5 验证记录
 
@@ -186,9 +214,9 @@ open "preview/index.html?scene=shop"                         # 商店
   任何购买路径都不会出现负数；当前皮肤按钮不会重复扣款。
 - 存档：schema 2/1 → 3 迁移保留金币、券、通关记录、统计与皮肤；每日历史只留
   最近 31 天，未知猫/成就/皮肤与非法日期一律清洗；S5 状态 JSON 落盘后可完整重载。
-- 冒烟测试 260 项全绿：S5 服务逻辑、五个页面完整流程、页面文案占位符、320×568 小屏布局、
-  300 帧无异常；正式包 300 关复验 21ms；批量 1000 关全部唯一解（平均 32.6ms/关）；
-  浏览器预览 51 个模块构建通过。
+- 冒烟测试 282 项全绿：S5 服务逻辑、五个页面完整流程、玩法说明弹窗首次弹出与再次打开、
+  页面文案占位符、320×568 小屏布局、300 帧无异常；正式包 300 关复验 31ms；
+  批量 1000 关全部唯一解（平均 33.9ms/关）；浏览器预览 52 个模块构建通过。
 - 已知范围：广告、签到补签的广告补充、存档导入导出尚未接入（S6/S7）。
   真机帧率、触控与视觉细节仍需在微信开发者工具/真机确认。
 

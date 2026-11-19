@@ -216,7 +216,6 @@ ShopScene.prototype.onTouchEnd = function (x, y, isTap) {
     if (row.action === 'use') {
       if (app.shop.useSkin(item.id)) {
         app.applySkin();
-        app.haptic();
         app.toast.show(copy.toastSkinUsed);
       }
       return;
@@ -228,7 +227,6 @@ ShopScene.prototype.onTouchEnd = function (x, y, isTap) {
       return;
     }
 
-    app.haptic();
     if (item.type === 'ticket') {
       app.toast.show(format(copy.toastBoughtTicket, item.amount));
     } else if (item.type === 'makeup') {

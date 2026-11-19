@@ -88,6 +88,7 @@ Layout.prototype.game = function (n) {
     collapsed: collapsed,
     topBar: { x: margin, y: topY, w: w - 2 * margin, h: topH },
     back: { cx: margin + 22 * s, cy: topY + topH / 2, r: 22 * s },
+    help: { cx: w - margin - 70 * s, cy: topY + topH / 2, r: 22 * s },
     gear: { cx: w - margin - 22 * s, cy: topY + topH / 2, r: 22 * s },
     legend: { x: margin, y: legendY, w: w - 2 * margin, h: legendH, item: legendItem, gap: legendGap },
     rules: { x: margin, y: rulesY, w: w - 2 * margin, h: rulesH, cardW: cardW, gap: cardGap },
@@ -131,6 +132,7 @@ Layout.prototype.home = function () {
     margin: margin,
     topBar: { y: topY, h: topH },
     coin: { x: margin, y: topY, w: 92 * s, h: 32 * s },
+    help: { cx: w - margin - 108 * s, cy: topY + 16 * s, r: 18 * s },
     checkin: { cx: w - margin - 64 * s, cy: topY + 16 * s, r: 18 * s },
     gear: { cx: w - margin - 18 * s, cy: topY + 16 * s, r: 18 * s },
     titleY: titleY,
@@ -142,6 +144,46 @@ Layout.prototype.home = function () {
       { key: 'shop', x: margin + (cardW + gap) * 2, y: cardsY, w: cardW, h: cardH }
     ],
     footerY: h - this.safeBottom - 22 * s
+  };
+};
+
+/* ---------------- 玩法说明 ---------------- */
+
+Layout.prototype.guide = function () {
+  var s = this.s;
+  var w = this.w;
+  var h = this.h;
+  var margin = 16 * s;
+  var pad = 18 * s;
+  var ctaH = 46 * s;
+
+  // 弹窗：不铺满整屏，居中显示在当前场景之上
+  var cardW = Math.min(w - 2 * margin, 360 * s);
+  var cardH = Math.min(414 * s, h - this.safeTop - this.safeBottom - 24 * s);
+  var x = (w - cardW) / 2;
+  var y = this.safeTop + Math.max(6 * s, (h - this.safeTop - this.safeBottom - cardH) / 2);
+
+  var contentX = x + pad;
+  var contentW = cardW - 2 * pad;
+  var ctaY = y + cardH - pad - ctaH;
+
+  var tile = 26 * s;
+  var rowGap = 32 * s;
+  var row0 = y + 180 * s;
+  var rows = [];
+  for (var i = 0; i < 3; i++) {
+    rows.push({ x: contentX, y: row0 + i * rowGap, size: tile });
+  }
+
+  return {
+    card: { x: x, y: y, w: cardW, h: cardH },
+    close: { cx: x + cardW - pad - 14 * s, cy: y + pad + 14 * s, r: 14 * s },
+    titleY: y + 36 * s,
+    dividerY: y + 56 * s,
+    goal: { x: contentX, y: y + 70 * s, w: contentW, h: 68 * s },
+    tap: { x: contentX, y: y + 146 * s, w: contentW, h: 130 * s, rows: rows },
+    tip: { x: contentX, y: y + 280 * s, w: contentW, h: 60 * s },
+    cta: { x: contentX, y: ctaY, w: contentW, h: ctaH }
   };
 };
 

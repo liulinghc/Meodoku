@@ -150,7 +150,6 @@ AchievementsScene.prototype.onTouchEnd = function (x, y, isTap) {
     if (row.btn && hit.inRect(x, y, row.btn)) {
       var res = app.achievements.claim(row.id);
       if (res.ok) {
-        app.haptic();
         app.metaRefresh();
         app.toast.show(copy.toastAchievementClaimed);
       }

@@ -9,7 +9,7 @@
  *   node tools/build-preview.js
  *   open preview/index.html
  *   # 也可直接指定场景：preview/index.html?scene=map | ?scene=game&level=12
- *   # S5 页面：?scene=daily | checkin | album | achievements | shop
+ *   # 玩法说明：?scene=guide；S5 页面：?scene=daily | checkin | album | achievements | shop
  *
  * 注意：这是近似环境（尺寸固定 375×812、DPR=2），
  * 最终效果以微信开发者工具/真机为准。
@@ -221,6 +221,11 @@ var RUNTIME = String.raw`
   window.__app = app;
 
   var scene = q.get('scene');
+  // 直接打开某个演示场景时，先收起首次启动的玩法说明，避免返回键回到说明页
+  if (scene && scene !== 'guide' && app.sm.top() && app.sm.top().sceneName === 'guide') {
+    app.sm.top()._close();
+  }
+
   if (app && scene === 'map') {
     app.sm.push('levelmap');
     if (q.get('demo') === 'progress') {
@@ -228,6 +233,8 @@ var RUNTIME = String.raw`
       app.progress.setLastLevel(6);
       app.sm.replace('levelmap');
     }
+  } else if (app && scene === 'guide') {
+    if (!app.sm.top() || app.sm.top().sceneName !== 'guide') app.sm.push('guide');
   } else if (app && /^(daily|checkin|album|achievements|shop)$/.test(scene || '')) {
     app.sm.push(scene);
   } else if (app && scene === 'game') {

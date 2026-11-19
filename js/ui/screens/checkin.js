@@ -331,14 +331,12 @@ CheckinScene.prototype.onTouchEnd = function (x, y, isTap) {
 
   if (this.makeupMode && hit.inRect(x, y, L.makeup)) {
     if (this.makeupMode === 2) {
-      app.haptic();
       app.sm.push('shop');
       return;
     }
     if (this.makeupMode === 1) {
       var mr = app.signin.makeup();
       if (mr.ok) {
-        app.haptic();
         app.metaRefresh();
         app.toast.show(copy.toastMakeupDone);
       } else if (mr.reason === 'guarded') {
@@ -364,7 +362,6 @@ CheckinScene.prototype.onTouchEnd = function (x, y, isTap) {
     }
     var res = app.signin.claim();
     if (res.ok) {
-      app.haptic();
       app.metaRefresh();
       app.toast.show(copy.toastCheckinDone);
     } else if (res.reason === 'guarded') {

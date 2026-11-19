@@ -56,8 +56,13 @@
 - 平台 API 只出现在 `js/platform/*`，业务层不直接调 `wx.*`。
 - 关卡生成（不打包）：`js/domain/generate.js` + `solver.js` + `difficulty.js`
   （运行时与 Node 工具共用）；`tools/gen-pack.js`（300 关产物，基于
-  `tools/lib/base-200.json` 追加并保持旧 ID）、`gen-daily.js`（365 道日历池）、
+  `tools/lib/base-200.json` 追加并保持旧 ID）、`gen-easy.js`（前 10 关 4×4
+  零分支教学池 → `tools/lib/easy-10.json`）、`gen-daily.js`（365 道日历池）、
   `batch-test.js`（批量验证）、`smoke-test.js`、`build-preview.js`。
+- 教学曲线：前 10 关固定为 4×4 / T1 / 难度分 0 / 零分支，第 11 关起 5×5。
+  `gen-pack.js` 用 `easy-10.json` 替换前 10 个**原槽位**
+  （`L001 L202 L002 L003 L004 L005 L203 L006 L201 L206`，顺序不变），
+  只换题面不挪位置，旧存档下标不会错位；`--check` 同时校验 ID/顺序与零分支属性。
 - 正式关卡源数据 `levels/pack-001.json`，游戏加载 `levels/pack-001.js`；
   `levels/index.js` 解码紧凑字段。
 
@@ -65,7 +70,8 @@
 
 ```bash
 node tools/smoke-test.js          # 必须全绿
-node tools/gen-pack.js --check    # 300 关唯一解/档位/去重/旧 ID 保留/大小校验
+node tools/gen-easy.js --check    # 前 10 关：4×4 / T1 / 零分支 / 唯一解
+node tools/gen-pack.js --check    # 300 关唯一解/档位/去重/旧 ID 保留/教学槽位/大小校验
 node tools/gen-daily.js --check   # 365 道日历池唯一解/档位/与主线去重/大小校验
 node tools/batch-test.js 1000     # 批量生成/验证统计（至少 1000 关）
 node tools/build-preview.js       # 视觉验收（可选，open preview/index.html）
@@ -78,7 +84,14 @@ node tools/build-preview.js       # 视觉验收（可选，open preview/index.h
   S4 解锁与续玩（300 关/15 章、真实解锁链、章节锁与爪印、中断续玩、旧档迁移）、
   S5 经济与收集（每日挑战、7 日签到与补签、16 猫图鉴、9 个成就、商店与棋盘皮肤）
   已完成；三态点击、撤销/重开/提示、实时冲突判定、放置反馈均已接入；
-  冒烟测试 260 项全绿（含五页文案占位符检查），批量 1000 关全部唯一解。
+  冒烟测试 282 项全绿（含五页文案占位符、玩法说明弹窗与前 10 关教学曲线），
+  批量 1000 关全部唯一解。
+- 难度曲线：前 10 关为 4×4 / T1 / D0 / b0 零分支教学池（第 11 关起 5×5），
+  档位配额 30/75/105/60/30 与 300 关总数不变；数据哈希 `ca7fb221760802f9`。
+- 新手引导：`guide` 场景首次启动自动弹出，以弹窗覆盖当前场景（下层画面保留并压暗），
+  关闭后写 `guideSeen`（存档，不清零进度）；首页与对局右上角 `?` 可随时重开。
+  界面内的操作提示以“单击打叉 → 再点放猫 → 再点清空”为准。
+- 触感：全部点击不调用 `wx.vibrateShort`；`platform/haptics.js` 仅保留封装，当前无调用方。
 - 结算真相：`GameScene._settle()` 用 `domain/rules` 二次校验后调
   `progress.completeLevel()`；奖励参数在 `js/data/config.js`（`LEVEL_COINS`、
   `LEVEL_PERFECT_BONUS`、`HINT_COIN_COST`、`RESULT_DELAY`）。

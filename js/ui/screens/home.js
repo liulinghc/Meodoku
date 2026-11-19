@@ -65,6 +65,16 @@ HomeScene.prototype._renderTop = function (r) {
     color: th.color.text
   });
 
+  // 玩法说明
+  r.circle(L.help.cx, L.help.cy, L.help.r, th.color.card);
+  r.strokeCircle(L.help.cx, L.help.cy, L.help.r, th.color.border, 1);
+  r.text(copy.guideHelpMark, L.help.cx, L.help.cy + 1, {
+    size: th.font.body,
+    weight: '700',
+    color: th.color.text,
+    align: 'center'
+  });
+
   // 签到
   r.circle(L.checkin.cx, L.checkin.cy, L.checkin.r, th.color.card);
   r.strokeCircle(L.checkin.cx, L.checkin.cy, L.checkin.r, th.color.border, 1);
@@ -202,6 +212,10 @@ HomeScene.prototype.onTouchEnd = function (x, y, isTap) {
   }
   if (hit.inCircleLoose(x, y, L.checkin)) {
     app.sm.push('checkin');
+    return;
+  }
+  if (hit.inCircleLoose(x, y, L.help)) {
+    app.sm.push('guide');
     return;
   }
   if (hit.inCircleLoose(x, y, L.gear)) {

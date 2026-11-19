@@ -185,6 +185,15 @@ GameScene.prototype._renderTop = function (r) {
   r.strokeCircle(L.back.cx, L.back.cy, L.back.r, th.color.border, 1);
   draw.iconBack(r, L.back.cx, L.back.cy, 20 * s, th.color.text);
 
+  r.circle(L.help.cx, L.help.cy, L.help.r, th.color.card);
+  r.strokeCircle(L.help.cx, L.help.cy, L.help.r, th.color.border, 1);
+  r.text(copy.guideHelpMark, L.help.cx, L.help.cy + 1, {
+    size: th.font.body,
+    weight: '700',
+    color: th.color.text,
+    align: 'center'
+  });
+
   r.circle(L.gear.cx, L.gear.cy, L.gear.r, th.color.card);
   r.strokeCircle(L.gear.cx, L.gear.cy, L.gear.r, th.color.border, 1);
   draw.iconGear(r, L.gear.cx, L.gear.cy, 19 * s, th.color.text);
@@ -837,6 +846,10 @@ GameScene.prototype.onTouchEnd = function (x, y, isTap) {
 
   if (hit.inCircleLoose(x, y, L.back, 4)) {
     app.sm.pop();
+    return;
+  }
+  if (hit.inCircleLoose(x, y, L.help, 4)) {
+    app.sm.push('guide');
     return;
   }
   if (hit.inCircleLoose(x, y, L.gear, 4)) {
