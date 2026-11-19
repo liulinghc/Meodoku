@@ -2,10 +2,11 @@
 
 微信小游戏，纯原生 JavaScript + Canvas，零引擎、零后端、离线可玩。
 
-当前阶段：**S4 解锁与续玩**。300 关正式关卡（4×4–9×9，T1–T5，15 章），
+当前阶段：**S5 经济与收集**。300 关正式关卡（4×4–9×9，T1–T5，15 章），
 全部唯一解、结构合格、逻辑难度定档、布局去重；真实章节/关卡解锁链、
-中断续玩、旧存档迁移、地图猫爪评分已接入。三态标记、撤销/重开/提示、
-实时冲突反馈、计时步数与结算页均可直接运行。
+中断续玩、旧存档迁移、地图猫爪评分已接入。S5 新增每日挑战（365 道日历池）、
+7 日签到与补签、16 只猫图鉴、9 个成就、金币商店与棋盘皮肤。
+三态标记、撤销/重开/提示、实时冲突反馈、计时步数与结算页均可直接运行。
 
 ## 运行
 
@@ -27,6 +28,15 @@
 - 通关：每行、每列、每区域各一只猫且互不相邻（含对角）
 - 续玩：对局中切后台会保存盘面/用时/步数/失误/提示次数，重进同关自动恢复；
   通关后清除续玩数据，不保留撤销栈
+- 每日挑战：首页大卡进入；同一天所有设备取同一道题（周日 T4，其余 T3）；
+  首通发 80 + 10×连胜金币（加成上限 +70）和 1–2 枚碎片，同日重玩可练手但不发奖
+- 签到：7 日循环，第 3 日发提示券，第 7 日发券 + 碎片；累计 7/14/30/60/100 天
+  有里程碑奖励；漏签 1 天可消耗补签卡补上（每自然周最多 1 次）
+- 图鉴：16 只猫按通关数 / 签到 / 每日挑战 / 成就 / 碎片合成解锁；
+  已解锁猫可出战，棋盘与首页的猫会同步换装；碎片合成猫各需 3 枚
+- 成就：9 条长期目标，达成后需在成就页手动领取金币/提示券
+- 商店：金币购买提示券、补签卡与 3 款棋盘皮肤，不接支付与广告；金币不足会明确提示
+- 改时间：检测到系统时间回拨超过 60 秒时，当天不发放每日/签到奖励，不弹警告
 
 ## 目录
 
@@ -39,6 +49,8 @@ levels/
   index.js              关卡索引：全局 1-based 序号、章节归属、稳定 ID → 序号
   pack-001.json         300 关源数据（紧凑字段，不打包）
   pack-001.js           小游戏加载包（同一份数据的 CommonJS 包装，勿手改）
+  daily-365.json        365 道每日挑战源数据（312 T3 + 53 T4，不打包）
+  daily-365.js          每日挑战加载包（勿手改，跨年复用）
 js/
   main.js               启动 + 错误兜底
   app.js                装配：环境/布局/主题/渲染器/存档/场景栈/主循环
@@ -49,7 +61,8 @@ js/
   domain/difficulty.js  人类技巧求解器、难度定档、布局规范签名
   domain/generate.js    生成管线（造解/生长/修补/定档；每日挑战可复用）
   platform/             env storage input lifecycle haptics（wx API 全在这里）
-  services/             save progress settings levels
+  services/             save progress settings levels daily signin collection
+                        achievements shop
   ui/
     renderer.js         Canvas 底座（DPR、圆角、文字、离屏层）
     layout.js           所有界面布局（界面代码不写绝对坐标）
@@ -57,23 +70,27 @@ js/
     hit.js              命中测试
     widgets/toast.js    轻提示
     debug.js            调试浮层（首页版本号连点 5 次）
-    screens/            home levelmap game result
+    screens/            home levelmap game result daily checkin album
+                        achievements shop
 tools/                  Node 侧工具（不打包）
   lib/generate.js       兼容转发到 js/domain/generate.js
   lib/base-200.json     旧 200 关基线（用于追加新关并保持 ID 稳定）
   gen-pack.js           正式 300 关生成 + 全量复验 + JSON/JS 产物
+  gen-daily.js          365 道每日挑战日历池生成 + 全量复验
   batch-test.js         1000 关批量生成/验证统计
   gen-mini.js           旧命令兼容入口（转发 gen-pack）
-  smoke-test.js         Node 冒烟测试（模拟 wx + Canvas 桩，130 项）
+  smoke-test.js         Node 冒烟测试（模拟 wx + Canvas 桩，260 项）
   build-preview.js      浏览器预览构建 → preview/（不打包）
 ```
 
 ## 常用命令
 
 ```bash
-node tools/smoke-test.js          # 冒烟测试：关卡 / 交互 / 提示 / 结算 / 存档 / 小屏
+node tools/smoke-test.js          # 冒烟测试：关卡 / 交互 / 结算 / 存档 / S5 页面 / 小屏
 node tools/gen-pack.js            # 生成 300 关正式包（JSON + JS）并全量复验
-node tools/gen-pack.js --check    # 只复验现有关卡包（唯一解/档位/去重/大小）
+node tools/gen-pack.js --check    # 只复验正式包（唯一解/档位/去重/大小）
+node tools/gen-daily.js           # 生成 365 道每日挑战日历池并全量复验
+node tools/gen-daily.js --check   # 只复验每日池（唯一解/档位/与主线去重/大小）
 node tools/batch-test.js 1000     # 至少 1000 关批量生成 + 独立复验统计
 node tools/build-preview.js       # 生成 preview/index.html（浏览器预览，非小游戏包）
 ```
@@ -92,6 +109,11 @@ open "preview/index.html?scene=game&level=1&demo=hint"       # 用一次提示�
 open "preview/index.html?scene=game&level=1&demo=mistake"    # 放错再撤销，最后通关
 open "preview/index.html?scene=game&level=1&demo=conflict"   # 造一行两猫冲突
 open "preview/index.html?scene=map&demo=progress"            # 前 5 关已完成
+open "preview/index.html?scene=daily"                        # 每日挑战
+open "preview/index.html?scene=checkin"                      # 签到
+open "preview/index.html?scene=album"                        # 猫咪图鉴
+open "preview/index.html?scene=achievements"                 # 成就
+open "preview/index.html?scene=shop"                         # 商店
 ```
 
 `preview/` 是演示产物，已在 `packOptions.ignore` 中排除。
@@ -121,7 +143,9 @@ open "preview/index.html?scene=map&demo=progress"            # 前 5 关已完�
 - [x] S4：扩到 300 关 / 15 章并重排难度曲线、真实解锁链（`UNLOCK_ALL=false`）、
       地图章节锁与猫爪评分、中断续玩（盘面/用时/步数/失误/提示）、
       schema 2 旧档迁移（按稳定关卡 ID 重映射）
-- [ ] S5：猫咪图鉴 / 商店 / 提示券获取、每日挑战与签到
+- [x] S5：每日挑战（365 道日历池 / 连胜 / 回拨止损）、7 日签到与补签、
+      16 猫图鉴（解锁 / 出战 / 碎片合成）、9 个成就（手动领奖）、
+      金币商店（提示券 / 补签卡 / 3 款棋盘皮肤）、schema 3 旧档迁移
 - [ ] S6：激励视频广告（提示券 / 复活 / 双倍奖励）
 - [ ] S7：设置页、音效与打磨
 
@@ -145,6 +169,28 @@ open "preview/index.html?scene=map&demo=progress"            # 前 5 关已完�
   章节锁与爪印、小屏布局、300 帧无异常。
 - 旧档迁移：`completed` 按 L001…L200 稳定 ID 找回新序号，`unlocked` 取旧可玩
   前沿的最大新序号 +1，`lastLevel` 按 ID 映射；金币/券/统计/设置原样保留。
+
+## S5 验证记录
+
+- 每日挑战日历池：365/365 唯一解，T3 312 + T4 53，池内无重复且与 300 关主线
+  布局签名无重复；复验 33ms；JSON 70KB，小游戏 JS 44KB。
+- 每日取题：同一日期全设备同题；周日取 T4，工作日取 T3；跨年按池长度循环复用。
+- 每日奖励：80 + 10×连胜（上限 +70），首通 1–2 碎片；同日重玩不发奖；
+  回拨超过 60 秒仅封当天奖励与连胜，次日恢复。
+- 签到：7 日循环、累计里程碑、漏 1 天补签（有卡且每自然周 ≤1 次）、漏多天归零；
+  时间回拨时签到与每日共用同一守护。
+- 图鉴：16 只猫阈值精确触发（1/30/60/90/120/150/180/210/240/270/300 关、
+  签到 7、每日 7、成就 6、两只需要 3 碎片）；解锁后出战，棋盘与首页同步换装。
+- 成就：9 条，达成只标记，领取才发金币/券，避免悄悄改变结算数值。
+- 商店：金币购买提示券 45、补签卡 100、皮肤 300/500/800；余额不足有明确提示，
+  任何购买路径都不会出现负数；当前皮肤按钮不会重复扣款。
+- 存档：schema 2/1 → 3 迁移保留金币、券、通关记录、统计与皮肤；每日历史只留
+  最近 31 天，未知猫/成就/皮肤与非法日期一律清洗；S5 状态 JSON 落盘后可完整重载。
+- 冒烟测试 260 项全绿：S5 服务逻辑、五个页面完整流程、页面文案占位符、320×568 小屏布局、
+  300 帧无异常；正式包 300 关复验 21ms；批量 1000 关全部唯一解（平均 32.6ms/关）；
+  浏览器预览 51 个模块构建通过。
+- 已知范围：广告、签到补签的广告补充、存档导入导出尚未接入（S6/S7）。
+  真机帧率、触控与视觉细节仍需在微信开发者工具/真机确认。
 
 ## 未验证项
 

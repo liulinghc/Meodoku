@@ -45,13 +45,19 @@
 - 数值 / 文案 / 颜色：分别改 `js/data/config.js`、`copy.js`、`theme.js`；绘制代码不写死 hex、字号、坐标。
 - 存档：所有写入走 `js/services/*`（内部 `save.touch()` 防抖落盘、切后台双写）。
   对局续玩是单槽 `resume`（盘面/用时/步数/失误/提示次数，不含撤销栈），
-  切后台与离开对局时保存，通关时清除；schema 版本为 2，旧档在 `save.normalize` 迁移。
+  切后台与离开对局时保存，通关时清除；schema 版本为 3，旧档在 `save.normalize` 迁移。
+- S5 服务：`daily.js`（日历池/连胜/回拨守护）、`signin.js`（7 日循环/里程碑/补签）、
+  `collection.js`（图鉴解锁/出战/碎片合成）、`achievements.js`（只标记、手动领取）、
+  `shop.js`（金币购买，不接支付）。业务时间统一走 `core/clock.now()`。
+- 每日挑战：`levels/daily-365.json` 是源数据，游戏加载 `levels/daily-365.js`；
+  365 道（312 T3 + 53 T4）按本地日期取题，同一日期全设备同题，跨年复用；
+  周日取 T4 池，其余取 T3 池。产物由 `tools/gen-daily.js` 生成，勿手改。
 - 美术替换边界：`js/ui/draw.js` 的每个绘制函数保持签名不变，内部可换成 `drawImage`。
 - 平台 API 只出现在 `js/platform/*`，业务层不直接调 `wx.*`。
 - 关卡生成（不打包）：`js/domain/generate.js` + `solver.js` + `difficulty.js`
   （运行时与 Node 工具共用）；`tools/gen-pack.js`（300 关产物，基于
-  `tools/lib/base-200.json` 追加并保持旧 ID）、`batch-test.js`（批量验证）、
-  `smoke-test.js`、`build-preview.js`。
+  `tools/lib/base-200.json` 追加并保持旧 ID）、`gen-daily.js`（365 道日历池）、
+  `batch-test.js`（批量验证）、`smoke-test.js`、`build-preview.js`。
 - 正式关卡源数据 `levels/pack-001.json`，游戏加载 `levels/pack-001.js`；
   `levels/index.js` 解码紧凑字段。
 
@@ -60,6 +66,7 @@
 ```bash
 node tools/smoke-test.js          # 必须全绿
 node tools/gen-pack.js --check    # 300 关唯一解/档位/去重/旧 ID 保留/大小校验
+node tools/gen-daily.js --check   # 365 道日历池唯一解/档位/与主线去重/大小校验
 node tools/batch-test.js 1000     # 批量生成/验证统计（至少 1000 关）
 node tools/build-preview.js       # 视觉验收（可选，open preview/index.html）
 ```
@@ -68,16 +75,21 @@ node tools/build-preview.js       # 视觉验收（可选，open preview/index.h
 
 - S1 工程底座、S2 对局闭环（计时/步数/猫爪、提示经济、结算页与金币奖励）、
   S3 内容管线（4×4–9×9、唯一解、人类技巧难度、去重、JSON/JS 包）、
-  S4 解锁与续玩（300 关/15 章、真实解锁链、章节锁与爪印、中断续玩、旧档迁移）
+  S4 解锁与续玩（300 关/15 章、真实解锁链、章节锁与爪印、中断续玩、旧档迁移）、
+  S5 经济与收集（每日挑战、7 日签到与补签、16 猫图鉴、9 个成就、商店与棋盘皮肤）
   已完成；三态点击、撤销/重开/提示、实时冲突判定、放置反馈均已接入；
-  冒烟测试 130 项全绿，批量 1000 关全部唯一解。
+  冒烟测试 260 项全绿（含五页文案占位符检查），批量 1000 关全部唯一解。
 - 结算真相：`GameScene._settle()` 用 `domain/rules` 二次校验后调
   `progress.completeLevel()`；奖励参数在 `js/data/config.js`（`LEVEL_COINS`、
   `LEVEL_PERFECT_BONUS`、`HINT_COIN_COST`、`RESULT_DELAY`）。
 - 解锁真相：`config.UNLOCK_ALL = false`；`progress.completeLevel()` 把
   `unlocked` 推进到 `index + 1`，`progress.isUnlocked()` 只认该前缀。
   难度档位 T1–T5 数量 30/75/105/60/30，共 15 章，章内先小后大、同档按逻辑分递增。
-- 下一步 S5：猫咪图鉴 / 商店 / 提示券获取、每日挑战与签到。
-- 已知待办：首页「每日挑战 / 猫咪图鉴 / 小商店」与齿轮为阶段性占位（toast 提示），
-  分别在 S5 / S5 / S5 / S7 接入真实功能，不得长期停留为无效按钮；
-  提示券目前已可消耗，获取途径（广告/签到）在 S5–S6 接入。
+- S5 真相：每日奖励 `DAILY_BASE_COINS + 10×连胜`（上限 +70），同日重玩不发奖；
+  回拨超过 60s 只封当天奖励/连胜（`daily.timeGuardDate`），不封号。
+  签到第 3 日发券、第 7 日发券+碎片，累计 7/14/30/60/100 天发里程碑；
+  补签仅限漏 1 天、有卡、每自然周 1 次。成就只标记，奖励必须手动领取；
+  图鉴 16 只按通关/签到/每日/成就/碎片精确解锁；棋盘皮肤只换区域配色，无数值加成。
+- 下一步 S6：激励视频广告（提示券 / 双倍奖励 / 补签），仍须保持断网可玩。
+- 已知待办：首页齿轮仍是阶段性占位（toast 提示），计划 S7 接入真实设置页；
+  提示券已可通过签到、里程碑、商店与成就获取，广告途径留待 S6。

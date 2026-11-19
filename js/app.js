@@ -17,6 +17,11 @@ var logger = require('./core/logger');
 var Save = require('./services/save');
 var Progress = require('./services/progress');
 var settings = require('./services/settings');
+var Daily = require('./services/daily');
+var Signin = require('./services/signin');
+var Collection = require('./services/collection');
+var Achievements = require('./services/achievements');
+var Shop = require('./services/shop');
 
 var Toast = require('./ui/widgets/toast');
 var Debug = require('./ui/debug');
@@ -25,6 +30,11 @@ var HomeScene = require('./ui/screens/home');
 var LevelmapScene = require('./ui/screens/levelmap');
 var GameScene = require('./ui/screens/game');
 var ResultScene = require('./ui/screens/result');
+var DailyScene = require('./ui/screens/daily');
+var CheckinScene = require('./ui/screens/checkin');
+var AlbumScene = require('./ui/screens/album');
+var AchievementsScene = require('./ui/screens/achievements');
+var ShopScene = require('./ui/screens/shop');
 
 function App() {
   this.env = envMod.read();
@@ -38,6 +48,12 @@ function App() {
   this.save = new Save();
   this.save.load();
   this.progress = new Progress(this.save);
+  this.collection = new Collection(this.progress);
+  this.daily = new Daily(this.progress);
+  this.signin = new Signin(this.progress, this.daily);
+  this.achievements = new Achievements(this.progress, this.collection);
+  this.shop = new Shop(this.progress);
+  this.applySkin();
 
   this.toast = new Toast(this);
   this.debug = new Debug(this);
@@ -49,6 +65,8 @@ function App() {
   this.frames = 0;
 
   this._register();
+  this.daily.noteSeen();
+  this.metaRefresh();
 }
 
 App.prototype._register = function () {
@@ -56,6 +74,28 @@ App.prototype._register = function () {
   this.sm.register('levelmap', function (app) { return new LevelmapScene(app); });
   this.sm.register('game', function (app) { return new GameScene(app); });
   this.sm.register('result', function (app) { return new ResultScene(app); });
+  this.sm.register('daily', function (app) { return new DailyScene(app); });
+  this.sm.register('checkin', function (app) { return new CheckinScene(app); });
+  this.sm.register('album', function (app) { return new AlbumScene(app); });
+  this.sm.register('achievements', function (app) { return new AchievementsScene(app); });
+  this.sm.register('shop', function (app) { return new ShopScene(app); });
+};
+
+/** 立即应用当前棋盘皮肤 */
+App.prototype.applySkin = function () {
+  this.theme.region = theme.palette(this.progress.currentSkin());
+};
+
+/**
+ * 统一处理“进度变化后可能解锁的新内容”：
+ * 猫 → 成就 → 再检查猫（图鉴数量成就可能触发成就猫）。
+ */
+App.prototype.metaRefresh = function () {
+  var cats = this.collection.refresh();
+  var achievements = this.achievements.check();
+  cats = cats.concat(this.collection.refresh());
+  achievements = achievements.concat(this.achievements.check());
+  return { cats: cats, achievements: achievements };
 };
 
 App.prototype.start = function () {
@@ -68,7 +108,10 @@ App.prototype.start = function () {
       self.sm.onHide();
       self.save.flushHard();
     },
-    onShow: function () { /* 目前无需刷新环境信息 */ },
+    onShow: function () {
+      self.daily.noteSeen();
+      self.metaRefresh();
+    },
     onError: function (err) { logger.error(err); }
   });
 

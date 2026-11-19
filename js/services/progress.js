@@ -33,13 +33,76 @@ Progress.prototype.spendCoins = function (n) {
 Progress.prototype.tickets = function () { return this.d().tickets; };
 
 Progress.prototype.addTickets = function (n) {
-  this.d().tickets = Math.max(0, this.d().tickets + n);
+  this.d().tickets = Math.max(0, this.d().tickets + (n || 0));
   this.save.touch();
+  return this.d().tickets;
 };
 
 Progress.prototype.spendTicket = function () {
   if (this.d().tickets <= 0) return false;
   this.d().tickets--;
+  this.save.touch();
+  return true;
+};
+
+/* ---------------- 补签卡 ---------------- */
+
+Progress.prototype.makeupCards = function () { return this.d().makeupCards; };
+
+Progress.prototype.addMakeupCards = function (n) {
+  this.d().makeupCards = Math.max(0, this.d().makeupCards + (n || 0));
+  this.save.touch();
+};
+
+Progress.prototype.spendMakeupCard = function () {
+  if (this.d().makeupCards <= 0) return false;
+  this.d().makeupCards--;
+  this.save.touch();
+  return true;
+};
+
+/* ---------------- 猫爪碎片 ---------------- */
+
+Progress.prototype.fragments = function () { return this.d().fragments; };
+
+Progress.prototype.addFragments = function (n) {
+  this.d().fragments = Math.max(0, this.d().fragments + (n || 0));
+  this.save.touch();
+};
+
+Progress.prototype.spendFragments = function (n) {
+  if (this.d().fragments < n) return false;
+  this.d().fragments -= n;
+  this.save.touch();
+  return true;
+};
+
+/* ---------------- 猫与皮肤 ---------------- */
+
+Progress.prototype.unlockedCats = function () { return this.d().collection.unlocked; };
+
+Progress.prototype.isCatUnlocked = function (id) {
+  return !!this.d().collection.unlocked[id];
+};
+
+Progress.prototype.equippedCatId = function () { return this.d().collection.equipped; };
+
+Progress.prototype.setEquippedCat = function (id) {
+  if (!this.d().collection.unlocked[id]) return false;
+  if (this.d().collection.equipped === id) return true;
+  this.d().collection.equipped = id;
+  this.save.touch();
+  return true;
+};
+
+Progress.prototype.ownedSkins = function () { return this.d().cosmetics.skins; };
+
+Progress.prototype.currentSkin = function () { return this.d().cosmetics.current; };
+
+Progress.prototype.setCurrentSkin = function (id) {
+  if (!this.d().cosmetics.skins[id]) return false;
+  if (this.d().cosmetics.current === id) return true;
+  this.d().cosmetics.current = id;
   this.save.touch();
   return true;
 };

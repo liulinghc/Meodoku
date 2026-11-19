@@ -9,6 +9,7 @@
  *   node tools/build-preview.js
  *   open preview/index.html
  *   # 也可直接指定场景：preview/index.html?scene=map | ?scene=game&level=12
+ *   # S5 页面：?scene=daily | checkin | album | achievements | shop
  *
  * 注意：这是近似环境（尺寸固定 375×812、DPR=2），
  * 最终效果以微信开发者工具/真机为准。
@@ -36,6 +37,7 @@ function collect() {
   walk('js', files);
   files.push('levels/index.js');
   files.push('levels/pack-001.js');
+  files.push('levels/daily-365.js');
   return files;
 }
 
@@ -226,6 +228,8 @@ var RUNTIME = String.raw`
       app.progress.setLastLevel(6);
       app.sm.replace('levelmap');
     }
+  } else if (app && /^(daily|checkin|album|achievements|shop)$/.test(scene || '')) {
+    app.sm.push(scene);
   } else if (app && scene === 'game') {
     var level = parseInt(q.get('level') || '1', 10);
     app.sm.push('levelmap');

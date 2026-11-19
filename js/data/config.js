@@ -4,16 +4,17 @@
  */
 module.exports = {
   APP_NAME: '喵谜格',
-  VERSION: '0.4.0',
-  STAGE: 'S4',
+  VERSION: '0.5.0',
+  STAGE: 'S5',
 
   SAVE_KEY: 'md:save:v1',
   SAVE_BAK_KEY: 'md:save:bak',
-  SAVE_SCHEMA: 2,
+  SAVE_SCHEMA: 3,
   SAVE_DEBOUNCE_MS: 800,
 
   INITIAL_COINS: 100,
   INITIAL_TICKETS: 3,
+  INITIAL_MAKEUP_CARDS: 0,
 
   // S2 结算
   LEVEL_COINS: 20,          // 首次通关基础金币
@@ -28,6 +29,61 @@ module.exports = {
 
   // S4 起使用真实解锁链：通关第 N 关才解锁第 N+1 关。
   UNLOCK_ALL: false,
+
+  // S5 每日挑战：全服同一套本地日历池，周日用 T4 池
+  DAILY_BASE_COINS: 80,
+  DAILY_STREAK_STEP: 10,
+  DAILY_STREAK_BONUS_MAX: 70,
+  DAILY_FRAGMENT_MIN: 1,
+  DAILY_FRAGMENT_MAX: 2,
+  DAILY_HISTORY_DAYS: 31,
+  TIME_ROLLBACK_TOLERANCE_MS: 60 * 1000,
+
+  // S5 签到：7 日循环 + 累计里程碑
+  SIGNIN_REWARDS: [
+    { coins: 20, tickets: 0, fragments: 0 },
+    { coins: 30, tickets: 0, fragments: 0 },
+    { coins: 40, tickets: 1, fragments: 0 },
+    { coins: 50, tickets: 0, fragments: 0 },
+    { coins: 60, tickets: 0, fragments: 0 },
+    { coins: 80, tickets: 0, fragments: 0 },
+    { coins: 120, tickets: 1, fragments: 1 }
+  ],
+  SIGNIN_MILESTONES: [
+    { days: 7, coins: 50, tickets: 1, makeup: 0 },
+    { days: 14, coins: 80, tickets: 0, makeup: 1 },
+    { days: 30, coins: 120, tickets: 1, makeup: 0 },
+    { days: 60, coins: 180, tickets: 0, makeup: 1 },
+    { days: 100, coins: 300, tickets: 2, makeup: 0 }
+  ],
+  MAKEUP_WEEKLY_LIMIT: 1,
+  MAKEUP_CARD_COST: 100,
+
+  // S5 图鉴
+  CRAFT_FRAGMENT_COST: 3,
+  ACHIEVEMENT_CAT_THRESHOLD: 6,
+
+  // S5 成就（奖励需在成就页手动领取）
+  ACHIEVEMENTS: [
+    { id: 'first_clear', type: 'clears', target: 1, coins: 50, tickets: 0 },
+    { id: 'clear_50', type: 'clears', target: 50, coins: 100, tickets: 0 },
+    { id: 'clear_150', type: 'clears', target: 150, coins: 180, tickets: 1 },
+    { id: 'clear_300', type: 'clears', target: 300, coins: 300, tickets: 2 },
+    { id: 'perfect_20', type: 'perfects', target: 20, coins: 150, tickets: 1 },
+    { id: 'daily_7', type: 'daily', target: 7, coins: 120, tickets: 1 },
+    { id: 'signin_7', type: 'signin', target: 7, coins: 100, tickets: 1 },
+    { id: 'collection_8', type: 'collection', target: 8, coins: 160, tickets: 1 },
+    { id: 'collection_16', type: 'collection', target: 16, coins: 300, tickets: 2 }
+  ],
+
+  // S5 商店（只收金币，不接支付）
+  SHOP_ITEMS: [
+    { id: 'ticket', type: 'ticket', price: 45, amount: 1 },
+    { id: 'makeup', type: 'makeup', price: 100, amount: 1 },
+    { id: 'skin-mint', type: 'skin', price: 300, amount: 1 },
+    { id: 'skin-sakura', type: 'skin', price: 500, amount: 1 },
+    { id: 'skin-night', type: 'skin', price: 800, amount: 1 }
+  ],
 
   DEBUG: false
 };

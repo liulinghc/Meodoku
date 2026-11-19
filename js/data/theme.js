@@ -23,7 +23,13 @@ var BASE = {
     selected: '#FFFFFF',
     shadow: 'rgba(90, 60, 40, 0.10)',
     mask: 'rgba(60, 40, 30, 0.38)',
-    ink: '#2E2A28'
+    ink: '#2E2A28',
+    gold: '#B8862B',
+    success: '#5FAF7C',
+    rarityCommon: '#8C7A69',
+    rarityRare: '#5C8DD6',
+    rarityEpic: '#A06BC8',
+    dot: '#E4572E'
   },
 
   region: [
@@ -56,10 +62,37 @@ var BASE = {
   motion: { fast: 0.12, mid: 0.24, slow: 0.4 }
 };
 
+var SKINS = [
+  { id: 'cream', colors: BASE.region },
+  { id: 'skin-mint', colors: [
+    '#6FD3A0', '#7ED9B2', '#8FD9A6', '#A8D987',
+    '#C2DF8A', '#DDE6A0', '#9ED9C9', '#7CCBC6',
+    '#6BBFC4', '#8FC7D3', '#A6D3C9', '#BCDCC9'
+  ] },
+  { id: 'skin-sakura', colors: [
+    '#F07AB4', '#F58FA8', '#F4A0A0', '#F2B08E',
+    '#E8B98A', '#D8B9A0', '#C7A8C8', '#B79BD3',
+    '#A991D8', '#C38AC0', '#D990B3', '#E6A2B4'
+  ] },
+  { id: 'skin-night', colors: [
+    '#4C6B8A', '#566F9E', '#5E7AA8', '#647FA0',
+    '#6B8C9E', '#5A8C96', '#4F8F8A', '#5C8C7A',
+    '#718A66', '#8A865F', '#7C6B8A', '#675E7E'
+  ] }
+];
+
+var SKIN_BY_ID = {};
+for (var si = 0; si < SKINS.length; si++) SKIN_BY_ID[SKINS[si].id] = SKINS[si];
+
+function palette(id) {
+  var skin = SKIN_BY_ID[id];
+  return (skin || SKINS[0]).colors;
+}
+
 function scale(s) {
   var out = {
     color: BASE.color,
-    region: BASE.region,
+    region: BASE.region.slice(),
     motion: BASE.motion,
     radius: {},
     space: {},
@@ -74,4 +107,4 @@ function scale(s) {
   return out;
 }
 
-module.exports = { base: BASE, scale: scale };
+module.exports = { base: BASE, skins: SKINS, palette: palette, scale: scale };

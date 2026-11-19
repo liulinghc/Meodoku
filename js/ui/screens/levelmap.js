@@ -223,7 +223,6 @@ LevelmapScene.prototype.onTouchEnd = function (x, y, isTap) {
         var range = levels.chapterRange(this.chapter);
         app.toast.show(app.progress.isUnlocked(range.start) ? copy.toastLocked : copy.toastChapterLocked);
       } else {
-        app.haptic();
         app.sm.push('game', { levelIndex: node.index });
       }
       return;

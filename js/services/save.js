@@ -3,11 +3,17 @@
  * - 单一根对象，所有业务数据挂在下面，便于迁移
  * - 写入防抖：touch() 只标脏，由主循环 tick() 到点落盘（不依赖定时器，便于测试）
  * - 双槽：主槽 + 备份槽，主槽不可用时回退
+ *
+ * schema 3（S5）：每日挑战、签到、图鉴、成就、商店皮肤。
+ * schema 2 → 3 只补默认结构；schema 1 → 3 先按稳定关卡 ID 重映射（S4 规则）。
  */
 var config = require('../data/config');
 var storage = require('../platform/storage');
 var clock = require('../core/clock');
 var logger = require('../core/logger');
+var date = require('../core/date');
+var catData = require('../data/cats');
+var theme = require('../data/theme');
 
 function emptyResume() {
   return { index: 0, n: 0, cells: [], timeMs: 0, moves: 0, mistakes: 0, hintsUsed: 0 };
@@ -18,13 +24,39 @@ function defaults() {
     schema: config.SAVE_SCHEMA,
     coins: config.INITIAL_COINS,
     tickets: config.INITIAL_TICKETS,
+    makeupCards: config.INITIAL_MAKEUP_CARDS,
     unlocked: 1,
     lastLevel: 1,
     completed: {},
     resume: emptyResume(),
     stats: { catsPlaced: 0, playedMs: 0, hintsUsed: 0, erases: 0, undos: 0 },
     cats: {},
-    daily: { date: '', streak: 0, claimed: false, lastIndex: 0 },
+    fragments: 0,
+    daily: {
+      date: '',
+      streak: 0,
+      bestStreak: 0,
+      claimed: false,
+      lastIndex: 0,
+      total: 0,
+      history: {},
+      lastClaimTs: 0,
+      lastSeenTs: 0,
+      timeGuardDate: ''
+    },
+    signin: {
+      lastDate: '',
+      streak: 0,
+      cycleDay: 0,
+      totalDays: 0,
+      makeupWeek: '',
+      makeupUsed: 0,
+      claimedMilestones: {},
+      history: {}
+    },
+    collection: { unlocked: {}, equipped: '' },
+    achievements: {},
+    cosmetics: { skins: { cream: true }, current: 'cream' },
     settings: { haptic: true, debug: false }
   };
 }
@@ -52,7 +84,7 @@ function pad3(n) {
 }
 
 /**
- * schema 1（S3 200 关）→ schema 2（S4 300 关）。
+ * schema 1（S3 200 关）→ 当前 schema（S4 起 300 关）。
  * 旧档的 completed 下标指向 S3 的播放顺序；关卡已重排为 15 章，
  * 但每关 ID 不变，因此按 L001…L200 找回新序号，保留玩家真实进度。
  */
@@ -74,8 +106,7 @@ function migrateV1(d, raw) {
     if (newIndex > maxNew) maxNew = newIndex;
   }
 
-  // 旧 unlocked 表示"1…unlocked-1 均可进入"，迁移成新序号前缀，
-  // 保证玩家已能玩的关卡和插入其间的关卡都不被锁回去。
+  // 旧 unlocked 表示"1…unlocked-1 均可进入"，迁移成新序号前缀。
   var oldUnlocked = int(raw.unlocked, 1, 1, 10000);
   for (i = 1; i < oldUnlocked; i++) {
     var frontier = levels.indexOfId('L' + pad3(i));
@@ -119,18 +150,133 @@ function normalizeResume(raw, total) {
   return out;
 }
 
+function normalizeHistory(raw, limit, fields) {
+  var out = {};
+  raw = obj(raw);
+  if (!raw) return out;
+  var keys = [];
+  for (var k in raw) {
+    if (!raw.hasOwnProperty(k) || !date.isKey(k)) continue;
+    var e = obj(raw[k]);
+    if (!e) continue;
+    var item = {};
+    for (var i = 0; i < fields.length; i++) {
+      item[fields[i]] = int(e[fields[i]], 0, 0);
+    }
+    out[k] = item;
+    keys.push(k);
+  }
+  keys.sort();
+  while (keys.length > limit) delete out[keys.shift()];
+  return out;
+}
+
+function normalizeDaily(raw) {
+  var out = defaults().daily;
+  raw = obj(raw);
+  if (!raw) return out;
+
+  out.date = date.isKey(raw.date) ? raw.date : '';
+  out.streak = int(raw.streak, 0, 0);
+  out.bestStreak = Math.max(out.streak, int(raw.bestStreak, 0, 0));
+  out.claimed = bool(raw.claimed, false);
+  out.lastIndex = int(raw.lastIndex, 0, 0);
+  out.total = int(raw.total, 0, 0);
+  out.history = normalizeHistory(raw.history, config.DAILY_HISTORY_DAYS, ['coins', 'fragments', 'timeMs', 'paws', 'streak']);
+  out.lastClaimTs = int(raw.lastClaimTs, 0, 0);
+  out.lastSeenTs = int(raw.lastSeenTs, 0, 0);
+  out.timeGuardDate = date.isKey(raw.timeGuardDate) ? raw.timeGuardDate : '';
+  return out;
+}
+
+function normalizeSignin(raw) {
+  var out = defaults().signin;
+  raw = obj(raw);
+  if (!raw) return out;
+
+  out.lastDate = date.isKey(raw.lastDate) ? raw.lastDate : '';
+  out.streak = int(raw.streak, 0, 0);
+  out.cycleDay = int(raw.cycleDay, 0, 0, 7);
+  out.totalDays = int(raw.totalDays, 0, 0);
+  out.makeupWeek = date.isKey(raw.makeupWeek) ? raw.makeupWeek : '';
+  out.makeupUsed = int(raw.makeupUsed, 0, 0);
+  out.history = normalizeHistory(raw.history, 100, ['coins', 'tickets', 'day', 'makeup']);
+  var ms = obj(raw.claimedMilestones);
+  if (ms) {
+    for (var k in ms) {
+      if (ms.hasOwnProperty(k) && ms[k]) out.claimedMilestones[k] = true;
+    }
+  }
+  return out;
+}
+
+function normalizeCollection(raw) {
+  var out = defaults().collection;
+  raw = obj(raw);
+  if (!raw) return out;
+
+  var unlocked = obj(raw.unlocked);
+  if (unlocked) {
+    for (var id in unlocked) {
+      if (!unlocked.hasOwnProperty(id) || !catData.has(id)) continue;
+      out.unlocked[id] = int(unlocked[id], 0, 0);
+    }
+  }
+  if (typeof raw.equipped === 'string' && out.unlocked[raw.equipped]) {
+    out.equipped = raw.equipped;
+  }
+  return out;
+}
+
+function normalizeAchievements(raw) {
+  var out = {};
+  raw = obj(raw);
+  if (!raw) return out;
+  var known = {};
+  for (var i = 0; i < config.ACHIEVEMENTS.length; i++) known[config.ACHIEVEMENTS[i].id] = true;
+  for (var id in raw) {
+    if (!raw.hasOwnProperty(id) || !known[id]) continue;
+    var e = obj(raw[id]);
+    if (!e) continue;
+    out[id] = {
+      unlockedAt: int(e.unlockedAt, 0, 0),
+      claimedAt: int(e.claimedAt, 0, 0)
+    };
+  }
+  return out;
+}
+
+function normalizeCosmetics(raw) {
+  var out = defaults().cosmetics;
+  raw = obj(raw);
+  if (!raw) return out;
+
+  var owned = obj(raw.skins);
+  out.skins.cream = true;
+  if (owned) {
+    for (var i = 0; i < theme.skins.length; i++) {
+      var id = theme.skins[i].id;
+      if (owned[id]) out.skins[id] = true;
+    }
+  }
+  if (typeof raw.current === 'string' && out.skins[raw.current]) out.current = raw.current;
+  return out;
+}
+
 /** 只接受已知字段，未知/缺失字段一律回落到默认值 */
 function normalize(raw) {
   var d = defaults();
   raw = obj(raw);
   if (!raw) return d;
   var from = raw.schema;
-  if (from !== 1 && from !== config.SAVE_SCHEMA) {
+  if (from !== 1 && from !== 2 && from !== config.SAVE_SCHEMA) {
     logger.warn('存档版本不符: ' + from + '，按默认值合并');
   }
 
   d.coins = int(raw.coins, d.coins, 0);
   d.tickets = int(raw.tickets, d.tickets, 0);
+  d.makeupCards = int(raw.makeupCards, d.makeupCards, 0);
+  d.fragments = int(raw.fragments, d.fragments, 0);
   d.unlocked = int(raw.unlocked, d.unlocked, 1);
   d.lastLevel = int(raw.lastLevel, d.lastLevel, 1);
 
@@ -159,20 +305,18 @@ function normalize(raw) {
   var cats = obj(raw.cats);
   if (cats) {
     for (var id in cats) {
-      if (!cats.hasOwnProperty(id)) continue;
+      if (!cats.hasOwnProperty(id) || !catData.has(id)) continue;
       var ce = obj(cats[id]);
       if (!ce) continue;
       d.cats[id] = { count: int(ce.count, 0, 0) };
     }
   }
 
-  var day = obj(raw.daily);
-  if (day) {
-    d.daily.date = typeof day.date === 'string' ? day.date : '';
-    d.daily.streak = int(day.streak, 0, 0);
-    d.daily.claimed = bool(day.claimed, false);
-    d.daily.lastIndex = int(day.lastIndex, 0, 0);
-  }
+  d.daily = normalizeDaily(raw.daily);
+  d.signin = normalizeSignin(raw.signin);
+  d.collection = normalizeCollection(raw.collection);
+  d.achievements = normalizeAchievements(raw.achievements);
+  d.cosmetics = normalizeCosmetics(raw.cosmetics);
 
   var st = obj(raw.settings);
   if (st) {
@@ -200,7 +344,7 @@ function normalize(raw) {
 }
 
 function usable(raw) {
-  return obj(raw) && (raw.schema === 1 || raw.schema === config.SAVE_SCHEMA);
+  return obj(raw) && (raw.schema === 1 || raw.schema === 2 || raw.schema === config.SAVE_SCHEMA);
 }
 
 function readKey(key) {

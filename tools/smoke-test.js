@@ -5,7 +5,8 @@
  * 覆盖：
  *   4×4–9×9 正式关卡包（唯一解/档位/去重/紧凑解码）/ 运行时规则判胜 /
  *   三场景+结算渲染 / 触摸交互 / 提示与资源 / 重开与冲突反馈 /
- *   计时与猫爪评分 / 结算奖励与导航 / 存档落盘与重载 / 小屏布局
+ *   计时与猫爪评分 / 结算奖励与导航 / 存档落盘与重载 /
+ *   S5 每日挑战/签到/图鉴/成就/商店 服务与页面流程 / 小屏布局
  *
  * 说明：Canvas 是桩实现，这里只看"逻辑与坐标是否正确、有没有抛异常"，
  * 真实帧率必须在开发者工具真机调试里看。
@@ -19,12 +20,15 @@ var path = require('path');
 var store = {};
 var handlers = {};
 
-function FakeCtx() { this.ops = 0; }
+function FakeCtx() { this.ops = 0; this.texts = []; }
 ['setTransform', 'clearRect', 'fillRect', 'beginPath', 'closePath', 'moveTo', 'lineTo',
-  'arcTo', 'arc', 'rect', 'clip', 'fill', 'stroke', 'save', 'restore', 'fillText',
+  'arcTo', 'arc', 'rect', 'clip', 'fill', 'stroke', 'save', 'restore',
   'quadraticCurveTo', 'bezierCurveTo', 'translate', 'scale', 'rotate'].forEach(function (m) {
   FakeCtx.prototype[m] = function () { this.ops++; };
 });
+// 记录最近一帧实际绘制的文字，便于检查占位符/undefined 等文案问题
+FakeCtx.prototype.clearRect = function () { this.ops++; this.texts.length = 0; };
+FakeCtx.prototype.fillText = function (s) { this.ops++; this.texts.push(String(s)); };
 FakeCtx.prototype.measureText = function (s) { return { width: String(s).length * 8 }; };
 FakeCtx.prototype.drawImage = function () { this.ops++; };
 
@@ -458,15 +462,15 @@ check('重新载入后最佳用时仍在', data2.completed['2'].bestTimeMs > 0);
 check('重新载入后资源仍在', data2.coins === 150 && data2.tickets === 2,
   'coins=' + data2.coins + ' tickets=' + data2.tickets);
 check('统计包含提示与对局时长', data2.stats.hintsUsed === 1 && data2.stats.playedMs > 0);
-check('schema 校验生效', data2.schema === 2);
+check('schema 校验生效', data2.schema === 3);
 
 var save3 = new Save();
 store['md:save:v1'] = 'not-json-object';
 save3.load();
-check('主槽损坏时回退备份', save3.data.schema === 2 && !!save3.data.completed['2']);
+check('主槽损坏时回退备份', save3.data.schema === 3 && !!save3.data.completed['2']);
 store['md:save:v1'] = app.save.data;
 
-// schema 1（旧 200 关）→ schema 2（300 关）：完成记录/解锁前沿按稳定 ID 迁移
+// schema 1（旧 200 关）→ schema 3（300 关 + S5）：完成记录/解锁前沿按稳定 ID 迁移
 var m1 = levelsIndex.indexOfId('L001');
 var m2 = levelsIndex.indexOfId('L002');
 var m3 = levelsIndex.indexOfId('L003');
@@ -483,7 +487,7 @@ var migrated = Save.normalize({
   },
   stats: { catsPlaced: 10 }
 });
-check('旧档 schema1 迁移到 schema2', migrated.schema === 2 && migrated.coins === 77);
+check('旧档 schema1 迁移到 schema3', migrated.schema === 3 && migrated.coins === 77);
 check('旧档完成记录按关卡 ID 重映射', !!migrated.completed[m1] && !!migrated.completed[m2] &&
   !!migrated.completed[m3] && migrated.completed[m2].paws === 3,
   'mapped=' + m1 + ',' + m2 + ',' + m3);
@@ -515,6 +519,431 @@ var badResumeData = Save.normalize({
   resume: { index: 1, n: lv1.n, cells: [9, 9], timeMs: 1, moves: 1, mistakes: 0, hintsUsed: 0 }
 });
 check('非法续玩数据被丢弃', badResumeData.resume.index === 0 && badResumeData.resume.cells.length === 0);
+
+/* ---------------- 6b. S5 服务层 ---------------- */
+
+console.log('[6b] S5 服务层（每日 / 签到 / 图鉴 / 成就 / 商店）');
+(function () {
+  var clock = require('../js/core/clock');
+  var date = require('../js/core/date');
+  var config = require('../js/data/config');
+  var ProgressSvc = require('../js/services/progress');
+  var DailySvc = require('../js/services/daily');
+  var SigninSvc = require('../js/services/signin');
+  var CollectionSvc = require('../js/services/collection');
+  var AchievementsSvc = require('../js/services/achievements');
+  var ShopSvc = require('../js/services/shop');
+  var catData = require('../js/data/cats');
+  var dailyRaw = require('../levels/daily-365');
+
+  function makeS5(seed) {
+    var save = {
+      data: Save.defaults(),
+      dirty: false,
+      touch: function () { this.dirty = true; }
+    };
+    if (seed) {
+      for (var k in seed) {
+        if (seed.hasOwnProperty(k)) save.data[k] = seed[k];
+      }
+    }
+    var progress = new ProgressSvc(save);
+    var daily = new DailySvc(progress);
+    var signin = new SigninSvc(progress, daily);
+    var collection = new CollectionSvc(progress);
+    var achievements = new AchievementsSvc(progress, collection);
+    var shop = new ShopSvc(progress);
+    return {
+      save: save,
+      progress: progress,
+      daily: daily,
+      signin: signin,
+      collection: collection,
+      achievements: achievements,
+      shop: shop
+    };
+  }
+
+  var REAL_NOW = function () { return Date.now(); };
+  function at(y, m, d, h) {
+    return new Date(y, m - 1, d, h || 10, 0, 0, 0).getTime();
+  }
+  function setDay(y, m, d) {
+    clock.setSource(function () { return at(y, m, d); });
+  }
+
+  try {
+    /* ---- 日历题库与选关 ---- */
+    check('每日题库 365 道（312 T3 + 53 T4）',
+      dailyRaw.t3.length === 312 && dailyRaw.t4.length === 53,
+      't3=' + dailyRaw.t3.length + ' t4=' + dailyRaw.t4.length);
+    check('每日题 ID 全库唯一', (function () {
+      var seen = {};
+      var dup = 0;
+      var pools = [dailyRaw.t3, dailyRaw.t4];
+      for (var p = 0; p < pools.length; p++) {
+        for (var i = 0; i < pools[p].length; i++) {
+          if (seen[pools[p][i].id]) dup++;
+          seen[pools[p][i].id] = true;
+        }
+      }
+      return dup === 0;
+    })());
+
+    var poolSvc = makeS5();
+    var sameA = poolSvc.daily.level('2026-11-19');
+    var sameB = poolSvc.daily.level('2026-11-19');
+    check('同一日期取题稳定（全设备同题）', sameA && sameB && sameA.id === sameB.id &&
+      sameA.dailySlot === sameB.dailySlot, 'id=' + (sameA && sameA.id));
+    check('周日使用 T4 池', date.isSunday('2026-11-22') &&
+      poolSvc.daily.level('2026-11-22').dailyPool === 't4');
+    check('工作日使用 T3 池', poolSvc.daily.level('2026-11-19').dailyPool === 't3');
+
+    var poolLevel = poolSvc.daily.level('2026-11-19');
+    var poolCats = [];
+    for (var pr = 0; pr < poolLevel.n; pr++) poolCats.push(pr * poolLevel.n + poolLevel.solution[pr]);
+    check('每日题面解码后可通过运行时规则',
+      rulesMod.analyze(poolCats, poolLevel.n,
+        runtimeGen.decodeRegions(poolLevel.regions, poolLevel.n)).solved);
+
+    /* ---- 每日挑战：发奖 / 连胜 / 重玩 ---- */
+    var dl = makeS5();
+    var dlCoins0 = dl.progress.coins();
+    setDay(2026, 11, 17);
+    var day1 = dl.daily.complete({ timeMs: 60000, paws: 3 });
+    check('每日首通发基础金币与连胜加成',
+      day1.ok && day1.streak === 1 &&
+      day1.coins === config.DAILY_BASE_COINS + config.DAILY_STREAK_STEP,
+      'coins=' + day1.coins);
+    check('每日通关发放 1–2 枚碎片',
+      day1.fragments >= config.DAILY_FRAGMENT_MIN && day1.fragments <= config.DAILY_FRAGMENT_MAX,
+      'fragments=' + day1.fragments);
+    check('每日奖励到账并写入历史',
+      dl.progress.coins() === dlCoins0 + day1.coins &&
+      dl.progress.fragments() === day1.fragments && dl.daily.isCleared('2026-11-17'));
+
+    var replaySameDay = dl.daily.complete({ timeMs: 1, paws: 3 });
+    check('同日重玩不重复发奖',
+      replaySameDay.replay === true && replaySameDay.coins === 0 &&
+      dl.progress.coins() === dlCoins0 + day1.coins);
+
+    setDay(2026, 11, 18);
+    var day2 = dl.daily.complete({ timeMs: 50000, paws: 3 });
+    check('连续第二天连胜 +1，奖励递增',
+      day2.ok && day2.streak === 2 &&
+      day2.coins === config.DAILY_BASE_COINS + config.DAILY_STREAK_STEP * 2,
+      'streak=' + day2.streak + ' coins=' + day2.coins);
+
+    setDay(2026, 11, 19);
+    var day3 = dl.daily.complete({ timeMs: 40000, paws: 3 });
+    check('连续第三天累计连胜与最佳', day3.streak === 3 && dl.daily.bestStreak() === 3 &&
+      dl.daily.totalDays() === 3);
+
+    setDay(2026, 11, 21);
+    var broken = dl.daily.complete({ timeMs: 30000, paws: 3 });
+    check('跳过一天后连胜重置为 1', broken.streak === 1 && broken.coins ===
+      config.DAILY_BASE_COINS + config.DAILY_STREAK_STEP, 'streak=' + broken.streak);
+    check('历史只保留已通关日期', Object.keys(dl.save.data.daily.history).length === 4);
+
+    /* ---- 改时间：止损式守护 ---- */
+    var guard = makeS5();
+    setDay(2026, 11, 20);
+    guard.daily.complete({ timeMs: 1000, paws: 1 });
+    var guardCoins = guard.progress.coins();
+    setDay(2026, 11, 19);
+    var gRes = guard.daily.complete({ timeMs: 1000, paws: 3 });
+    check('时钟回拨当天不发奖、不计连胜',
+      gRes.ok === false && gRes.guarded === true && guard.daily.guarded() &&
+      guard.progress.coins() === guardCoins);
+    setDay(2026, 11, 21);
+    check('回拨守护只标记当天', guard.daily.guarded() === false);
+    var gNext = guard.daily.complete({ timeMs: 1000, paws: 3 });
+    check('次日恢复正常发奖', gNext.ok === true && gNext.guarded === false);
+
+    /* ---- 签到：7 日循环 / 里程碑 / 补签 ---- */
+    var si = makeS5();
+    var R = config.SIGNIN_REWARDS;
+    var siCoins0 = si.progress.coins();
+    var siTickets0 = si.progress.tickets();
+    var siFrags0 = si.progress.fragments();
+
+    setDay(2026, 11, 10);
+    var c1 = si.signin.claim();
+    check('签到第 1 天领取', c1.ok && c1.day === 1 && c1.streak === 1 &&
+      si.progress.coins() === siCoins0 + R[0].coins, 'coins=' + si.progress.coins());
+    setDay(2026, 11, 11);
+    var c2 = si.signin.claim();
+    check('签到第 2 天连续', c2.ok && c2.day === 2 && c2.streak === 2);
+    setDay(2026, 11, 12);
+    var c3 = si.signin.claim();
+    check('签到第 3 天发提示券', c3.ok && c3.day === 3 && c3.tickets === 1 &&
+      si.progress.tickets() === siTickets0 + 1);
+    setDay(2026, 11, 13);
+    si.signin.claim();
+    setDay(2026, 11, 14);
+    si.signin.claim();
+    setDay(2026, 11, 15);
+    si.signin.claim();
+    setDay(2026, 11, 16);
+    var c7 = si.signin.claim();
+
+    var expectedCoins = siCoins0;
+    for (var i = 0; i < 7; i++) expectedCoins += R[i].coins;
+    expectedCoins += 50; // 7 日累计里程碑
+    check('签到第 7 天发金币/券/碎片并触发里程碑',
+      c7.ok && c7.day === 7 && c7.fragments === 1 && c7.tickets === 1 &&
+      c7.milestones.length === 1 && c7.milestones[0].days === 7,
+      'milestones=' + c7.milestones.length);
+    check('签到 7 日总账正确',
+      si.progress.coins() === expectedCoins &&
+      si.progress.tickets() === siTickets0 + 3 &&
+      si.progress.fragments() === siFrags0 + 1,
+      'coins=' + si.progress.coins() + ' tickets=' + si.progress.tickets());
+    check('里程碑不可重复领取', si.signin.milestones()[0].claimed === true &&
+      si.save.data.signin.claimedMilestones['7'] === true);
+    check('7 日循环全部标记已完成', si.signin.week().every(function (w) { return w.done; }));
+
+    // 漏签 1 天：需补签卡，补签后连续；本周第二次补签受限
+    setDay(2026, 11, 18);
+    var missSt = si.signin.status();
+    check('漏签 1 天且无卡时不能补签',
+      missSt.gap === 2 && missSt.missed === true && missSt.canMakeup === false &&
+      missSt.makeupCards === 0);
+    si.progress.addMakeupCards(1);
+    check('有补签卡后允许补签', si.signin.status().canMakeup === true);
+    var mk = si.signin.makeup();
+    check('补签昨天并消耗 1 张卡', mk.ok && mk.day === 1 && mk.streak === 8 &&
+      si.progress.makeupCards() === 0 &&
+      si.save.data.signin.lastDate === '2026-11-17' &&
+      si.save.data.signin.history['2026-11-17'].makeup === 1,
+      'streak=' + mk.streak);
+    var c18 = si.signin.claim();
+    check('补签后当天继续连续', c18.ok && c18.day === 2 && c18.streak === 9 &&
+      si.signin.status().totalDays === 9);
+    setDay(2026, 11, 19);
+    si.signin.claim();
+    setDay(2026, 11, 21);
+    si.progress.addMakeupCards(1);
+    var weekSt = si.signin.status();
+    check('同一自然周补签次数受限',
+      weekSt.gap === 2 && weekSt.canMakeup === false && weekSt.makeupCards === 1);
+    check('超限时补签接口拒绝', si.signin.makeup().ok === false);
+
+    // 漏签多天：补签不处理，重新从第 1 天开始
+    var si2 = makeS5();
+    setDay(2026, 11, 10);
+    si2.signin.claim();
+    setDay(2026, 11, 13);
+    check('漏签多天标记 missed', si2.signin.status().missed === true);
+    var resetClaim = si2.signin.claim();
+    check('漏签多天后签到从第 1 天重新开始',
+      resetClaim.ok && resetClaim.day === 1 && resetClaim.streak === 1);
+
+    // 改时间守护：签到同样受 daily 回拨标记保护
+    var si3 = makeS5();
+    setDay(2026, 11, 10);
+    si3.signin.claim();
+    var si3Coins = si3.progress.coins();
+    setDay(2026, 11, 12);
+    si3.daily.noteSeen();
+    setDay(2026, 11, 11);
+    var blocked = si3.signin.claim();
+    check('时钟回拨当天签到不发奖',
+      blocked.ok === false && blocked.reason === 'guarded' &&
+      si3.progress.coins() === si3Coins);
+
+    /* ---- 图鉴：阈值 / 出战 / 合成 ---- */
+    var col = makeS5();
+    check('初始无猫解锁', col.collection.refresh().length === 0 && col.collection.count() === 0);
+    for (var ci = 1; ci <= 29; ci++) col.progress.completeLevel(ci, { paws: 1, timeMs: 1000 });
+    col.collection.refresh();
+    check('通关 1 关解锁墨墨并自动出战',
+      col.collection.isUnlocked('mo') && col.collection.equippedId() === 'mo');
+    check('29 关时未提前解锁奶糖', !col.collection.isUnlocked('naitang'));
+    col.progress.completeLevel(30, { paws: 1, timeMs: 1000 });
+    col.collection.refresh();
+    check('满 30 关精确解锁奶糖', col.collection.isUnlocked('naitang'));
+    check('未到 60 关的橘座仍锁定', !col.collection.isUnlocked('juzuo'));
+
+    col.save.data.signin.totalDays = 7;
+    col.collection.refresh();
+    check('签到 7 天解锁抹茶', col.collection.isUnlocked('mocha'));
+    col.save.data.daily.total = 7;
+    col.collection.refresh();
+    check('每日 7 天解锁奶茶', col.collection.isUnlocked('naicha'));
+    for (var ai = 0; ai < 6; ai++) {
+      col.save.data.achievements[config.ACHIEVEMENTS[ai].id] = { unlockedAt: 1, claimedAt: 0 };
+    }
+    col.collection.refresh();
+    check('达成 6 个成就解锁乌云', col.collection.isUnlocked('wuyun'));
+
+    col.save.data.fragments = 2;
+    var craftFail = col.collection.craft('jiaotang');
+    check('碎片不足不能合成', craftFail.ok === false && craftFail.reason === 'fragments');
+    col.progress.addFragments(1);
+    var craftOk = col.collection.craft('jiaotang');
+    check('3 碎片合成焦糖并扣除碎片',
+      craftOk.ok && col.collection.isUnlocked('jiaotang') && col.progress.fragments() === 0);
+    check('已解锁猫不可重复合成', col.collection.craft('jiaotang').reason === 'owned');
+    check('非合成猫不可合成', col.collection.craft('juzuo').reason === 'not_craft');
+    check('可切换已解锁的出战猫',
+      col.collection.equip('naitang') && col.collection.equippedCat().id === 'naitang');
+    check('未解锁猫不能出战', col.collection.equip('yecha') === false);
+    check('图鉴共 16 只', col.collection.total() === 16 && catData.all.length === 16);
+
+    /* ---- 成就：只标记，手动领取 ---- */
+    var ac = makeS5();
+    ac.progress.completeLevel(1, { paws: 2, timeMs: 1000 });
+    var achCoins0 = ac.progress.coins();
+    ac.achievements.check();
+    check('首通成就自动标记', ac.achievements.isUnlocked('first_clear'));
+    check('标记成就不自动发金币', ac.progress.coins() === achCoins0);
+    var claimA = ac.achievements.claim('first_clear');
+    check('手动领取成就发奖', claimA.ok && claimA.coins === 50 &&
+      ac.progress.coins() === achCoins0 + 50);
+    check('成就不可重复领取', ac.achievements.claim('first_clear').reason === 'claimed');
+    check('未达成成就不可领取', ac.achievements.claim('clear_50').reason === 'locked');
+
+    for (var pi = 1; pi <= 20; pi++) ac.progress.completeLevel(pi, { paws: 3, timeMs: 1000 });
+    ac.achievements.check();
+    check('20 个三爪成就达成', ac.achievements.isUnlocked('perfect_20'));
+    check('成就进度按目标封顶',
+      ac.achievements.progressOf(ac.achievements.getDef('clear_50')).current === 20);
+
+    for (var si2i = 0; si2i < 8; si2i++) ac.save.data.collection.unlocked[catData.all[si2i].id] = 1;
+    ac.save.data.daily.total = 7;
+    ac.save.data.signin.totalDays = 7;
+    var coinsBeforeBatch = ac.progress.coins();
+    ac.achievements.check();
+    check('图鉴 / 每日 / 签到成就达成',
+      ac.achievements.isUnlocked('collection_8') &&
+      ac.achievements.isUnlocked('daily_7') &&
+      ac.achievements.isUnlocked('signin_7'));
+    check('批量标记仍不发金币', ac.progress.coins() === coinsBeforeBatch);
+    var ticketsBeforeClaim = ac.progress.tickets();
+    var claimP = ac.achievements.claim('perfect_20');
+    check('带券成就领取同时发券',
+      claimP.ok && claimP.tickets === 1 && ac.progress.tickets() === ticketsBeforeClaim + 1);
+
+    /* ---- 商店：扣币 / 售罄 / 换肤 ---- */
+    var sh = makeS5();
+    var shCoins = sh.progress.coins();
+    var shTickets = sh.progress.tickets();
+    var buyTicket = sh.shop.buy('ticket');
+    check('商店购买提示券',
+      buyTicket.ok && sh.progress.tickets() === shTickets + 1 &&
+      sh.progress.coins() === shCoins - 45);
+    var shCoinsAfter = sh.progress.coins();
+    var buyPoor = sh.shop.buy('makeup');
+    check('金币不足时购买失败且不扣款',
+      buyPoor.ok === false && buyPoor.reason === 'coins' &&
+      sh.progress.coins() === shCoinsAfter && sh.progress.makeupCards() === 0);
+
+    var sh2 = makeS5({ coins: 1200 });
+    var m1 = sh2.shop.buy('skin-mint');
+    check('购买皮肤并立即使用',
+      m1.ok && sh2.progress.coins() === 900 &&
+      sh2.shop.ownsSkin('skin-mint') && sh2.progress.currentSkin() === 'skin-mint');
+    check('已拥有皮肤不再出售', sh2.shop.isSoldOut(sh2.shop.item('skin-mint')) &&
+      sh2.shop.buy('skin-mint').reason === 'owned');
+    check('可切回已拥有的基础皮肤', sh2.shop.useSkin('cream') &&
+      sh2.progress.currentSkin() === 'cream');
+    check('未拥有皮肤不能使用', sh2.shop.useSkin('skin-night') === false);
+    var night = sh2.shop.buy('skin-night');
+    check('购买第二款皮肤切换成功',
+      night.ok && sh2.progress.coins() === 100 &&
+      sh2.progress.currentSkin() === 'skin-night');
+    var makeupBuy = sh2.shop.buy('makeup');
+    check('购买补签卡并清空余额',
+      makeupBuy.ok && sh2.progress.coins() === 0 && sh2.progress.makeupCards() === 1);
+    check('所有货币始终非负',
+      sh2.progress.coins() >= 0 && sh2.progress.tickets() >= 0 &&
+      sh2.progress.makeupCards() >= 0 && sh2.progress.fragments() >= 0);
+    check('商店共 5 个商品', sh.shop.items().length === 5);
+  } finally {
+    clock.setSource(REAL_NOW);
+  }
+})();
+
+/* ---------------- 6c. S5 存档 ---------------- */
+
+console.log('[6c] S5 存档迁移与清洗');
+check('默认 schema 为 3', Save.defaults().schema === 3);
+check('日历日期校验拒绝不存在的日期',
+  require('../js/core/date').isKey('2026-02-30') === false &&
+  require('../js/core/date').isKey('2026-13-40') === false &&
+  require('../js/core/date').isKey('2026-02-28') === true);
+
+var mig3 = Save.normalize({ schema: 2, coins: 321, tickets: 7 });
+check('schema2 存档补全 S5 默认结构',
+  mig3.schema === 3 && mig3.coins === 321 && mig3.tickets === 7 &&
+  mig3.makeupCards === 0 && mig3.fragments === 0 &&
+  !!mig3.daily && !!mig3.signin && !!mig3.collection &&
+  !!mig3.achievements && mig3.cosmetics.current === 'cream');
+
+var hist40 = {};
+for (var hi = 0; hi < 40; hi++) {
+  hist40[require('../js/core/date').add('2026-01-01', hi)] = {
+    coins: 10, fragments: 1, timeMs: 1, paws: 3, streak: 1
+  };
+}
+hist40['bad'] = { coins: 1 };
+var cleanSave = Save.normalize({
+  schema: 3,
+  daily: { history: hist40, timeGuardDate: '2026-13-40' },
+  signin: { history: hist40 },
+  collection: { unlocked: { mo: 1, dragon: 1 }, equipped: 'dragon' },
+  achievements: { first_clear: { unlockedAt: 1, claimedAt: 2 }, hack: { unlockedAt: 1 } },
+  cosmetics: { skins: { cream: true, 'skin-rainbow': true }, current: 'skin-rainbow' }
+});
+check('每日历史只保留最近 31 天',
+  Object.keys(cleanSave.daily.history).length === 31 &&
+  !cleanSave.daily.history['2026-01-01'] && !!cleanSave.daily.history['2026-02-09'],
+  'len=' + Object.keys(cleanSave.daily.history).length);
+check('非法日期与非法守护日被丢弃',
+  !cleanSave.daily.history.bad && cleanSave.daily.timeGuardDate === '');
+check('未知猫与非法出战猫被丢弃',
+  !!cleanSave.collection.unlocked.mo && !cleanSave.collection.unlocked.dragon &&
+  cleanSave.collection.equipped === '');
+check('未知成就被丢弃、已知成就保留',
+  !!cleanSave.achievements.first_clear && !cleanSave.achievements.hack);
+check('未知皮肤被丢弃并回退默认皮肤',
+  !!cleanSave.cosmetics.skins.cream && !cleanSave.cosmetics.skins['skin-rainbow'] &&
+  cleanSave.cosmetics.current === 'cream');
+
+var s5Persist = Save.normalize({
+  schema: 3,
+  coins: 222,
+  tickets: 9,
+  makeupCards: 2,
+  fragments: 4,
+  daily: {
+    date: '2026-11-19', streak: 4, bestStreak: 6, total: 9, claimed: true,
+    history: { '2026-11-19': { coins: 110, fragments: 2, timeMs: 30000, paws: 3, streak: 4 } },
+    lastSeenTs: 1700000000000
+  },
+  signin: {
+    lastDate: '2026-11-19', streak: 5, cycleDay: 5, totalDays: 12,
+    claimedMilestones: { '7': true },
+    history: { '2026-11-19': { coins: 60, tickets: 0, day: 5, makeup: 0 } }
+  },
+  collection: { unlocked: { mo: 1, naitang: 2 }, equipped: 'naitang' },
+  achievements: { first_clear: { unlockedAt: 5, claimedAt: 6 } },
+  cosmetics: { skins: { cream: true, 'skin-mint': true }, current: 'skin-mint' }
+});
+store['md:save:v1'] = JSON.stringify(s5Persist);
+var reloadS5 = new Save();
+var rd5 = reloadS5.load();
+check('S5 状态经 JSON 落盘后可完整重载',
+  rd5.schema === 3 && rd5.coins === 222 && rd5.tickets === 9 &&
+  rd5.makeupCards === 2 && rd5.fragments === 4 &&
+  rd5.daily.streak === 4 && rd5.daily.bestStreak === 6 &&
+  rd5.daily.history['2026-11-19'].coins === 110 &&
+  rd5.signin.totalDays === 12 && rd5.signin.claimedMilestones['7'] === true &&
+  rd5.collection.equipped === 'naitang' &&
+  rd5.achievements.first_clear.claimedAt === 6 &&
+  rd5.cosmetics.current === 'skin-mint');
+store['md:save:v1'] = app.save.data;
 
 /* ---------------- 7. 返回与调试浮层 ---------------- */
 
@@ -553,6 +982,193 @@ check('连点版本号开启调试浮层', app.debug.on === true);
 frames(app, 5);
 app.debug.setEnabled(false);
 
+/* ---------------- 7b. S5 页面流程 ---------------- */
+
+console.log('[7b] S5 页面流程（签到 / 每日 / 图鉴 / 成就 / 商店）');
+var configUI = require('../js/data/config');
+var themeData = require('../js/data/theme');
+
+function checkNoBadText(label) {
+  var texts = app.renderer.ctx.texts || [];
+  var bad = texts.filter(function (t) { return /%[ds]|undefined|NaN/.test(t); });
+  check(label + '文案无占位符/NaN', texts.length > 0 && bad.length === 0,
+    bad.slice(0, 3).join(' | '));
+}
+
+// 首页 → 签到 → 领取 → 返回
+var HL7 = app.layout.home();
+tap(HL7.checkin.cx, HL7.checkin.cy);
+frames(app, 1);
+check('首页签到入口进入签到页', sceneName(app) === 'checkin');
+checkNoBadText('签到页');
+var CL7 = app.layout.checkin();
+var coinsBeforeSignin = app.progress.coins();
+tap(CL7.claim.x + CL7.claim.w / 2, CL7.claim.y + CL7.claim.h / 2);
+frames(app, 2);
+check('签到页领取到账',
+  app.signin.claimedToday() &&
+  app.progress.coins() === coinsBeforeSignin + configUI.SIGNIN_REWARDS[0].coins,
+  'coins=' + app.progress.coins());
+check('签到领取有成功提示', app.toast.text === copy.toastCheckinDone);
+check('签到后按钮变为已签到', app.sm.top().makeupMode === 0);
+tap(CL7.back.cx, CL7.back.cy);
+frames(app, 2);
+check('签到页返回首页', sceneName(app) === 'home');
+
+// 首页 → 每日挑战 → 对局 → 结算 → 首页
+var HL8 = app.layout.home();
+tap(HL8.cards[0].x + HL8.cards[0].w / 2, HL8.cards[0].y + HL8.cards[0].h / 2);
+frames(app, 1);
+check('首页每日入口进入每日页', sceneName(app) === 'daily');
+checkNoBadText('每日页');
+var dailySt = app.daily.status();
+check('每日页有今日题面', !!dailySt.level && dailySt.level.daily === true &&
+  dailySt.level.tier >= 3, 'tier=' + (dailySt.level && dailySt.level.tier));
+var DL7 = app.layout.daily();
+var coinsBeforeDaily = app.progress.coins();
+tap(DL7.cta.x + DL7.cta.w / 2, DL7.cta.y + DL7.cta.h / 2);
+frames(app, 1);
+check('每日页进入每日对局',
+  sceneName(app) === 'game' && app.sm.top().dailyMode === true &&
+  app.sm.top().dailyDate === app.daily.todayKey());
+
+var dg7 = app.sm.top();
+fillSolution(app, dg7);
+frames(app, 50);
+check('每日对局完成进入每日结算',
+  sceneName(app) === 'result' && app.sm.top().info.daily === true);
+var dailyInfo = app.sm.top().info;
+check('每日结算首通发币与碎片',
+  dailyInfo.firstClear === true && dailyInfo.coins > 0 && dailyInfo.fragments >= 1 &&
+  app.progress.coins() === coinsBeforeDaily + dailyInfo.coins,
+  'coins=' + dailyInfo.coins + ' frag=' + dailyInfo.fragments);
+check('每日结算写入今日历史', app.daily.isCleared(app.daily.todayKey()) &&
+  app.daily.totalDays() >= 1);
+
+var RD7 = app.layout.result();
+tap(RD7.cta.x + RD7.cta.w / 2, RD7.cta.y + RD7.cta.h / 2);
+frames(app, 2);
+check('每日结算一键回首页', sceneName(app) === 'home');
+
+// 同一天重玩不计奖励
+var HL9 = app.layout.home();
+tap(HL9.cards[0].x + HL9.cards[0].w / 2, HL9.cards[0].y + HL9.cards[0].h / 2);
+frames(app, 1);
+var DL8 = app.layout.daily();
+var coinsBeforeReplay = app.progress.coins();
+tap(DL8.cta.x + DL8.cta.w / 2, DL8.cta.y + DL8.cta.h / 2);
+frames(app, 1);
+var dg8 = app.sm.top();
+fillSolution(app, dg8);
+frames(app, 50);
+check('每日重玩进入结算且不发奖',
+  sceneName(app) === 'result' && app.sm.top().info.replay === true &&
+  app.sm.top().info.coins === 0 && app.progress.coins() === coinsBeforeReplay);
+var RD8 = app.layout.result();
+tap(RD8.cta.x + RD8.cta.w / 2, RD8.cta.y + RD8.cta.h / 2);
+frames(app, 2);
+check('每日重玩后返回首页', sceneName(app) === 'home');
+
+// 首页 → 图鉴 → 详情 → 成就 → 领取
+var HL10 = app.layout.home();
+tap(HL10.cards[1].x + HL10.cards[1].w / 2, HL10.cards[1].y + HL10.cards[1].h / 2);
+frames(app, 1);
+check('首页图鉴入口进入图鉴', sceneName(app) === 'album');
+checkNoBadText('图鉴页');
+var album7 = app.sm.top();
+var AL7 = app.layout.album();
+check('图鉴展示 16 只猫、4 列网格',
+  album7.cells.length === 16 && AL7.grid.cols === 4);
+check('墨墨已解锁、奶糖仍锁定',
+  app.collection.isUnlocked('mo') && !app.collection.isUnlocked('naitang'));
+
+var cellNai = album7.cells[1];
+tap(cellNai.x + cellNai.w / 2, cellNai.y + cellNai.h / 2);
+frames(app, 1);
+check('点击锁定猫打开详情', album7.selected === 'naitang' && album7.detailAction === '');
+tap(AL7.detail.close.cx, AL7.detail.close.cy);
+frames(app, 1);
+check('详情右上角可关闭', album7.selected === null);
+
+var cellMo = album7.cells[0];
+tap(cellMo.x + cellMo.w / 2, cellMo.y + cellMo.h / 2);
+frames(app, 1);
+check('点击已出战猫显示已出战状态',
+  album7.selected === 'mo' && album7.detailAction === '');
+tap(AL7.detail.close.cx, AL7.detail.close.cy);
+frames(app, 1);
+
+tap(AL7.ach.x + AL7.ach.w / 2, AL7.ach.y + AL7.ach.h / 2);
+frames(app, 1);
+check('图鉴右上角进入成就页', sceneName(app) === 'achievements');
+checkNoBadText('成就页');
+var AS7 = app.sm.top();
+check('成就页列出 9 条成就', AS7.rows.length === configUI.ACHIEVEMENTS.length);
+check('首通成就已由进度自动标记',
+  app.achievements.isUnlocked('first_clear') &&
+  !app.achievements.isClaimed('first_clear') && !!AS7.rows[0].btn);
+var coinsBeforeAch = app.progress.coins();
+var ar = AS7.rows[0].btn;
+tap(ar.x + ar.w / 2, ar.y + ar.h / 2);
+frames(app, 2);
+check('成就领取入账并标记已领',
+  app.achievements.isClaimed('first_clear') &&
+  app.progress.coins() === coinsBeforeAch + configUI.ACHIEVEMENTS[0].coins);
+check('成就领取提示', app.toast.text === copy.toastAchievementClaimed);
+tap(AS7.L.back.cx, AS7.L.back.cy);
+frames(app, 2);
+check('成就页返回图鉴', sceneName(app) === 'album');
+tap(AL7.back.cx, AL7.back.cy);
+frames(app, 2);
+check('图鉴返回首页', sceneName(app) === 'home');
+
+// 首页 → 商店 → 买券/补签卡/皮肤 → 当前皮肤不重复扣款
+var HL11 = app.layout.home();
+tap(HL11.cards[2].x + HL11.cards[2].w / 2, HL11.cards[2].y + HL11.cards[2].h / 2);
+frames(app, 1);
+check('首页商店入口进入商店', sceneName(app) === 'shop');
+checkNoBadText('商店页');
+var shop7 = app.sm.top();
+var SL7 = app.layout.shop();
+check('商店渲染 5 个商品', shop7.rows.length === 5);
+
+var shopCoins0 = app.progress.coins();
+var shopTickets0 = app.progress.tickets();
+tap(shop7.rows[0].btn.x + shop7.rows[0].btn.w / 2, shop7.rows[0].btn.y + shop7.rows[0].btn.h / 2);
+frames(app, 2);
+check('商店购买提示券',
+  app.progress.tickets() === shopTickets0 + 1 &&
+  app.progress.coins() === shopCoins0 - 45);
+
+var shopCoins1 = app.progress.coins();
+var shopCards0 = app.progress.makeupCards();
+tap(shop7.rows[1].btn.x + shop7.rows[1].btn.w / 2, shop7.rows[1].btn.y + shop7.rows[1].btn.h / 2);
+frames(app, 2);
+check('商店购买补签卡',
+  app.progress.makeupCards() === shopCards0 + 1 &&
+  app.progress.coins() === shopCoins1 - 100);
+
+app.progress.addCoins(1000);
+frames(app, 1);
+var coinsBeforeSkin = app.progress.coins();
+tap(shop7.rows[2].btn.x + shop7.rows[2].btn.w / 2,
+  shop7.rows[2].btn.y + shop7.rows[2].btn.h / 2);
+frames(app, 2);
+check('商店购买皮肤并切换棋盘配色',
+  app.progress.currentSkin() === 'skin-mint' &&
+  app.progress.coins() === coinsBeforeSkin - 300 &&
+  app.theme.region[0] === themeData.palette('skin-mint')[0] &&
+  app.theme.region[0] !== themeData.palette('cream')[0]);
+var coinsAfterSkin = app.progress.coins();
+tap(shop7.rows[2].btn.x + shop7.rows[2].btn.w / 2,
+  shop7.rows[2].btn.y + shop7.rows[2].btn.h / 2);
+frames(app, 1);
+check('当前皮肤按钮不会重复扣款',
+  shop7.rows[2].action === '' && app.progress.coins() === coinsAfterSkin);
+tap(SL7.back.cx, SL7.back.cy);
+frames(app, 2);
+check('商店返回首页', sceneName(app) === 'home');
+
 /* ---------------- 8. 小屏布局 ---------------- */
 
 console.log('[8] 320×568 小屏布局');
@@ -587,6 +1203,41 @@ check('小屏 9×9 棋盘不越界', S9.board.y + S9.board.size <= S9.band.y + 0
 check('小屏 9×9 格子边长 ≥ 24px', S9.geom.tile >= 24, 'tile=' + S9.geom.tile.toFixed(1));
 check('小屏 9×9 图例不溢出', S9.legend.item * 9 + S9.legend.gap * 8 <= 320,
   'legend=' + (S9.legend.item * 9 + S9.legend.gap * 8).toFixed(1));
+
+// S5 五个子页面：320×568 全部不越界、不重叠
+var SDAILY = small.daily();
+check('小屏每日页按钮在屏内', SDAILY.cta.y + SDAILY.cta.h <= 568 + 0.5);
+check('小屏每日页奖励卡不与按钮重叠', SDAILY.reward.y + SDAILY.reward.h < SDAILY.cta.y);
+check('小屏每日 7 日历史不溢出',
+  SDAILY.history.x + SDAILY.history.cellW * 7 + SDAILY.history.gap * 6 <= 320 + 0.5,
+  'right=' + (SDAILY.history.x + SDAILY.history.cellW * 7 + SDAILY.history.gap * 6).toFixed(1));
+
+var SCHK = small.checkin();
+check('小屏签到按钮在屏内', SCHK.claim.y + SCHK.claim.h <= 568 + 0.5);
+check('小屏补签条在按钮上方', SCHK.makeup.y + SCHK.makeup.h < SCHK.claim.y);
+check('小屏里程碑在补签条上方', SCHK.miles.y + SCHK.miles.h < SCHK.makeup.y);
+check('小屏签到 7 格不溢出',
+  SCHK.week.x + SCHK.week.cellW * 7 + SCHK.week.gap * 6 <= 320 + 0.5);
+
+var SALB = small.album();
+check('小屏图鉴 4×4 网格在屏内', SALB.grid.y + SALB.grid.h <= 568 + 0.5,
+  'bottom=' + (SALB.grid.y + SALB.grid.h).toFixed(1));
+check('小屏图鉴格子宽度可用', SALB.grid.cellW >= 60, 'w=' + SALB.grid.cellW.toFixed(1));
+check('小屏图鉴详情卡在屏内',
+  SALB.detail.y + SALB.detail.h <= 568 + 0.5 &&
+  SALB.detail.action.y + SALB.detail.action.h <= SALB.detail.y + SALB.detail.h + 0.5);
+
+var SACH = small.achievements();
+check('小屏成就列表 9 条在屏内',
+  SACH.list.y + SACH.list.rowH * 9 + SACH.list.gap * 8 <= 568 + 0.5,
+  'bottom=' + (SACH.list.y + SACH.list.rowH * 9 + SACH.list.gap * 8).toFixed(1));
+check('小屏成就行高可读', SACH.list.rowH >= 38, 'rowH=' + SACH.list.rowH.toFixed(1));
+
+var SSHOP = small.shop();
+check('小屏商店 5 个商品在屏内',
+  SSHOP.list.y + SSHOP.list.rowH * 5 + SSHOP.list.gap * 4 <= 568 + 0.5,
+  'bottom=' + (SSHOP.list.y + SSHOP.list.rowH * 5 + SSHOP.list.gap * 4).toFixed(1));
+check('小屏商店行高可读', SSHOP.list.rowH >= 52, 'rowH=' + SSHOP.list.rowH.toFixed(1));
 
 /* ---------------- 9. 连续帧 ---------------- */
 

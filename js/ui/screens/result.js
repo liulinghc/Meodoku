@@ -82,8 +82,7 @@ ResultScene.prototype._renderCat = function (r) {
   var s = this.app.layout.s;
   var L = this.L;
   var bob = Math.sin(this.t * 1.8) * 2 * s;
-  var idx = Math.max(1, (this.info && this.info.levelIndex) || 1);
-  var cat = cats.all[(idx - 1) % cats.all.length];
+  var cat = this.app.collection.equippedCat();
 
   r.circle(L.cat.cx, L.cat.cy + 3 * s, L.cat.r, th.color.card);
   r.strokeCircle(L.cat.cx, L.cat.cy + 3 * s, L.cat.r, th.color.border, 1);
@@ -94,13 +93,15 @@ ResultScene.prototype._renderTitle = function (r, info) {
   var th = this.app.theme;
   var L = this.L;
 
-  r.text(copy.resultTitle, r.w / 2, L.titleY, {
+  var title = info.daily ? copy.dailyResultTitle : copy.resultTitle;
+  var sub = info.daily ? format(copy.dailyResultSub, info.streak || 0, info.n || 5) : format(copy.resultSub, info.levelIndex || 1, info.n || 5, info.n || 5);
+  r.text(title, r.w / 2, L.titleY, {
     size: th.font.hudValue,
     weight: '800',
     color: th.color.text,
     align: 'center'
   });
-  r.text(format(copy.resultSub, info.levelIndex || 1, info.n || 5, info.n || 5), r.w / 2, L.subY, {
+  r.text(sub, r.w / 2, L.subY, {
     size: th.font.small,
     color: th.color.textSoft,
     align: 'center'
@@ -197,6 +198,34 @@ ResultScene.prototype._renderReward = function (r, info) {
   var s = this.app.layout.s;
   var cy = this.L.reward.cy;
 
+  if (info.daily) {
+    if (info.guarded) {
+      r.text(copy.dailyResultGuarded, r.w / 2, cy, {
+        size: th.font.small, color: th.color.conflict, align: 'center'
+      });
+      return;
+    }
+    if (info.replay || !info.firstClear) {
+      r.text(copy.dailyResultReplay, r.w / 2, cy, {
+        size: th.font.small, color: th.color.textSoft, align: 'center'
+      });
+      return;
+    }
+
+    var dlabel = format(copy.dailyResultRewards, info.coins || 0, info.fragments || 0);
+    var dfs = th.font.small;
+    var dw = Math.min(r.w - 48 * s, r.measure(dlabel, dfs, '700') + 52 * s);
+    var dh = 32 * s;
+    var dx = (r.w - dw) / 2;
+    var dy = cy - dh / 2;
+    r.roundRect(dx, dy, dw, dh, dh / 2, th.color.highlight);
+    draw.iconCoin(r, dx + 16 * s, cy, 16 * s);
+    r.text(dlabel, dx + 30 * s, cy + 1, {
+      size: dfs, weight: '700', color: th.color.text, maxWidth: dw - 34 * s
+    });
+    return;
+  }
+
   if (!(info.firstClear && info.coins > 0)) {
     r.text(copy.resultReplay, r.w / 2, cy, {
       size: th.font.small,
@@ -230,14 +259,15 @@ ResultScene.prototype._renderButtons = function (r, info) {
 
   draw.softShadow(r, cta.x, cta.y, cta.w, cta.h, cta.h / 2);
   r.roundRect(cta.x, cta.y, cta.w, cta.h, cta.h / 2, th.color.cta);
-  r.text(info.nextIndex ? copy.resultNext : copy.resultMap, r.w / 2, cta.y + cta.h / 2 + 1, {
+  var ctaText = info.daily ? copy.resultHome : (info.nextIndex ? copy.resultNext : copy.resultMap);
+  r.text(ctaText, r.w / 2, cta.y + cta.h / 2 + 1, {
     size: th.font.banner,
     weight: '700',
     color: th.color.textOnColor,
     align: 'center'
   });
 
-  if (info.nextIndex) {
+  if (info.nextIndex && !info.daily) {
     var m = L.map;
     r.roundRect(m.x, m.y, m.w, m.h, m.h / 2, th.color.card);
     r.strokeRoundRect(m.x, m.y, m.w, m.h, m.h / 2, th.color.border, 1);
@@ -249,7 +279,7 @@ ResultScene.prototype._renderButtons = function (r, info) {
     });
   }
 
-  if (!info.nextIndex) {
+  if (!info.nextIndex && !info.daily) {
     r.text(copy.resultAllDone || '', r.w / 2, L.cta.y - 18 * s, {
       size: th.font.micro,
       color: th.color.textSoft,
@@ -294,12 +324,13 @@ ResultScene.prototype.onTouchEnd = function (x, y, isTap) {
 
   if (hit.inRect(x, y, L.cta)) {
     this.app.haptic();
-    if (info.nextIndex) this._next();
+    if (info.daily) this._toHome();
+    else if (info.nextIndex) this._next();
     else this._toMap();
     return;
   }
 
-  if (info.nextIndex && hit.inRect(x, y, L.map)) {
+  if (!info.daily && info.nextIndex && hit.inRect(x, y, L.map)) {
     this.app.haptic();
     this._toMap();
   }
@@ -315,6 +346,16 @@ ResultScene.prototype._toMap = function () {
   this.app.sm.pop();
   var top = this.app.sm.top();
   if (top && top.sceneName === 'game') this.app.sm.pop();
+};
+
+ResultScene.prototype._toHome = function () {
+  var sm = this.app.sm;
+  while (sm.stack.length > 1) {
+    var top = sm.top();
+    sm.pop();
+    if (top && top.sceneName === 'daily') break;
+    if (sm.top() && sm.top().sceneName === 'home') break;
+  }
 };
 
 module.exports = ResultScene;

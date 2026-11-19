@@ -18,6 +18,8 @@ function HomeScene(app) {
 HomeScene.prototype.enter = function () {
   this.t = 0;
   this.taps = [];
+  this.app.daily.noteSeen();
+  this.app.metaRefresh();
 };
 
 HomeScene.prototype.update = function (dt) {
@@ -63,6 +65,16 @@ HomeScene.prototype._renderTop = function (r) {
     color: th.color.text
   });
 
+  // 签到
+  r.circle(L.checkin.cx, L.checkin.cy, L.checkin.r, th.color.card);
+  r.strokeCircle(L.checkin.cx, L.checkin.cy, L.checkin.r, th.color.border, 1);
+  draw.iconCalendar(r, L.checkin.cx, L.checkin.cy, 19 * s, th.color.text);
+  if (!this.app.signin.claimedToday() && !this.app.daily.guarded()) {
+    var dr = 5 * s;
+    r.circle(L.checkin.cx + L.checkin.r * 0.72, L.checkin.cy - L.checkin.r * 0.72, dr, th.color.dot);
+    r.strokeCircle(L.checkin.cx + L.checkin.r * 0.72, L.checkin.cy - L.checkin.r * 0.72, dr, th.color.card, 1.5 * s);
+  }
+
   // 设置
   r.circle(L.gear.cx, L.gear.cy, L.gear.r, th.color.card);
   r.strokeCircle(L.gear.cx, L.gear.cy, L.gear.r, th.color.border, 1);
@@ -97,7 +109,7 @@ HomeScene.prototype._renderCat = function (r) {
   draw.ellipseFill(r.ctx, L.cat.cx, L.cat.cy + L.cat.size * 0.42, L.cat.size * 0.26, L.cat.size * 0.06, 'rgba(90, 60, 40, 0.10)');
   r.circle(L.cat.cx, L.cat.cy + 4 * s, L.cat.size * 0.60, th.color.card);
   r.strokeCircle(L.cat.cx, L.cat.cy + 4 * s, L.cat.size * 0.60, th.color.border, 1);
-  draw.catFace(r, L.cat.cx, L.cat.cy + bob, L.cat.size, cats.get('mo'), {});
+  draw.catFace(r, L.cat.cx, L.cat.cy + bob, L.cat.size, this.app.collection.equippedCat(), {});
 };
 
 HomeScene.prototype._renderCta = function (r, progress) {
@@ -120,10 +132,16 @@ HomeScene.prototype._renderCards = function (r) {
   var th = this.app.theme;
   var s = this.app.layout.s;
   var L = this.L;
+  var app = this.app;
+  var daily = app.daily.status();
+  var dailySub = daily.cleared ? format(copy.homeDailyDone, daily.streak) :
+    format(copy.homeDailyNew, daily.level ? daily.level.n : 0, daily.level ? daily.level.n : 0);
   var defs = [
-    { icon: draw.iconBulb, bg: th.color.brandSoft, fg: th.color.brand, title: copy.cardDaily, sub: copy.cardDailySub },
-    { icon: draw.iconPaw, bg: th.color.ctaSoft, fg: th.color.cta, title: copy.cardAlbum, sub: copy.cardAlbumSub },
-    { icon: draw.iconCoin, bg: th.color.highlight, fg: '#B8862B', title: copy.cardShop, sub: copy.cardShopSub }
+    { icon: draw.iconBulb, bg: th.color.brandSoft, fg: th.color.brand, title: copy.cardDaily, sub: dailySub },
+    { icon: draw.iconPaw, bg: th.color.ctaSoft, fg: th.color.cta, title: copy.cardAlbum,
+      sub: format(copy.homeAlbumSub, app.collection.count(), app.collection.total()) },
+    { icon: draw.iconCoin, bg: th.color.highlight, fg: th.color.gold, title: copy.cardShop,
+      sub: format(copy.homeShopSub, app.progress.tickets()) }
   ];
 
   for (var i = 0; i < L.cards.length; i++) {
@@ -147,6 +165,12 @@ HomeScene.prototype._renderCards = function (r) {
       align: 'center',
       maxWidth: card.w - 8 * s
     });
+
+    if (i === 0 && !daily.cleared) {
+      var dr = 4.5 * s;
+      r.circle(card.x + card.w - 10 * s, card.y + 10 * s, dr, th.color.dot);
+      r.strokeCircle(card.x + card.w - 10 * s, card.y + 10 * s, dr, th.color.card, 1.5 * s);
+    }
   }
 };
 
@@ -173,8 +197,11 @@ HomeScene.prototype.onTouchEnd = function (x, y, isTap) {
   var L = this.L || app.layout.home();
 
   if (hit.inRect(x, y, L.cta)) {
-    app.haptic();
     app.sm.push('levelmap');
+    return;
+  }
+  if (hit.inCircleLoose(x, y, L.checkin)) {
+    app.sm.push('checkin');
     return;
   }
   if (hit.inCircleLoose(x, y, L.gear)) {
@@ -182,14 +209,14 @@ HomeScene.prototype.onTouchEnd = function (x, y, isTap) {
     return;
   }
   if (hit.inRect(x, y, L.coin)) {
-    app.toast.show(copy.toastShop);
+    app.sm.push('shop');
     return;
   }
 
-  var toasts = [copy.toastDaily, copy.toastAlbum, copy.toastShop];
+  var scenes = ['daily', 'album', 'shop'];
   for (var i = 0; i < L.cards.length; i++) {
     if (hit.inRect(x, y, L.cards[i])) {
-      app.toast.show(toasts[i]);
+      app.sm.push(scenes[i]);
       return;
     }
   }

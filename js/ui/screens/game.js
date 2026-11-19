@@ -30,6 +30,8 @@ var ERROR_SHAKE = 0.18; // 冲突时棋盘短震动时长（秒）
 function GameScene(app) {
   this.app = app;
   this.index = 1;
+  this.dailyMode = false;
+  this.dailyDate = '';
   this.n = 5;
   this.regions = [];
   this.cells = [];
@@ -58,21 +60,36 @@ function GameScene(app) {
 
 GameScene.prototype.enter = function (params) {
   var app = this.app;
-  var index = (params && params.levelIndex) || 1;
-  var level = levels.get(index);
-  if (!level) {
-    logger.warn('关卡不存在: ' + index);
-    level = levels.get(1);
-  }
-  if (!level) {
-    logger.error('关卡包为空');
-    app.toast.show('关卡数据缺失');
-    app.sm.pop();
-    return;
+  this.dailyMode = !!(params && params.mode === 'daily');
+  var level;
+  if (this.dailyMode) {
+    level = app.daily.available() ? app.daily.level() : null;
+    if (!level) {
+      logger.warn('每日挑战题库不可用');
+      app.toast.show(copy.toastDailyUnavailable);
+      app.sm.pop();
+      return;
+    }
+    this.dailyDate = level.dailyDate;
+    this.index = 0;
+  } else {
+    var index = (params && params.levelIndex) || 1;
+    level = levels.get(index);
+    if (!level) {
+      logger.warn('关卡不存在: ' + index);
+      level = levels.get(1);
+    }
+    if (!level) {
+      logger.error('关卡包为空');
+      app.toast.show('关卡数据缺失');
+      app.sm.pop();
+      return;
+    }
+    this.dailyDate = '';
+    this.index = level.index;
   }
 
   this.level = level;
-  this.index = level.index;
   this.n = level.n;
   this.regions = parseRegions(level.regions, this.n);
   this.cells = [];
@@ -96,8 +113,8 @@ GameScene.prototype.enter = function (params) {
   this.resultOpened = false;
   this.resumeT = 0;
 
-  // 续玩：同一关有未完成盘面时恢复（撤销栈按设计不保存）
-  var resume = app.progress.getResume(this.index);
+  // 续玩：仅主线关卡；每日挑战鼓励当天重试，不与主线单槽混用
+  var resume = this.dailyMode ? null : app.progress.getResume(this.index);
   if (resume && resume.n === this.n && resume.cells.length === this.n * this.n) {
     this.cells = resume.cells.slice();
     this.elapsed = resume.timeMs / 1000;
@@ -111,7 +128,7 @@ GameScene.prototype.enter = function (params) {
   this.L = app.layout.game(this.n);
   this.boardLayer = this._buildBoardLayer();
 
-  app.progress.setLastLevel(this.index);
+  if (!this.dailyMode) app.progress.setLastLevel(this.index);
   this._recompute();
 };
 
@@ -172,7 +189,7 @@ GameScene.prototype._renderTop = function (r) {
   r.strokeCircle(L.gear.cx, L.gear.cy, L.gear.r, th.color.border, 1);
   draw.iconGear(r, L.gear.cx, L.gear.cy, 19 * s, th.color.text);
 
-  r.text(format(copy.levelTitle, this.index), r.w / 2, L.topBar.y + 19 * s, {
+  r.text(this.dailyMode ? copy.dailyGameTitle : format(copy.levelTitle, this.index), r.w / 2, L.topBar.y + 19 * s, {
     size: th.font.body,
     weight: '700',
     color: th.color.text,
@@ -180,6 +197,7 @@ GameScene.prototype._renderTop = function (r) {
   });
   var tierName = copy.tierNames[this.level.tier - 1] || '';
   var info = this.n + ' × ' + this.n;
+  if (this.dailyMode) info = copy.dailyGameTag + '  ·  ' + info;
   if (tierName) info += '  ·  ' + tierName;
   info += '  ·  ' + format.duration(Math.round(this.elapsed * 1000));
   r.text(info, r.w / 2, L.topBar.y + 37 * s, {
@@ -446,7 +464,8 @@ GameScene.prototype._regionColor = function (g) {
 };
 
 GameScene.prototype._catFor = function (g) {
-  return cats.all[g % cats.all.length];
+  // S5：装备的猫会出现在棋盘的每一只猫上；未解锁时回退默认猫
+  return this.app.collection.equippedCat();
 };
 
 GameScene.prototype._regionHasCat = function (g) {
@@ -478,7 +497,7 @@ GameScene.prototype._recompute = function () {
 
 /** 只保存盘面与计数，不保存撤销栈/动画；已通关则不写 */
 GameScene.prototype._saveResume = function () {
-  if (this.solvedFlag || !this.level) return;
+  if (this.dailyMode || this.solvedFlag || !this.level) return;
   this.app.progress.saveResume({
     index: this.index,
     n: this.n,
@@ -734,7 +753,37 @@ GameScene.prototype._settle = function () {
     if (this.mistakes === 0) paws = 3;
   }
 
+  if (this.dailyMode) {
+    var dailyRes = this.app.daily.complete({ date: this.dailyDate, timeMs: this.timeMs, paws: paws });
+    var meta = this.app.metaRefresh();
+    this.app.save.flushHard();
+    this.resultInfo = {
+      daily: true,
+      dailyDate: this.dailyDate,
+      levelIndex: 0,
+      n: this.n,
+      timeMs: this.timeMs,
+      moves: this.moves,
+      hints: this.hintsAtSolve,
+      mistakes: this.mistakes,
+      paws: paws,
+      coins: dailyRes.coins || 0,
+      fragments: dailyRes.fragments || 0,
+      firstClear: !!dailyRes.ok,
+      replay: !!dailyRes.replay,
+      guarded: !!dailyRes.guarded,
+      streak: dailyRes.streak || 0,
+      bestStreak: dailyRes.bestStreak || 0,
+      dailyTotal: dailyRes.total || 0,
+      newCats: meta.cats,
+      newAchievements: meta.achievements,
+      nextIndex: 0
+    };
+    return;
+  }
+
   var res = this.app.progress.completeLevel(this.index, { timeMs: this.timeMs, paws: paws });
+  var meta2 = this.app.metaRefresh();
   this.app.save.flushHard();
 
   this.resultInfo = {
@@ -749,6 +798,8 @@ GameScene.prototype._settle = function () {
     firstClear: res.firstClear,
     isNewBest: res.isNewBest,
     bestTimeMs: res.bestTimeMs,
+    newCats: meta2.cats,
+    newAchievements: meta2.achievements,
     nextIndex: levels.get(this.index + 1) ? this.index + 1 : 0
   };
 };

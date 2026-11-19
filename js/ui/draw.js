@@ -391,6 +391,85 @@ function iconCheck(r, cx, cy, size, color) {
   ctx.stroke();
 }
 
+function iconCalendar(r, cx, cy, size, color) {
+  var ctx = r.ctx;
+  var w = size * 0.52;
+  var h = size * 0.48;
+  var x = cx - w / 2;
+  var y = cy - h / 2 + size * 0.04;
+  r.strokeRoundRect(x, y, w, h, size * 0.08, color, Math.max(1.4, size * 0.075));
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(1.4, size * 0.075);
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x, y + h * 0.28);
+  ctx.lineTo(x + w, y + h * 0.28);
+  ctx.moveTo(x + w * 0.28, y - size * 0.06);
+  ctx.lineTo(x + w * 0.28, y + size * 0.04);
+  ctx.moveTo(x + w * 0.72, y - size * 0.06);
+  ctx.lineTo(x + w * 0.72, y + size * 0.04);
+  ctx.stroke();
+  r.circle(cx - w * 0.18, y + h * 0.62, size * 0.045, color);
+  r.circle(cx + w * 0.18, y + h * 0.62, size * 0.045, color);
+}
+
+function iconTicket(r, cx, cy, size, color) {
+  var ctx = r.ctx;
+  var w = size * 0.56;
+  var h = size * 0.36;
+  var x = cx - w / 2;
+  var y = cy - h / 2;
+  r.strokeRoundRect(x, y, w, h, size * 0.06, color, Math.max(1.4, size * 0.075));
+  // 票根分隔：用两个小圆点代替虚线，兼容性更好
+  r.line(cx + w * 0.12, y + h * 0.22, cx + w * 0.12, y + h * 0.78, color, Math.max(1.2, size * 0.06), 'round');
+  r.circle(cx + w * 0.12, y + h * 0.12, size * 0.03, color);
+  r.circle(cx + w * 0.12, y + h * 0.88, size * 0.03, color);
+  r.line(cx - w * 0.28, cy, cx - w * 0.04, cy, color, Math.max(1.4, size * 0.075), 'round');
+}
+
+function iconFlame(r, cx, cy, size, color) {
+  var ctx = r.ctx;
+  var w = size * 0.38;
+  var h = size * 0.54;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - h * 0.55);
+  ctx.bezierCurveTo(cx + w * 0.8, cy - h * 0.12, cx + w * 0.55, cy + h * 0.30, cx, cy + h * 0.48);
+  ctx.bezierCurveTo(cx - w * 0.55, cy + h * 0.30, cx - w * 0.8, cy - h * 0.12, cx, cy - h * 0.55);
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function iconStar(r, cx, cy, size, color) {
+  var ctx = r.ctx;
+  var R = size * 0.46;
+  ctx.beginPath();
+  for (var i = 0; i < 10; i++) {
+    var a = -Math.PI / 2 + i * Math.PI / 5;
+    var rad = i % 2 === 0 ? R : R * 0.46;
+    var px = cx + Math.cos(a) * rad;
+    var py = cy + Math.sin(a) * rad;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function iconBag(r, cx, cy, size, color) {
+  var ctx = r.ctx;
+  var w = size * 0.50;
+  var h = size * 0.42;
+  var x = cx - w / 2;
+  var y = cy - h * 0.20;
+  r.roundRect(x, y, w, h, size * 0.10, color);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(1.4, size * 0.08);
+  ctx.beginPath();
+  ctx.arc(cx, y, w * 0.24, Math.PI, 0, false);
+  ctx.stroke();
+}
+
 /* ---------------- 规则卡小示意图 ---------------- */
 
 /**
@@ -483,6 +562,11 @@ module.exports = {
   iconRestart: iconRestart,
   iconEraser: iconEraser,
   iconBulb: iconBulb,
+  iconCalendar: iconCalendar,
+  iconTicket: iconTicket,
+  iconFlame: iconFlame,
+  iconStar: iconStar,
+  iconBag: iconBag,
   iconPaw: iconPaw,
   iconCoin: iconCoin,
   iconLock: iconLock,

@@ -131,6 +131,7 @@ Layout.prototype.home = function () {
     margin: margin,
     topBar: { y: topY, h: topH },
     coin: { x: margin, y: topY, w: 92 * s, h: 32 * s },
+    checkin: { cx: w - margin - 64 * s, cy: topY + 16 * s, r: 18 * s },
     gear: { cx: w - margin - 18 * s, cy: topY + 16 * s, r: 18 * s },
     titleY: titleY,
     cat: { cx: w / 2, cy: catCY, size: catSize },
@@ -205,6 +206,261 @@ Layout.prototype.levelmap = function () {
     nodeGap: 76 * s,
     nodePadTop: 30 * s,
     nodePadBottom: 40 * s
+  };
+};
+
+
+/* ---------------- 公共页头 ---------------- */
+
+/** 子页面统一页头：返回按钮 + 居中标题 */
+Layout.prototype.page = function () {
+  var s = this.s;
+  var margin = 16 * s;
+  var topY = this.safeTop + 8 * s;
+  var topH = 52 * s;
+  return {
+    s: s,
+    w: this.w,
+    h: this.h,
+    margin: margin,
+    topBar: { x: margin, y: topY, w: this.w - 2 * margin, h: topH },
+    back: { cx: margin + 22 * s, cy: topY + topH / 2, r: 22 * s },
+    contentY: topY + topH + 12 * s,
+    bottom: this.h - this.safeBottom - 12 * s
+  };
+};
+
+/* ---------------- 每日挑战 ---------------- */
+
+Layout.prototype.daily = function () {
+  var p = this.page();
+  var s = p.s;
+  var w = p.w - 2 * p.margin;
+
+  var ctaH = 54 * s;
+  var ctaY = p.bottom - ctaH;
+  var heroH = 158 * s;
+  var statsH = 64 * s;
+  var histLabelH = 18 * s;
+  var histH = 44 * s;
+  var rewardH = 62 * s;
+  var gap1 = 12 * s;
+  var gap2 = 18 * s;
+  var gap3 = 10 * s;
+  var gap4 = 18 * s;
+
+  var clusterH = heroH + gap1 + statsH + gap2 + histLabelH + histH + gap3 + rewardH;
+  var top = p.contentY + Math.max(0, (ctaY - 16 * s - p.contentY - clusterH) / 2);
+
+  var heroY = top;
+  var statsY = heroY + heroH + gap1;
+  var histLabelY = statsY + statsH + gap2;
+  var histY = histLabelY + histLabelH;
+  var rewardY = histY + histH + gap3;
+
+  var histGap = 6 * s;
+  var histCellW = (w - histGap * 6) / 7;
+
+  return {
+    s: s,
+    w: p.w,
+    h: p.h,
+    margin: p.margin,
+    topBar: p.topBar,
+    back: p.back,
+    hero: { x: p.margin, y: heroY, w: w, h: heroH },
+    stats: { x: p.margin, y: statsY, w: w, h: statsH },
+    historyLabelY: histLabelY + histLabelH / 2,
+    history: {
+      x: p.margin,
+      y: histY,
+      w: w,
+      h: histH,
+      cellW: histCellW,
+      gap: histGap
+    },
+    reward: { x: p.margin, y: rewardY, w: w, h: rewardH },
+    cta: { x: 24 * s, y: ctaY, w: p.w - 48 * s, h: ctaH }
+  };
+};
+
+/* ---------------- 签到 ---------------- */
+
+Layout.prototype.checkin = function () {
+  var p = this.page();
+  var s = p.s;
+  var w = p.w - 2 * p.margin;
+
+  var claimH = 52 * s;
+  var claimY = p.bottom - claimH;
+  var makeupH = 40 * s;
+  var makeupY = claimY - 10 * s - makeupH;
+
+  var statsH = 62 * s;
+  var weekH = 88 * s;
+  var mileLabelH = 18 * s;
+  var mileH = 56 * s;
+
+  var clusterH = statsH + 16 * s + weekH + 22 * s + mileLabelH + 8 * s + mileH;
+  var top = p.contentY + Math.max(0, (makeupY - 14 * s - p.contentY - clusterH) / 2);
+
+  var statsY = top;
+  var weekY = statsY + statsH + 16 * s;
+  var mileLabelY = weekY + weekH + 22 * s;
+  var mileY = mileLabelY + mileLabelH + 8 * s;
+
+  var weekGap = 5 * s;
+  var weekCellW = (w - weekGap * 6) / 7;
+  var mileGap = 6 * s;
+  var mileW = (w - mileGap * 4) / 5;
+
+  return {
+    s: s,
+    w: p.w,
+    h: p.h,
+    margin: p.margin,
+    topBar: p.topBar,
+    back: p.back,
+    stats: { x: p.margin, y: statsY, w: w, h: statsH },
+    week: {
+      x: p.margin,
+      y: weekY,
+      w: w,
+      h: weekH,
+      cellW: weekCellW,
+      cellH: weekH,
+      gap: weekGap
+    },
+    mileLabelY: mileLabelY + mileLabelH / 2,
+    miles: {
+      x: p.margin,
+      y: mileY,
+      w: w,
+      h: mileH,
+      itemW: mileW,
+      itemH: mileH,
+      gap: mileGap
+    },
+    makeup: { x: p.margin, y: makeupY, w: w, h: makeupH },
+    claim: { x: 24 * s, y: claimY, w: p.w - 48 * s, h: claimH }
+  };
+};
+
+/* ---------------- 图鉴 ---------------- */
+
+Layout.prototype.album = function () {
+  var p = this.page();
+  var s = p.s;
+  var w = p.w - 2 * p.margin;
+
+  var achW = 84 * s;
+  var achH = 32 * s;
+
+  var pillsY = p.contentY;
+  var pillsH = 34 * s;
+  var gridY = pillsY + pillsH + 14 * s;
+  var gap = 8 * s;
+  var cols = 4;
+  var cellW = (w - gap * (cols - 1)) / cols;
+  var cellH = Math.min(106 * s, Math.max(82 * s, (p.bottom - gridY - gap * 3) / 4));
+  var gridH = cellH * 4 + gap * 3;
+  var gridTop = gridY + Math.max(0, (p.bottom - gridY - gridH) / 2);
+
+  var dCardX = 24 * s;
+  var dCardW = p.w - 48 * s;
+  var dCardY = this.safeTop + 64 * s;
+  var dCardH = Math.min(520 * s, this.h - this.safeBottom - 20 * s - dCardY);
+
+  return {
+    s: s,
+    w: p.w,
+    h: p.h,
+    margin: p.margin,
+    topBar: p.topBar,
+    back: p.back,
+    ach: {
+      x: p.topBar.x + p.topBar.w - achW,
+      y: p.topBar.y + (p.topBar.h - achH) / 2,
+      w: achW,
+      h: achH
+    },
+    pills: { x: p.margin, y: pillsY, w: w, h: pillsH, half: (w - 8 * s) / 2 },
+    grid: {
+      x: p.margin,
+      y: gridTop,
+      w: w,
+      h: gridH,
+      cols: cols,
+      cellW: cellW,
+      cellH: cellH,
+      gap: gap
+    },
+    detail: {
+      x: dCardX,
+      y: dCardY,
+      w: dCardW,
+      h: dCardH,
+      close: { cx: dCardX + dCardW - 24 * s, cy: dCardY + 24 * s, r: 16 * s },
+      cat: { cx: p.w / 2, cy: dCardY + 118 * s, size: 132 * s },
+      nameY: dCardY + 202 * s,
+      titleY: dCardY + 228 * s,
+      rarityY: dCardY + 252 * s,
+      quoteY: dCardY + 284 * s,
+      condY: dCardY + dCardH - 152 * s,
+      condBar: { x: dCardX + 24 * s, y: dCardY + dCardH - 128 * s, w: dCardW - 48 * s, h: 6 * s },
+      fragY: dCardY + dCardH - 108 * s,
+      action: { x: dCardX + 20 * s, y: dCardY + dCardH - 66 * s, w: dCardW - 40 * s, h: 46 * s }
+    }
+  };
+};
+
+/* ---------------- 成就 ---------------- */
+
+Layout.prototype.achievements = function () {
+  var p = this.page();
+  var s = p.s;
+  var w = p.w - 2 * p.margin;
+
+  var summaryY = p.contentY + 8 * s;
+  var listY = p.contentY + 30 * s;
+  var gap = 6 * s;
+  var avail = p.bottom - listY;
+  var rowH = Math.min(58 * s, Math.max(44 * s, (avail - gap * 8) / 9));
+
+  return {
+    s: s,
+    w: p.w,
+    h: p.h,
+    margin: p.margin,
+    topBar: p.topBar,
+    back: p.back,
+    summaryY: summaryY,
+    list: { x: p.margin, y: listY, w: w, rowH: rowH, gap: gap }
+  };
+};
+
+/* ---------------- 商店 ---------------- */
+
+Layout.prototype.shop = function () {
+  var p = this.page();
+  var s = p.s;
+  var w = p.w - 2 * p.margin;
+
+  var walletH = 66 * s;
+  var listY = p.contentY + walletH + 14 * s;
+  var gap = 8 * s;
+  var avail = p.bottom - listY;
+  var rowH = Math.min(72 * s, Math.max(58 * s, (avail - gap * 4) / 5));
+
+  return {
+    s: s,
+    w: p.w,
+    h: p.h,
+    margin: p.margin,
+    topBar: p.topBar,
+    back: p.back,
+    wallet: { x: p.margin, y: p.contentY, w: w, h: walletH },
+    list: { x: p.margin, y: listY, w: w, rowH: rowH, gap: gap }
   };
 };
 
