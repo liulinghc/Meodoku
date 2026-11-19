@@ -32,10 +32,12 @@ var BASE = {
     dot: '#E4572E'
   },
 
+  // 区域色板：色相与明度都拉开，实际取色由 ui/region-colors 按相邻关系分配。
+  // 仍是糖果色系，但不再按编号顺序直接映射。
   region: [
-    '#F07AB4', '#F2917A', '#F2A85E', '#D4B24C',
-    '#A8CF6B', '#6FD3A0', '#56C6C0', '#5CC3EE',
-    '#8E6BC8', '#A87B5D', '#7A82D8', '#7C8B9E'
+    '#E85D75', '#4FAF6E', '#4A90D9', '#E8B33C',
+    '#9B59B6', '#EF7B4F', '#2FA9A0', '#8C5E3C',
+    '#C75B9E', '#7C8B9E', '#8CC152', '#5B6FD6'
   ],
 
   radius: { board: 20, tileLg: 12, tileSm: 8, card: 14, chip: 10, pill: 28 },
@@ -64,20 +66,22 @@ var BASE = {
 
 var SKINS = [
   { id: 'cream', colors: BASE.region },
+  // 皮肤同样保留多色相，靠整体冷暖与明度形成风格差异；
+  // 不能做成单色渐变，否则区域边界无法辨认。
   { id: 'skin-mint', colors: [
-    '#6FD3A0', '#7ED9B2', '#8FD9A6', '#A8D987',
-    '#C2DF8A', '#DDE6A0', '#9ED9C9', '#7CCBC6',
-    '#6BBFC4', '#8FC7D3', '#A6D3C9', '#BCDCC9'
+    '#E87A98', '#63C9A0', '#3FAFC4', '#E3CC5A',
+    '#9E7BCB', '#EF8A6A', '#2E8E87', '#9A7157',
+    '#D07BAE', '#7D92A0', '#A6CC66', '#5D7ED8'
   ] },
   { id: 'skin-sakura', colors: [
-    '#F07AB4', '#F58FA8', '#F4A0A0', '#F2B08E',
-    '#E8B98A', '#D8B9A0', '#C7A8C8', '#B79BD3',
-    '#A991D8', '#C38AC0', '#D990B3', '#E6A2B4'
+    '#EE7894', '#67B57F', '#6FA3DE', '#EDBF55',
+    '#A66FBC', '#F28B6B', '#3EAAA3', '#A47050',
+    '#D76CA6', '#8A95A4', '#9FC866', '#7386DA'
   ] },
   { id: 'skin-night', colors: [
-    '#4C6B8A', '#566F9E', '#5E7AA8', '#647FA0',
-    '#6B8C9E', '#5A8C96', '#4F8F8A', '#5C8C7A',
-    '#718A66', '#8A865F', '#7C6B8A', '#675E7E'
+    '#C65B74', '#4E9B70', '#5577C7', '#C9A03E',
+    '#8F63B8', '#C47A55', '#3E9A94', '#8A6244',
+    '#E79BB8', '#6B7B90', '#8AA04F', '#8FD0E0'
   ] }
 ];
 

@@ -242,6 +242,67 @@ check('每关档位与难度分由同一判据产生', (function () {
   return badTier === 0;
 })());
 
+/* 区域配色：按区域相邻关系取色，保证相邻区域色差足够 */
+var regionColors = require('../js/ui/region-colors');
+var themeData = require('../js/data/theme');
+
+function regionGridOf(level) {
+  var out = [];
+  for (var r = 0; r < level.n; r++) {
+    for (var c = 0; c < level.n; c++) {
+      out.push(level.regions[r].charCodeAt(c) - 97);
+    }
+  }
+  return out;
+}
+
+function minAdjacentDeltaE(grid, n, palette) {
+  var map = regionColors.assign(grid, n, palette);
+  var min = Infinity;
+  var dirs = [[0, 1], [1, 0], [1, 1], [1, -1]];
+  for (var r = 0; r < n; r++) {
+    for (var c = 0; c < n; c++) {
+      var g0 = grid[r * n + c];
+      for (var d = 0; d < dirs.length; d++) {
+        var rr = r + dirs[d][0];
+        var cc = c + dirs[d][1];
+        if (rr >= n || cc < 0 || cc >= n) continue;
+        var g1 = grid[rr * n + cc];
+        if (g1 === g0) continue;
+        var de = regionColors.deltaE(map[g0], map[g1]);
+        if (de < min) min = de;
+      }
+    }
+  }
+  return min;
+}
+
+check('区域配色按相邻关系分配且结果确定', (function () {
+  var lv1 = levelsIndex.get(1);
+  var grid = regionGridOf(lv1);
+  var a = regionColors.assign(grid, lv1.n, themeData.base.region);
+  var b = regionColors.assign(grid, lv1.n, themeData.base.region);
+  var seen = {};
+  for (var k = 0; k < a.length; k++) seen[a[k]] = true;
+  return a.length === lv1.n && Object.keys(seen).length === lv1.n &&
+    a.join('|') === b.join('|');
+})());
+
+var colorWorst = { de: Infinity, at: '' };
+check('全部关卡相邻区域色差 ≥ 30（含皮肤）', (function () {
+  var ok = true;
+  for (var s = 0; s < themeData.skins.length; s++) {
+    var pal = themeData.skins[s].colors;
+    for (var k = 0; k < pack.levels.length; k++) {
+      var lv = levelsIndex.get(k + 1);
+      var de = minAdjacentDeltaE(regionGridOf(lv), lv.n, pal);
+      if (de < colorWorst.de) colorWorst = { de: de, at: themeData.skins[s].id + '@' + lv.id };
+      if (de < 30) ok = false;
+    }
+  }
+  return ok;
+})(), 'worst=' + colorWorst.de.toFixed(1) + ' @ ' + colorWorst.at);
+
 // 本地动态生成能力：运行时域模块同一套管线（每日挑战后续直接复用）
 var runtimeGen = require('../js/domain/generate');
 var dynamic = runtimeGen.generateLevel(20261119, 5, { attempts: 6000, tier: 2 });
@@ -444,12 +505,24 @@ check('预放猫点击无效，不能删除', l1.cells[givenCell] === 2 &&
   l1.moves === movesAtLock && app.toast.text === copy.toastGivenLocked,
   'cell=' + l1.cells[givenCell] + ' moves=' + l1.moves + ' toast=' + app.toast.text);
 
-// 切到第 7 关（无预放、无规则卡）测通用三态交互
+// 锁关：未解锁关卡不能被代码入口直接跳过
 app.sm.pop();
 frames(app, 1);
+var frontierBefore = app.save.data.unlocked;
+app.sm.push('game', { levelIndex: 7 });
+frames(app, 1);
+check('未解锁关卡不能直接进入', sceneName(app) === 'levelmap' &&
+  app.toast.text === copy.toastLocked,
+  'scene=' + sceneName(app) + ' toast=' + app.toast.text);
+
+// 临时把测试前沿推到第 7 关（无预放、无规则卡），测通用三态交互；
+// 第 5 节开始前恢复，继续验证真实解锁链。
+app.save.data.unlocked = 7;
 app.sm.push('game', { levelIndex: 7 });
 frames(app, 1);
 var game = app.sm.top();
+check('测试前沿允许进入第 7 关', sceneName(app) === 'game' && game.index === 7,
+  'scene=' + sceneName(app) + ' index=' + (game && game.index));
 var n = game.n;
 var G = app.layout.game(n);
 
@@ -555,6 +628,9 @@ check('续玩有提示文案', app.toast.text === copy.toastResumed, 'toast=' + 
 
 console.log('[5] 通关与结算');
 
+// 恢复测试前沿（第 4 节曾临时推到第 7 关）
+app.save.data.unlocked = frontierBefore;
+
 // 回到第 1 关：预放猫 + 免费提示直接补齐最后一只
 app.sm.pop();
 frames(app, 1);
@@ -641,6 +717,18 @@ check('通关第 2 关解锁第 3 关', app.progress.isUnlocked(3) && !app.progr
 check('地图可读取历史猫爪评分', app.progress.pawsOf(1) === 1 && app.progress.pawsOf(2) === 3,
   'paws=' + app.progress.pawsOf(1) + '/' + app.progress.pawsOf(2));
 
+// 结算页“下一关”守卫：解锁前沿未覆盖时不能越关
+app.sm.push('result', { levelIndex: 3, nextIndex: 999 });
+frames(app, 1);
+var guardResult = app.sm.top();
+check('结算页可构造锁定目标', sceneName(app) === 'result' &&
+  guardResult.info.nextIndex === 999);
+guardResult._next();
+frames(app, 1);
+check('结算页不能跳到未解锁关卡', sceneName(app) === 'levelmap' &&
+  app.toast.text === copy.toastLocked,
+  'scene=' + sceneName(app) + ' toast=' + app.toast.text);
+
 // 9×9 关卡：正式包在后续章节，直接从地图压入对局验证大尺寸渲染
 var nine = null;
 var eight = null;
@@ -651,8 +739,17 @@ for (var li = 0; li < levelsSvc.all.length; li++) {
 check('关卡包包含 8×8 与 9×9', !!eight && !!nine);
 app.sm.push('game', { levelIndex: nine.index });
 frames(app, 2);
-check('9×9 关卡可进入', sceneName(app) === 'game' && app.sm.top().n === 9,
+check('未解锁的 9×9 关卡不能直接进入', sceneName(app) === 'levelmap' &&
+  app.toast.text === copy.toastLocked,
+  'scene=' + sceneName(app) + ' toast=' + app.toast.text);
+
+var nineFrontier = app.save.data.unlocked;
+app.save.data.unlocked = nine.index;
+app.sm.push('game', { levelIndex: nine.index });
+frames(app, 2);
+check('前沿覆盖后 9×9 关卡可进入', sceneName(app) === 'game' && app.sm.top().n === 9,
   'n=' + (app.sm.top().n || '?'));
+app.save.data.unlocked = nineFrontier;
 var G9 = app.layout.game(9);
 check('9×9 棋盘不越界', G9.board.y + G9.board.size <= G9.band.y + 0.5,
   'bottom=' + (G9.board.y + G9.board.size).toFixed(1) + ' band=' + G9.band.y.toFixed(1));
@@ -1204,11 +1301,22 @@ check('9×9 对局 → 地图', sceneName(app) === 'levelmap');
 var map3 = app.sm.top();
 map3.render(app.renderer);
 var mapL = map3.L;
+var navFrontier = app.save.data.unlocked;
 tap(map3.nextC.cx, map3.nextC.cy);
 map3.render(app.renderer);
-check('地图可切到第 2 章', map3.chapter === 2 && map3._computeNodes()[0].index === 21,
-  'chapter=' + map3.chapter);
+check('未解锁章节不能向前跳转', map3.chapter === 1 &&
+  app.toast.text === copy.toastChapterLocked,
+  'chapter=' + map3.chapter + ' toast=' + app.toast.text);
 check('未通关章节的节点仍锁定', !app.progress.isUnlocked(21));
+
+app.save.data.unlocked = 21;
+tap(map3.nextC.cx, map3.nextC.cy);
+map3.render(app.renderer);
+check('章节起点解锁后可切到第 2 章', map3.chapter === 2 &&
+  map3._computeNodes()[0].index === 21,
+  'chapter=' + map3.chapter);
+check('章节起点解锁后节点可进入', app.progress.isUnlocked(21));
+app.save.data.unlocked = navFrontier;
 tap(map3.prevC.cx, map3.prevC.cy);
 map3.render(app.renderer);
 check('地图可切回第 1 章', map3.chapter === 1 && map3._computeNodes()[0].index === 1);

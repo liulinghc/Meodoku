@@ -19,6 +19,7 @@ var hit = require('../hit');
 var clock = require('../../core/clock');
 var format = require('../../core/format');
 var logger = require('../../core/logger');
+var regionColors = require('../region-colors');
 var Renderer = require('../renderer');
 
 var EMPTY = 0;
@@ -35,6 +36,7 @@ function GameScene(app) {
   this.dailyDate = '';
   this.n = 5;
   this.regions = [];
+  this.regionColors = [];
   this.cells = [];
   this.givens = [];      // 预放猫格子（不可移动）
   this.givenSet = {};
@@ -94,6 +96,13 @@ GameScene.prototype.enter = function (params) {
       app.sm.pop();
       return;
     }
+    // 锁关守卫：地图之外的入口（结算下一关/未来入口）也不能越过解锁前沿。
+    if (!app.progress.isUnlocked(level.index)) {
+      logger.warn('关卡尚未解锁: ' + level.index);
+      app.toast.show(copy.toastLocked);
+      app.sm.pop();
+      return;
+    }
     this.dailyDate = '';
     this.index = level.index;
   }
@@ -101,6 +110,7 @@ GameScene.prototype.enter = function (params) {
   this.level = level;
   this.n = level.n;
   this.regions = parseRegions(level.regions, this.n);
+  this.regionColors = regionColors.assign(this.regions, this.n, app.theme.region);
   this.givens = (level.givens || []).slice();
   this.givenSet = {};
   this.focus = level.focus >= 0 ? level.focus : -1;
@@ -596,6 +606,7 @@ GameScene.prototype._buildBoardLayer = function () {
 /* ---------------- 状态 ---------------- */
 
 GameScene.prototype._regionColor = function (g) {
+  if (this.regionColors && this.regionColors[g]) return this.regionColors[g];
   var region = this.app.theme.region;
   return region[g % region.length];
 };

@@ -336,6 +336,13 @@ ResultScene.prototype.onTouchEnd = function (x, y, isTap) {
 
 ResultScene.prototype._next = function () {
   var info = this.info || {};
+  if (!info.nextIndex) return;
+  // 正常情况下 completeLevel 已推进解锁前沿；这里仍守卫，防止旧档/异常数据越关。
+  if (!this.app.progress.isUnlocked(info.nextIndex)) {
+    this.app.toast.show(copy.toastLocked);
+    this._toMap();
+    return;
+  }
   this.app.sm.pop();
   this.app.sm.replace('game', { levelIndex: info.nextIndex });
 };

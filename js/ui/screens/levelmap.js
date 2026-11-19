@@ -10,6 +10,15 @@ var format = require('../../core/format');
 
 var COLS = 4;
 
+/** 当前能进入的最大章节：按各章起点是否已解锁判断 */
+function maxUnlockedChapter(progress) {
+  var max = 1;
+  for (var c = 1; c <= levels.chapterCount(); c++) {
+    if (progress.isUnlocked(levels.chapterRange(c).start)) max = c;
+  }
+  return max;
+}
+
 function LevelmapScene(app) {
   this.app = app;
   this.chapter = 1;
@@ -19,7 +28,10 @@ function LevelmapScene(app) {
 }
 
 LevelmapScene.prototype.enter = function (params) {
-  this.chapter = (params && params.chapter) || levels.currentChapter(this.app.progress);
+  var progress = this.app.progress;
+  var maxChapter = maxUnlockedChapter(progress);
+  var requested = (params && params.chapter) || levels.currentChapter(progress);
+  this.chapter = Math.max(1, Math.min(requested, maxChapter));
   this.nodes = [];
 };
 
@@ -208,8 +220,13 @@ LevelmapScene.prototype.onTouchEnd = function (x, y, isTap) {
     return;
   }
   if (this.nextC && hit.inCircleLoose(x, y, this.nextC, 4)) {
-    if (this.chapter < levels.chapterCount()) this.chapter++;
-    else app.toast.show(copy.toastNextChapter);
+    if (this.chapter >= levels.chapterCount()) {
+      app.toast.show(copy.toastNextChapter);
+    } else if (!app.progress.isUnlocked(levels.chapterRange(this.chapter + 1).start)) {
+      app.toast.show(copy.toastChapterLocked);
+    } else {
+      this.chapter++;
+    }
     return;
   }
 
