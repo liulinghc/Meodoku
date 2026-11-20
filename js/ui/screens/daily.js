@@ -8,15 +8,33 @@ var hit = require('../hit');
 var format = require('../../core/format');
 var date = require('../../core/date');
 var config = require('../../data/config');
+var uiKit = require('../widgets/ui-kit');
 
 function DailyScene(app) {
   this.app = app;
   this.L = null;
+  this.t = 0;
 }
 
 DailyScene.prototype.enter = function () {
+  this.t = 0;
   this.app.daily.noteSeen();
   this.app.metaRefresh();
+};
+
+DailyScene.prototype.update = function (dt) {
+  this.t += dt;
+};
+
+/** 历史格子的盖章回弹：按列错峰，只做视觉 */
+DailyScene.prototype._stampScale = function (i) {
+  var p = uiKit.clamp01((this.t - 0.12 - i * 0.05) / 0.26);
+  return p <= 0 ? 0 : uiKit.easeOutBack(p);
+};
+
+/** 连胜火焰轻跳 */
+DailyScene.prototype._flameBounce = function () {
+  return Math.sin(this.t * 4) * 1.5 * this.app.layout.s;
 };
 
 DailyScene.prototype.render = function (r) {
@@ -34,6 +52,7 @@ DailyScene.prototype.render = function (r) {
   this._renderHistory(r, st);
   this._renderReward(r, st);
   this._renderCta(r, st);
+  r.ctx.globalAlpha = 1;
 };
 
 DailyScene.prototype._renderTop = function (r) {
@@ -59,15 +78,34 @@ DailyScene.prototype._renderHero = function (r, st) {
   var c = L.hero;
   var lv = st.level;
 
-  r.roundRect(c.x, c.y, c.w, c.h, th.radius.card, th.color.card);
-  r.strokeRoundRect(c.x, c.y, c.w, c.h, th.radius.card, th.color.border, 1);
+  uiKit.card(r, c, th);
 
   var parts = st.date.split('-');
   var weekday = copy.dailyWeekdays[st.weekday] || '';
-  r.text(format(copy.dailyDateLabel, parseInt(parts[1], 10), parseInt(parts[2], 10), weekday), c.x + 16 * s, c.y + 20 * s, {
-    size: th.font.micro,
-    color: th.color.textSoft
+
+  // 日期印章：右上角圆形戳，通关后换成成功色并盖对勾
+  var d = c.date;
+  var stampColor = st.guarded ? th.color.conflict : th.color.gold;
+  r.circle(d.cx, d.cy, d.r, st.cleared ? th.color.successSoft : th.color.surfaceWarm);
+  r.strokeCircle(d.cx, d.cy, d.r, st.cleared ? th.color.success : stampColor, 1.6 * s);
+  r.strokeCircle(d.cx, d.cy, d.r - 4 * s, draw.alpha(stampColor, 0.18), 1);
+  r.text(parseInt(parts[1], 10) + '/' + parseInt(parts[2], 10), d.cx, d.cy - 4 * s, {
+    size: th.font.small,
+    weight: '800',
+    color: st.cleared ? th.color.success : th.color.text,
+    align: 'center'
   });
+  r.text(weekday.slice(1), d.cx, d.cy + 8 * s, {
+    size: th.font.micro,
+    color: th.color.textSoft,
+    align: 'center'
+  });
+  if (st.cleared) {
+    var bx = d.cx + d.r * 0.72;
+    var by = d.cy + d.r * 0.72;
+    r.circle(bx, by, 7 * s, th.color.success);
+    draw.iconCheck(r, bx, by, 8 * s, th.color.textOnColor);
+  }
 
   r.text(copy.dailyCardLabel, c.x + 16 * s, c.y + 46 * s, {
     size: th.font.banner,
@@ -86,7 +124,7 @@ DailyScene.prototype._renderHero = function (r, st) {
     maxWidth: c.w - 110 * s
   });
 
-  draw.catFace(r, c.x + c.w - 50 * s, c.y + 70 * s, 62 * s, app.collection.equippedCat(), {});
+  draw.catFace(r, c.cat.cx, c.cat.cy, c.cat.size, app.collection.equippedCat(), {});
 
   var line = st.guarded ? copy.dailyGuarded :
     (st.cleared ? copy.dailyDoneBadge : copy.dailyGoal);
@@ -96,13 +134,6 @@ DailyScene.prototype._renderHero = function (r, st) {
     color: st.guarded ? th.color.conflict : th.color.gold,
     maxWidth: c.w - 106 * s
   });
-
-  if (st.cleared) {
-    var bx = c.x + c.w - 24 * s;
-    var by = c.y + 24 * s;
-    r.circle(bx, by, 11 * s, th.color.success);
-    draw.iconCheck(r, bx, by, 13 * s, th.color.textOnColor);
-  }
 };
 
 DailyScene.prototype._renderStats = function (r, st) {
@@ -116,13 +147,18 @@ DailyScene.prototype._renderStats = function (r, st) {
     { value: st.total, label: copy.dailyStatTotal }
   ];
 
-  r.roundRect(c.x, c.y, c.w, c.h, th.radius.card, th.color.card);
-  r.strokeRoundRect(c.x, c.y, c.w, c.h, th.radius.card, th.color.border, 1);
+  uiKit.card(r, c, th);
 
   var colW = c.w / 3;
   for (var i = 0; i < cols.length; i++) {
     var cx = c.x + colW * (i + 0.5);
-    r.text(String(cols[i].value), cx, c.y + 24 * s, {
+    var value = String(cols[i].value);
+    var vw = r.measure(value, th.font.hudValue, '800');
+    if (i === 0) {
+      draw.iconFlame(r, cx - vw / 2 - 10 * s, c.y + 23 * s + this._flameBounce(),
+        14 * s, th.color.cta);
+    }
+    r.text(value, cx, c.y + 24 * s, {
       size: th.font.hudValue,
       weight: '800',
       color: i === 0 ? th.color.cta : th.color.text,
@@ -177,8 +213,9 @@ DailyScene.prototype._renderHistory = function (r, st) {
 
     var cx = x + hist.cellW / 2;
     if (item.done) {
-      r.circle(cx, y + 27 * s, 8 * s, th.color.brand);
-      draw.iconCheck(r, cx, y + 27 * s, 9 * s, th.color.textOnColor);
+      uiKit.stamp(r, cx, y + 27 * s, 8 * s, th.color.brand, th, {
+        scale: this._stampScale(i)
+      });
     } else if (item.today) {
       r.circle(cx, y + 27 * s, 7 * s, th.color.ctaSoft);
       r.circle(cx, y + 27 * s, 3 * s, th.color.cta);
@@ -194,11 +231,10 @@ DailyScene.prototype._renderReward = function (r, st) {
   var L = this.L;
   var c = L.reward;
 
-  r.roundRect(c.x, c.y, c.w, c.h, th.radius.card, th.color.card);
-  r.strokeRoundRect(c.x, c.y, c.w, c.h, th.radius.card, th.color.border, 1);
+  uiKit.card(r, c, th);
 
-  r.circle(c.x + 28 * s, c.y + c.h / 2, 16 * s, th.color.highlight);
-  draw.iconCoin(r, c.x + 28 * s, c.y + c.h / 2, 18 * s, th.color.gold);
+  uiKit.iconTray(r, c.x + 28 * s, c.y + c.h / 2, 16 * s,
+    th.color.gold, draw.iconCoin, 18 * s, th.color.gold);
 
   r.text(copy.dailyRewardTitle, c.x + 54 * s, c.y + 20 * s, {
     size: th.font.small,
@@ -230,14 +266,9 @@ DailyScene.prototype._renderCta = function (r, st) {
   if (st.guarded) label = copy.dailyGuarded;
   if (unavailable) label = copy.toastDailyUnavailable;
 
-  if (!disabled) draw.softShadow(r, c.x, c.y, c.w, c.h, c.h / 2);
-  r.roundRect(c.x, c.y, c.w, c.h, c.h / 2, disabled ? th.color.bgSunken : th.color.cta);
-  r.text(label, r.w / 2, c.y + c.h / 2 + 1, {
-    size: st.guarded ? th.font.body : th.font.banner,
-    weight: '700',
-    color: disabled ? th.color.textSoft : th.color.textOnColor,
-    align: 'center',
-    maxWidth: c.w - 24 * s
+  uiKit.button(r, c, label, th, {
+    disabled: disabled,
+    size: st.guarded ? th.font.body : th.font.banner
   });
 };
 

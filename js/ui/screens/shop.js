@@ -5,15 +5,43 @@ var draw = require('../draw');
 var copy = require('../../data/copy');
 var hit = require('../hit');
 var format = require('../../core/format');
+var uiKit = require('../widgets/ui-kit');
+
+var FLIGHT_LIFE = 0.66;
 
 function ShopScene(app) {
   this.app = app;
   this.L = null;
   this.rows = [];
+  this.t = 0;
+  this.flights = [];
+  this.walletBounce = 0;
 }
 
 ShopScene.prototype.enter = function () {
   this.rows = [];
+  this.t = 0;
+  this.flights = [];
+  this.walletBounce = 0;
+};
+
+ShopScene.prototype.update = function (dt) {
+  this.t += dt;
+  if (this.walletBounce > 0) {
+    this.walletBounce = Math.max(0, this.walletBounce - dt * 2.4);
+  }
+
+  var alive = [];
+  for (var i = 0; i < this.flights.length; i++) {
+    var f = this.flights[i];
+    f.t += dt;
+    if (f.t >= FLIGHT_LIFE) {
+      this.walletBounce = 1;
+    } else {
+      alive.push(f);
+    }
+  }
+  this.flights = alive;
 };
 
 ShopScene.prototype.render = function (r) {
@@ -27,6 +55,8 @@ ShopScene.prototype.render = function (r) {
   this._renderTop(r);
   this._renderWallet(r);
   this._renderItems(r);
+  this._renderFlights(r);
+  r.ctx.globalAlpha = 1;
 };
 
 ShopScene.prototype._renderTop = function (r) {
@@ -56,22 +86,21 @@ ShopScene.prototype._renderWallet = function (r) {
     { icon: draw.iconCalendar, value: app.progress.makeupCards(), label: copy.shopItems.makeup.name, color: th.color.cta }
   ];
 
-  r.roundRect(c.x, c.y, c.w, c.h, th.radius.card, th.color.card);
-  r.strokeRoundRect(c.x, c.y, c.w, c.h, th.radius.card, th.color.border, 1);
+  uiKit.card(r, c, th);
 
   var colW = c.w / 3;
   for (var i = 0; i < cols.length; i++) {
     var cx = c.x + colW * (i + 0.5);
+    var iconX = c.x + colW * i + 14 * s;
     var text = String(cols[i].value);
-    var tw = r.measure(text, th.font.body, '700');
-    var groupW = 16 * s + 4 * s + tw;
-    var gx = cx - groupW / 2;
+    var size = i === 0 ? th.font.body * (1 + 0.16 * this.walletBounce) : th.font.body;
 
-    cols[i].icon(r, gx + 8 * s, c.y + 27 * s, 16 * s, cols[i].color);
-    r.text(text, gx + 20 * s, c.y + 27 * s, {
-      size: th.font.body,
+    cols[i].icon(r, iconX, c.y + 27 * s, 16 * s, cols[i].color);
+    r.text(text, iconX + 10 * s, c.y + 27 * s, {
+      size: size,
       weight: '700',
-      color: th.color.text
+      color: th.color.text,
+      maxWidth: colW - 30 * s
     });
     r.text(cols[i].label, cx, c.y + 47 * s, {
       size: th.font.micro,
@@ -114,14 +143,12 @@ ShopScene.prototype._renderItems = function (r) {
     var row = { x: list.x, y: y, w: list.w, h: list.rowH, item: item };
     rows.push(row);
 
-    r.roundRect(row.x, row.y, row.w, row.h, th.radius.card, th.color.card);
-    r.strokeRoundRect(row.x, row.y, row.w, row.h, th.radius.card, th.color.border, 1);
+    uiKit.card(r, row, th, { shadow: false });
 
     var iconCx = row.x + 32 * s;
     var iconCy = row.y + row.h / 2;
     var color = this._itemColor(item);
-    r.circle(iconCx, iconCy, 18 * s, draw.alpha(color, 0.13));
-    this._itemIcon(item)(r, iconCx, iconCy, 20 * s, color);
+    uiKit.iconTray(r, iconCx, iconCy, 18 * s, color, this._itemIcon(item), 20 * s, color);
 
     r.text(meta.name, row.x + 58 * s, iconCy - 10 * s, {
       size: th.font.small,
@@ -163,17 +190,10 @@ ShopScene.prototype._renderItems = function (r) {
     }
 
     row.btn = btn;
-    var bg = style === 'alt' ? th.color.brandSoft :
-      (style === 'flat' ? th.color.bgSunken : th.color.cta);
-    var fg = style === 'alt' ? th.color.bandDeep :
-      (style === 'flat' ? th.color.textSoft : th.color.textOnColor);
-    r.roundRect(bx, by, bw, bh, bh / 2, bg);
-    r.text(label, bx + bw / 2, by + bh / 2 + 1, {
-      size: th.font.small,
-      weight: '700',
-      color: fg,
-      align: 'center',
-      maxWidth: bw - 12 * s
+    uiKit.button(r, btn, label, th, {
+      disabled: disabled,
+      style: style === 'alt' ? 'soft' : (style === 'flat' ? 'flat' : 'primary'),
+      size: th.font.small
     });
   }
 
@@ -186,6 +206,32 @@ ShopScene.prototype._renderItems = function (r) {
       color: th.color.textSoft,
       align: 'center'
     });
+  }
+};
+
+/** 购买成功：金币从按钮飞向余额，抵达后余额数字弹跳 */
+ShopScene.prototype._spawnFlight = function (btn) {
+  if (!btn || !this.L) return;
+  var c = this.L.wallet.coin;
+  this.flights.push({
+    t: 0,
+    from: { x: btn.x + btn.w / 2, y: btn.y + btn.h / 2 },
+    to: { x: c.cx, y: c.cy }
+  });
+};
+
+ShopScene.prototype._renderFlights = function (r) {
+  var th = this.app.theme;
+  var s = this.app.layout.s;
+  for (var i = 0; i < this.flights.length; i++) {
+    var f = this.flights[i];
+    for (var k = 0; k < 3; k++) {
+      var p = uiKit.clamp01((f.t - k * 0.07) / 0.42);
+      if (p <= 0 || p >= 1) continue;
+      var x = f.from.x + (f.to.x - f.from.x) * p;
+      var y = f.from.y + (f.to.y - f.from.y) * p - Math.sin(Math.PI * p) * 24 * s;
+      draw.iconCoin(r, x, y, (8 - k) * s, th.color.gold);
+    }
   }
 };
 
@@ -221,6 +267,7 @@ ShopScene.prototype.onTouchEnd = function (x, y, isTap) {
       return;
     }
 
+    this._spawnFlight(row.btn);
     if (item.type === 'ticket') {
       app.toast.show(format(copy.toastBoughtTicket, item.amount));
     } else if (item.type === 'makeup') {

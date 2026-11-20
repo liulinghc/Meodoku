@@ -8,6 +8,7 @@ var cats = require('../../data/cats');
 var hit = require('../hit');
 var format = require('../../core/format');
 var config = require('../../data/config');
+var uiKit = require('../widgets/ui-kit');
 
 var RARITY_COLOR = {
   common: 'rarityCommon',
@@ -21,11 +22,26 @@ function AlbumScene(app) {
   this.selected = null;
   this.cells = [];
   this.detailAction = '';
+  this.t = 0;
+  this.detailT = 0;
 }
 
 AlbumScene.prototype.enter = function (params) {
   this.selected = (params && params.catId) || null;
   this.cells = [];
+  this.t = 0;
+  this.detailT = 0;
+};
+
+AlbumScene.prototype.update = function (dt) {
+  this.t += dt;
+  if (this.selected) this.detailT += dt;
+  else this.detailT = 0;
+};
+
+/** 详情卡上滑进度（0–1），只影响绘制 */
+AlbumScene.prototype._detailEase = function () {
+  return uiKit.easeOutCubic(uiKit.clamp01(this.detailT / 0.22));
 };
 
 AlbumScene.prototype.render = function (r) {
@@ -41,6 +57,7 @@ AlbumScene.prototype.render = function (r) {
   this._renderGrid(r);
 
   if (this.selected) this._renderDetail(r);
+  r.ctx.globalAlpha = 1;
 };
 
 AlbumScene.prototype._renderTop = function (r) {
@@ -115,10 +132,13 @@ AlbumScene.prototype._renderGrid = function (r) {
     var cell = { x: x, y: y, w: g.cellW, h: g.cellH, cat: cat };
     cells.push(cell);
 
-    r.roundRect(x, y, g.cellW, g.cellH, 12 * s, unlocked ? th.color.card : th.color.bgSunken);
-    r.strokeRoundRect(x, y, g.cellW, g.cellH, 12 * s,
-      isEquipped ? th.color.brand : th.color.border,
-      isEquipped ? 1.5 * s : 1);
+    uiKit.card(r, { x: x, y: y, w: g.cellW, h: g.cellH }, th, {
+      shadow: false,
+      radius: 12 * s,
+      fill: unlocked ? th.color.card : th.color.bgSunken,
+      borderColor: isEquipped ? th.color.brand : th.color.border,
+      borderWidth: isEquipped ? 1.5 * s : 1
+    });
 
     var faceSize = Math.min(52 * s, g.cellH * 0.52);
     draw.catFace(r, x + g.cellW / 2, y + g.cellH * 0.37, faceSize, cat, {
@@ -126,7 +146,20 @@ AlbumScene.prototype._renderGrid = function (r) {
     });
 
     var rarityColor = th.color[RARITY_COLOR[cat.rarity] || 'rarityCommon'];
-    r.circle(x + 11 * s, y + 11 * s, 3.2 * s, unlocked ? rarityColor : th.color.border);
+    var rarityName = copy.rarityNames[cat.rarity] || '';
+    if (unlocked && rarityName) {
+      var ribbonW = uiKit.ribbonWidth(r, rarityName, th, s);
+      uiKit.ribbon(r, x + 6 * s, y + 6 * s, ribbonW, 15 * s,
+        rarityColor, rarityName, th);
+    } else if (!unlocked) {
+      // 未解锁：低透明度猫咪剪影上压一个问号，保留神秘感
+      r.text('？', x + g.cellW / 2, y + g.cellH * 0.36, {
+        size: th.font.banner,
+        weight: '800',
+        color: draw.alpha(th.color.text, 0.55),
+        align: 'center'
+      });
+    }
 
     if (isEquipped) {
       draw.iconStar(r, x + g.cellW - 12 * s, y + 12 * s, 12 * s, th.color.gold);
@@ -141,13 +174,16 @@ AlbumScene.prototype._renderGrid = function (r) {
       align: 'center',
       maxWidth: g.cellW - 8 * s
     });
-    r.text(unlocked ? (copy.rarityNames[cat.rarity] || '') : copy.albumLocked,
-      x + g.cellW / 2, y + g.cellH - 12 * s, {
+    // 稀有度已经由左上角缎带表达，底部只保留“出战中/未解锁”
+    var sub = unlocked ? (isEquipped ? copy.albumEquipped : '') : copy.albumLocked;
+    if (sub) {
+      r.text(sub, x + g.cellW / 2, y + g.cellH - 12 * s, {
         size: th.font.micro,
         color: isEquipped ? th.color.brand : th.color.textSoft,
         align: 'center',
         maxWidth: g.cellW - 8 * s
       });
+    }
   }
 
   this.cells = cells;
@@ -184,18 +220,27 @@ AlbumScene.prototype._renderDetail = function (r) {
   var equipped = app.collection.equippedId() === cat.id;
   var isCraft = cat.unlock && cat.unlock.type === 'craft';
   var cond = app.collection.conditionOf(cat);
+  var ease = this._detailEase();
 
+  // 遮罩与卡片一起上滑淡入；输入仍以布局坐标为准
+  r.ctx.globalAlpha = ease;
   r.rect(0, 0, r.w, r.h, th.color.mask);
-  draw.softShadow(r, D.x, D.y, D.w, D.h, th.radius.board);
+  r.save();
+  r.ctx.translate(0, (1 - ease) * 18 * s);
 
-  r.roundRect(D.x, D.y, D.w, D.h, th.radius.board, th.color.card);
-  r.strokeRoundRect(D.x, D.y, D.w, D.h, th.radius.board, th.color.border, 1);
+  uiKit.card(r, D, th, { radius: th.radius.board });
 
   r.circle(D.close.cx, D.close.cy, D.close.r, th.color.bgSunken);
   draw.xMark(r, D.close.cx, D.close.cy, 12 * s, th.color.textSoft);
 
   draw.catFace(r, D.cat.cx, D.cat.cy, D.cat.size, cat, { alpha: unlocked ? 1 : 0.28 });
   if (!unlocked) {
+    r.text('？', D.cat.cx, D.cat.cy - 2 * s, {
+      size: th.font.banner,
+      weight: '800',
+      color: draw.alpha(th.color.text, 0.55),
+      align: 'center'
+    });
     r.circle(D.cat.cx + D.cat.size * 0.30, D.cat.cy + D.cat.size * 0.28, 13 * s, th.color.card);
     draw.iconLock(r, D.cat.cx + D.cat.size * 0.30, D.cat.cy + D.cat.size * 0.28, 14 * s, th.color.textSoft);
   }
@@ -214,14 +259,9 @@ AlbumScene.prototype._renderDetail = function (r) {
 
   var rarityColor = th.color[RARITY_COLOR[cat.rarity] || 'rarityCommon'];
   var rarityName = this._rarityName(cat);
-  var rw = r.measure(rarityName, th.font.micro, '700') + 20 * s;
-  r.roundRect(r.w / 2 - rw / 2, D.rarityY - 10 * s, rw, 20 * s, 10 * s, draw.alpha(rarityColor, 0.14));
-  r.text(rarityName, r.w / 2, D.rarityY, {
-    size: th.font.micro,
-    weight: '700',
-    color: rarityColor,
-    align: 'center'
-  });
+  var rw = uiKit.ribbonWidth(r, rarityName, th, s);
+  uiKit.ribbon(r, r.w / 2 - rw / 2, D.rarityY - 10 * s, rw, 20 * s,
+    rarityColor, rarityName, th);
 
   r.text(cat.quote, r.w / 2, D.quoteY, {
     size: th.font.small,
@@ -237,12 +277,8 @@ AlbumScene.prototype._renderDetail = function (r) {
   });
 
   if (!unlocked && cond.need > 0) {
-    var bar = D.condBar;
-    var ratio = Math.max(0, Math.min(1, cond.current / cond.need));
-    r.roundRect(bar.x, bar.y, bar.w, bar.h, bar.h / 2, th.color.bgSunken);
-    if (ratio > 0) {
-      r.roundRect(bar.x, bar.y, Math.max(bar.h, bar.w * ratio), bar.h, bar.h / 2, th.color.brand);
-    }
+    uiKit.progress(r, D.condBar,
+      Math.max(0, Math.min(1, cond.current / cond.need)), th);
   }
 
   if (isCraft) {
@@ -257,36 +293,28 @@ AlbumScene.prototype._renderDetail = function (r) {
     var need = cat.unlock.need || 3;
     var enough = app.progress.fragments() >= need;
     var label = enough ? format(copy.albumCraft, need) : format(copy.albumCraftNeed, app.progress.fragments(), need);
-    r.roundRect(D.action.x, D.action.y, D.action.w, D.action.h, D.action.h / 2,
-      enough ? th.color.cta : th.color.bgSunken);
-    r.text(label, r.w / 2, D.action.y + D.action.h / 2 + 1, {
-      size: th.font.body,
-      weight: '700',
-      color: enough ? th.color.textOnColor : th.color.textSoft,
-      align: 'center',
-      maxWidth: D.action.w - 20 * s
+    uiKit.button(r, D.action, label, th, {
+      disabled: !enough,
+      size: enough ? th.font.body : th.font.small
     });
     this.detailAction = 'craft';
   } else if (unlocked) {
     var equippedLabel = equipped ? copy.albumEquippedDone : copy.albumEquip;
-    r.roundRect(D.action.x, D.action.y, D.action.w, D.action.h, D.action.h / 2,
-      equipped ? th.color.bgSunken : th.color.cta);
-    r.text(equippedLabel, r.w / 2, D.action.y + D.action.h / 2 + 1, {
-      size: th.font.body,
-      weight: '700',
-      color: equipped ? th.color.textSoft : th.color.textOnColor,
-      align: 'center',
-      maxWidth: D.action.w - 20 * s
+    uiKit.button(r, D.action, equippedLabel, th, {
+      disabled: equipped,
+      style: equipped ? 'flat' : 'primary',
+      size: th.font.body
     });
     if (!equipped) this.detailAction = 'equip';
   } else {
-    r.roundRect(D.action.x, D.action.y, D.action.w, D.action.h, D.action.h / 2, th.color.bgSunken);
-    r.text(copy.albumLocked, r.w / 2, D.action.y + D.action.h / 2 + 1, {
-      size: th.font.small,
-      color: th.color.textSoft,
-      align: 'center'
+    uiKit.button(r, D.action, copy.albumLocked, th, {
+      disabled: true,
+      size: th.font.small
     });
   }
+
+  r.restore();
+  r.ctx.globalAlpha = 1;
 };
 
 AlbumScene.prototype.onTouchEnd = function (x, y, isTap) {
@@ -300,6 +328,7 @@ AlbumScene.prototype.onTouchEnd = function (x, y, isTap) {
     if (hit.inCircleLoose(x, y, D.close, 6) || !hit.inRect(x, y, D)) {
       this.selected = null;
       this.detailAction = '';
+      this.detailT = 0;
       return;
     }
     if (this.detailAction && hit.inRect(x, y, D.action)) {
@@ -334,6 +363,7 @@ AlbumScene.prototype.onTouchEnd = function (x, y, isTap) {
     var cell = this.cells[i];
     if (hit.inRect(x, y, cell)) {
       this.selected = cell.cat.id;
+      this.detailT = 0;
       return;
     }
   }

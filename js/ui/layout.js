@@ -445,7 +445,12 @@ Layout.prototype.daily = function () {
     margin: p.margin,
     topBar: p.topBar,
     back: p.back,
-    hero: { x: p.margin, y: heroY, w: w, h: heroH },
+    hero: {
+      x: p.margin, y: heroY, w: w, h: heroH,
+      // 日期印章与猫咪各占右上、右下，互不遮挡文字区
+      date: { cx: p.margin + w - 42 * s, cy: heroY + 34 * s, r: 22 * s },
+      cat: { cx: p.margin + w - 50 * s, cy: heroY + 86 * s, size: 52 * s }
+    },
     stats: { x: p.margin, y: statsY, w: w, h: statsH },
     historyLabelY: histLabelY + histLabelH / 2,
     history: {
@@ -516,7 +521,14 @@ Layout.prototype.checkin = function () {
       h: mileH,
       itemW: mileW,
       itemH: mileH,
-      gap: mileGap
+      gap: mileGap,
+      // 里程碑总进度条贴在标题行右侧，不额外占纵向空间
+      bar: {
+        x: p.margin + 96 * s,
+        y: mileLabelY + mileLabelH / 2 - 2.5 * s,
+        w: w - 96 * s,
+        h: 5 * s
+      }
     },
     makeup: { x: p.margin, y: makeupY, w: w, h: makeupH },
     claim: { x: 24 * s, y: claimY, w: p.w - 48 * s, h: claimH }
@@ -612,6 +624,16 @@ Layout.prototype.achievements = function () {
     topBar: p.topBar,
     back: p.back,
     summaryY: summaryY,
+    // 领取奖励后的飞行终点：顶栏右侧资源胶囊内的金币图标
+    // 124s 宽，金币与券各留 40s 数字区，5 位数也不会压到右侧图标
+    wallet: {
+      x: p.topBar.x + p.topBar.w - 124 * s,
+      y: p.topBar.y + (p.topBar.h - 32 * s) / 2,
+      w: 124 * s,
+      h: 32 * s,
+      coin: { cx: p.topBar.x + p.topBar.w - 109 * s, cy: p.topBar.y + p.topBar.h / 2 },
+      ticket: { cx: p.topBar.x + p.topBar.w - 43 * s, cy: p.topBar.y + p.topBar.h / 2 }
+    },
     list: { x: p.margin, y: listY, w: w, rowH: rowH, gap: gap }
   };
 };
@@ -636,7 +658,11 @@ Layout.prototype.shop = function () {
     margin: p.margin,
     topBar: p.topBar,
     back: p.back,
-    wallet: { x: p.margin, y: p.contentY, w: w, h: walletH },
+    wallet: {
+      x: p.margin, y: p.contentY, w: w, h: walletH,
+      // 购买成功后的金币飞行终点（第一格金币图标）
+      coin: { cx: p.margin + 14 * s, cy: p.contentY + 27 * s }
+    },
     list: { x: p.margin, y: listY, w: w, rowH: rowH, gap: gap }
   };
 };

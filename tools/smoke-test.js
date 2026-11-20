@@ -1772,6 +1772,14 @@ app.debug.setEnabled(false);
 console.log('[7b] S5 页面流程（签到 / 每日 / 图鉴 / 成就 / 商店）');
 var configUI = require('../js/data/config');
 var themeData = require('../js/data/theme');
+var uiKitTest = require('../js/ui/widgets/ui-kit');
+check('五个经济/收集页共用卡片、图标托、进度条、按钮、印章与缎带',
+  typeof uiKitTest.card === 'function' &&
+  typeof uiKitTest.iconTray === 'function' &&
+  typeof uiKitTest.progress === 'function' &&
+  typeof uiKitTest.button === 'function' &&
+  typeof uiKitTest.stamp === 'function' &&
+  typeof uiKitTest.ribbon === 'function');
 
 function checkNoBadText(label) {
   var texts = app.renderer.ctx.texts || [];
@@ -1796,6 +1804,17 @@ check('签到页领取到账',
   'coins=' + app.progress.coins());
 check('签到领取有成功提示', app.toast.text === copy.toastCheckinDone);
 check('签到后按钮变为已签到', app.sm.top().makeupMode === 0);
+var checkinScene7 = app.sm.top();
+frames(app, 12);
+check('签到盖章回弹且里程碑进度擦出',
+  checkinScene7._stampScale(0) > 0 &&
+  checkinScene7._mileRatio() > 0 &&
+  checkinScene7._mileRatio() <= 1);
+check('签到里程碑进度条贴在标题行且不越界',
+  CL7.miles.bar.x >= CL7.margin &&
+  CL7.miles.bar.x + CL7.miles.bar.w <= app.env.width - CL7.margin + 0.5 &&
+  CL7.miles.bar.y + CL7.miles.bar.h < CL7.miles.y,
+  'bar=' + JSON.stringify(CL7.miles.bar));
 tap(CL7.back.cx, CL7.back.cy);
 frames(app, 2);
 check('签到页返回首页', sceneName(app) === 'home');
@@ -1809,6 +1828,16 @@ checkNoBadText('每日页');
 var dailySt = app.daily.status();
 check('每日页有今日题面', !!dailySt.level && dailySt.level.daily === true &&
   dailySt.level.tier >= 3, 'tier=' + (dailySt.level && dailySt.level.tier));
+var dailyScene7 = app.sm.top();
+frames(app, 12);
+var DH7 = dailyScene7.L.hero;
+check('每日日期印章落在题面卡内',
+  DH7.date.cx - DH7.date.r >= DH7.x &&
+  DH7.date.cx + DH7.date.r <= DH7.x + DH7.w &&
+  DH7.cat.cx + DH7.cat.size / 2 <= DH7.x + DH7.w);
+check('每日历史盖章回弹且连胜火焰轻跳',
+  dailyScene7._stampScale(0) > 0 &&
+  Math.abs(dailyScene7._flameBounce()) > 0);
 var DL7 = app.layout.daily();
 var coinsBeforeDaily = app.progress.coins();
 tap(DL7.cta.x + DL7.cta.w / 2, DL7.cta.y + DL7.cta.h / 2);
@@ -1886,8 +1915,11 @@ check('墨墨已解锁、奶糖仍锁定',
 
 var cellNai = album7.cells[1];
 tap(cellNai.x + cellNai.w / 2, cellNai.y + cellNai.h / 2);
-frames(app, 1);
+frames(app, 12);
 check('点击锁定猫打开详情', album7.selected === 'naitang' && album7.detailAction === '');
+check('图鉴详情卡上滑淡入且结束重置透明度',
+  album7._detailEase() > 0.5 && app.renderer.ctx.globalAlpha === 1,
+  'ease=' + album7._detailEase().toFixed(2));
 tap(AL7.detail.close.cx, AL7.detail.close.cy);
 frames(app, 1);
 check('详情右上角可关闭', album7.selected === null);
@@ -1917,6 +1949,24 @@ check('成就领取入账并标记已领',
   app.achievements.isClaimed('first_clear') &&
   app.progress.coins() === coinsBeforeAch + configUI.ACHIEVEMENTS[0].coins);
 check('成就领取提示', app.toast.text === copy.toastAchievementClaimed);
+var achRow0 = AS7.rows[0];
+check('成就行含图标托与内嵌进度条',
+  !!achRow0.bar &&
+  achRow0.bar.x >= achRow0.x &&
+  achRow0.bar.x + achRow0.bar.w <= achRow0.x + achRow0.w + 0.5 &&
+  achRow0.bar.y + achRow0.bar.h <= achRow0.y + achRow0.h + 0.5);
+check('成就领取生成飞向资源胶囊的金币',
+  AS7.flights.length > 0 &&
+  AS7.L.wallet.coin.cx >= AS7.L.wallet.x &&
+  AS7.L.wallet.coin.cx <= AS7.L.wallet.x + AS7.L.wallet.w);
+var achWallet7 = AS7.L.wallet;
+var achTitleW7 = app.renderer.measure(copy.achievementsTitle, app.theme.font.pageTitle, '800');
+check('成就资源胶囊不压标题且金币数字区避开券图标',
+  achWallet7.x >= app.env.width / 2 + achTitleW7 / 2 + 4 &&
+  achWallet7.coin.cx + 9 * app.layout.s + 34 * app.layout.s <=
+    achWallet7.ticket.cx - 13 * app.layout.s + 0.5,
+  'walletX=' + achWallet7.x.toFixed(1) + ' titleRight=' +
+    (app.env.width / 2 + achTitleW7 / 2).toFixed(1));
 tap(AS7.L.back.cx, AS7.L.back.cy);
 frames(app, 2);
 check('成就页返回图鉴', sceneName(app) === 'album');
@@ -1941,6 +1991,10 @@ frames(app, 2);
 check('商店购买提示券',
   app.progress.tickets() === shopTickets0 + 1 &&
   app.progress.coins() === shopCoins0 - 45);
+check('商店购买后金币飞向余额胶囊',
+  shop7.flights.length > 0 &&
+  SL7.wallet.coin.cx >= SL7.wallet.x &&
+  SL7.wallet.coin.cx <= SL7.wallet.x + SL7.wallet.w);
 
 var shopCoins1 = app.progress.coins();
 var shopCards0 = app.progress.makeupCards();
@@ -2096,6 +2150,12 @@ check('小屏每日页奖励卡不与按钮重叠', SDAILY.reward.y + SDAILY.rew
 check('小屏每日 7 日历史不溢出',
   SDAILY.history.x + SDAILY.history.cellW * 7 + SDAILY.history.gap * 6 <= 320 + 0.5,
   'right=' + (SDAILY.history.x + SDAILY.history.cellW * 7 + SDAILY.history.gap * 6).toFixed(1));
+check('小屏每日日期印章与猫咪都在题面卡内',
+  SDAILY.hero.date.cx - SDAILY.hero.date.r >= SDAILY.hero.x &&
+  SDAILY.hero.date.cx + SDAILY.hero.date.r <= SDAILY.hero.x + SDAILY.hero.w &&
+  SDAILY.hero.cat.cx + SDAILY.hero.cat.size / 2 <= SDAILY.hero.x + SDAILY.hero.w,
+  'dateRight=' + (SDAILY.hero.date.cx + SDAILY.hero.date.r).toFixed(1) +
+  ' catRight=' + (SDAILY.hero.cat.cx + SDAILY.hero.cat.size / 2).toFixed(1));
 
 var SCHK = small.checkin();
 check('小屏签到按钮在屏内', SCHK.claim.y + SCHK.claim.h <= 568 + 0.5);
@@ -2103,6 +2163,11 @@ check('小屏补签条在按钮上方', SCHK.makeup.y + SCHK.makeup.h < SCHK.cla
 check('小屏里程碑在补签条上方', SCHK.miles.y + SCHK.miles.h < SCHK.makeup.y);
 check('小屏签到 7 格不溢出',
   SCHK.week.x + SCHK.week.cellW * 7 + SCHK.week.gap * 6 <= 320 + 0.5);
+check('小屏里程碑进度条在屏内且不压住卡片',
+  SCHK.miles.bar.x >= SCHK.margin &&
+  SCHK.miles.bar.x + SCHK.miles.bar.w <= 320 + 0.5 &&
+  SCHK.miles.bar.y + SCHK.miles.bar.h < SCHK.miles.y,
+  'barRight=' + (SCHK.miles.bar.x + SCHK.miles.bar.w).toFixed(1));
 
 var SALB = small.album();
 check('小屏图鉴 4×4 网格在屏内', SALB.grid.y + SALB.grid.h <= 568 + 0.5,
@@ -2117,12 +2182,28 @@ check('小屏成就列表 9 条在屏内',
   SACH.list.y + SACH.list.rowH * 9 + SACH.list.gap * 8 <= 568 + 0.5,
   'bottom=' + (SACH.list.y + SACH.list.rowH * 9 + SACH.list.gap * 8).toFixed(1));
 check('小屏成就行高可读', SACH.list.rowH >= 38, 'rowH=' + SACH.list.rowH.toFixed(1));
+check('小屏成就资源胶囊在顶栏内',
+  SACH.wallet.x >= 0 &&
+  SACH.wallet.x + SACH.wallet.w <= 320 + 0.5 &&
+  SACH.wallet.y >= SACH.topBar.y - 0.5 &&
+  SACH.wallet.y + SACH.wallet.h <= SACH.topBar.y + SACH.topBar.h + 0.5,
+  'walletRight=' + (SACH.wallet.x + SACH.wallet.w).toFixed(1));
+check('小屏成就金币数字区避开券图标',
+  SACH.wallet.coin.cx + 9 * small.s + 34 * small.s <=
+    SACH.wallet.ticket.cx - 13 * small.s + 0.5,
+  'coinEnd=' + (SACH.wallet.coin.cx + 43 * small.s).toFixed(1) +
+  ' ticketStart=' + (SACH.wallet.ticket.cx - 13 * small.s).toFixed(1));
 
 var SSHOP = small.shop();
 check('小屏商店 5 个商品在屏内',
   SSHOP.list.y + SSHOP.list.rowH * 5 + SSHOP.list.gap * 4 <= 568 + 0.5,
   'bottom=' + (SSHOP.list.y + SSHOP.list.rowH * 5 + SSHOP.list.gap * 4).toFixed(1));
 check('小屏商店行高可读', SSHOP.list.rowH >= 52, 'rowH=' + SSHOP.list.rowH.toFixed(1));
+check('小屏商店金币飞行终点在余额卡内',
+  SSHOP.wallet.coin.cx >= SSHOP.wallet.x &&
+  SSHOP.wallet.coin.cx <= SSHOP.wallet.x + SSHOP.wallet.w &&
+  SSHOP.wallet.coin.cy >= SSHOP.wallet.y &&
+  SSHOP.wallet.coin.cy <= SSHOP.wallet.y + SSHOP.wallet.h);
 
 var SGUIDE = small.guide();
 check('小屏玩法说明弹窗在安全区内',

@@ -8,16 +8,38 @@ var hit = require('../hit');
 var format = require('../../core/format');
 var date = require('../../core/date');
 var config = require('../../data/config');
+var uiKit = require('../widgets/ui-kit');
 
 function CheckinScene(app) {
   this.app = app;
   this.L = null;
   this.makeupMode = 0;
+  this.t = 0;
+  this.stampAt = 0;
 }
 
 CheckinScene.prototype.enter = function () {
+  this.t = 0;
+  this.stampAt = 0;
   this.app.daily.noteSeen();
   this.app.metaRefresh();
+};
+
+CheckinScene.prototype.update = function (dt) {
+  this.t += dt;
+};
+
+/** 7 格盖章回弹：领取后以 stampAt 为起点重新错峰 */
+CheckinScene.prototype._stampScale = function (i) {
+  var p = uiKit.clamp01((this.t - this.stampAt - i * 0.04) / 0.26);
+  return p <= 0 ? 0 : uiKit.easeOutBack(p);
+};
+
+/** 里程碑总进度：累计天数 / 100，入场时从左向右擦出 */
+CheckinScene.prototype._mileRatio = function () {
+  var p = uiKit.clamp01(this.t / 0.55);
+  var target = uiKit.clamp01(this.app.signin.status().totalDays / 100);
+  return target * uiKit.easeOutCubic(p);
 };
 
 CheckinScene.prototype.render = function (r) {
@@ -36,6 +58,7 @@ CheckinScene.prototype.render = function (r) {
   this._renderMilestones(r);
   this._renderMakeup(r, st);
   this._renderClaim(r, st);
+  r.ctx.globalAlpha = 1;
 };
 
 CheckinScene.prototype._renderTop = function (r) {
@@ -64,8 +87,7 @@ CheckinScene.prototype._renderStats = function (r, st) {
     { value: st.makeupCards, label: copy.checkinStatCards }
   ];
 
-  r.roundRect(c.x, c.y, c.w, c.h, th.radius.card, th.color.card);
-  r.strokeRoundRect(c.x, c.y, c.w, c.h, th.radius.card, th.color.border, 1);
+  uiKit.card(r, c, th);
 
   var colW = c.w / 3;
   for (var i = 0; i < cols.length; i++) {
@@ -135,10 +157,9 @@ CheckinScene.prototype._renderWeek = function (r) {
     }
 
     if (item.done) {
-      var bx = x + w.cellW - 9 * s;
-      var by = y + 9 * s;
-      r.circle(bx, by, 6 * s, th.color.brand);
-      draw.iconCheck(r, bx, by, 7 * s, th.color.textOnColor);
+      uiKit.stamp(r, x + w.cellW - 9 * s, y + 9 * s, 6 * s, th.color.brand, th, {
+        scale: this._stampScale(i)
+      });
     }
   }
 };
@@ -155,6 +176,7 @@ CheckinScene.prototype._renderMilestones = function (r) {
     weight: '600',
     color: th.color.text
   });
+  uiKit.progress(r, box.bar, this._mileRatio(), th);
 
   for (var i = 0; i < ms.length; i++) {
     var m = ms[i];
@@ -162,10 +184,12 @@ CheckinScene.prototype._renderMilestones = function (r) {
     var y = box.y;
     var cx = x + box.itemW / 2;
 
-    r.roundRect(x, y, box.itemW, box.itemH, 8 * s,
-      m.reached ? th.color.brandSoft : th.color.card);
-    r.strokeRoundRect(x, y, box.itemW, box.itemH, 8 * s,
-      m.reached ? th.color.brand : th.color.border, 1);
+    uiKit.card(r, { x: x, y: y, w: box.itemW, h: box.itemH }, th, {
+      shadow: false,
+      radius: 8 * s,
+      fill: m.reached ? th.color.brandSoft : th.color.card,
+      borderColor: m.reached ? th.color.brand : th.color.border
+    });
 
     r.text(format(copy.checkinMilestoneDays, m.days), cx, y + 16 * s, {
       size: th.font.micro,
@@ -250,8 +274,10 @@ CheckinScene.prototype._renderMakeup = function (r, st) {
   if (!mode) return;
 
   if (mode === 1) {
-    r.roundRect(c.x, c.y, c.w, c.h, th.radius.card, th.color.highlight);
-    r.strokeRoundRect(c.x, c.y, c.w, c.h, th.radius.card, th.color.gold, 1);
+    uiKit.card(r, c, th, {
+      fill: th.color.highlight,
+      borderColor: th.color.gold
+    });
     r.text(copy.checkinMakeup, r.w / 2, c.y + c.h / 2 + 1, {
       size: th.font.small,
       weight: '700',
@@ -263,8 +289,7 @@ CheckinScene.prototype._renderMakeup = function (r, st) {
   }
 
   if (mode === 2) {
-    r.roundRect(c.x, c.y, c.w, c.h, th.radius.card, th.color.card);
-    r.strokeRoundRect(c.x, c.y, c.w, c.h, th.radius.card, th.color.border, 1);
+    uiKit.card(r, c, th);
     r.text(copy.toastNoMakeupCard, c.x + 14 * s, c.y + c.h / 2, {
       size: th.font.micro,
       color: th.color.textSoft,
@@ -300,14 +325,9 @@ CheckinScene.prototype._renderClaim = function (r, st) {
   var label = st.claimed ? copy.checkinDone : copy.checkinBtn;
   if (st.guarded) label = copy.dailyGuarded;
 
-  if (!disabled) draw.softShadow(r, c.x, c.y, c.w, c.h, c.h / 2);
-  r.roundRect(c.x, c.y, c.w, c.h, c.h / 2, disabled ? th.color.bgSunken : th.color.cta);
-  r.text(label, r.w / 2, c.y + c.h / 2 + 1, {
-    size: st.guarded ? th.font.body : th.font.banner,
-    weight: '700',
-    color: disabled ? th.color.textSoft : th.color.textOnColor,
-    align: 'center',
-    maxWidth: c.w - 24 * s
+  uiKit.button(r, c, label, th, {
+    disabled: disabled,
+    size: st.guarded ? th.font.body : th.font.banner
   });
 };
 
@@ -330,6 +350,7 @@ CheckinScene.prototype.onTouchEnd = function (x, y, isTap) {
     if (this.makeupMode === 1) {
       var mr = app.signin.makeup();
       if (mr.ok) {
+        this.stampAt = this.t;
         app.metaRefresh();
         app.toast.show(copy.toastMakeupDone);
       } else if (mr.reason === 'guarded') {
@@ -355,6 +376,7 @@ CheckinScene.prototype.onTouchEnd = function (x, y, isTap) {
     }
     var res = app.signin.claim();
     if (res.ok) {
+      this.stampAt = this.t;
       app.metaRefresh();
       app.toast.show(copy.toastCheckinDone);
     } else if (res.reason === 'guarded') {
