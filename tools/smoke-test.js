@@ -545,6 +545,22 @@ var plainCat = {
   accessory: '', acc: 'brand'
 };
 var plainOps = faceOps(plainCat, 120);
+check('猫咪头形为正圆（直径 2R）',
+  (function () {
+    var arcs = [];
+    var c = new FakeCtx();
+    c.arc = function (x, y, radius, start, end) {
+      arcs.push([x, y, radius, start, end]);
+      this.ops++;
+    };
+    drawMod.catFace({ ctx: c }, 100, 100, 120, plainCat, {});
+    var R = 120 * 0.37;
+    return arcs.some(function (a) {
+      return Math.abs(a[0] - 100) < 0.01 && Math.abs(a[1] - 100) < 0.01 &&
+        Math.abs(a[2] - R) < 0.01 && Math.abs(a[3]) < 1e-6 &&
+        Math.abs(a[4] - Math.PI * 2) < 1e-6;
+    });
+  })());
 check('全部 11 种配饰都接入了真实绘制',
   Object.keys(ACC_SET).every(function (acc) {
     var cat = {};

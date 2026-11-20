@@ -81,24 +81,10 @@ function token(name, fallback) {
   return themeBase.color[name] || fallback;
 }
 
-/** 宽圆角方脸：比正圆更幼态，也更贴软萌日系贴纸画风 */
+/** 圆形猫头：直径 2R，圆润亲切；头部略大以适配小格 */
 function headPath(ctx, cx, cy, R) {
-  var w = R * 2.04;
-  var h = R * 1.90;
-  var x = cx - w / 2;
-  var y = cy - h / 2 + R * 0.02;
-  var rad = R * 0.66;
-
   ctx.beginPath();
-  ctx.moveTo(x + rad, y);
-  ctx.lineTo(x + w - rad, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + rad);
-  ctx.lineTo(x + w, y + h - rad);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - rad, y + h);
-  ctx.lineTo(x + rad, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - rad);
-  ctx.lineTo(x, y + rad);
-  ctx.quadraticCurveTo(x, y, x + rad, y);
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
   ctx.closePath();
 }
 
