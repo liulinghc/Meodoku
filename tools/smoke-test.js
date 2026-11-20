@@ -674,6 +674,11 @@ var l1Hint = game.L.tools[2];
 tap(l1Hint.cx, l1Hint.cy);
 check('L1 免费提示不扣券', app.progress.tickets() === l1Tickets);
 check('按答案摆放后判定通关', game.solvedFlag === true);
+check('通关时空白格自动补成 X', game.cells.every(function (v) { return v !== 0; }),
+  'cells=' + game.cells.join(''));
+check('补 X 不影响猫数量与通关判定',
+  countCells(game, 2) === game.n && game.solvedFlag === true,
+  'cats=' + countCells(game, 2));
 check('结算前记录用时', game.timeMs > 0, 'timeMs=' + game.timeMs);
 check('用过提示 → 1 猫爪', game.resultInfo && game.resultInfo.paws === 1);
 check('首通金币已到账（20）', app.progress.coins() === 120, 'coins=' + app.progress.coins());

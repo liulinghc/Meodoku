@@ -973,6 +973,11 @@ GameScene.prototype._settle = function () {
     return;
   }
 
+  // 通关瞬间把剩余空格补成打叉，结算前的庆祝画面盘面完整，不做空白结算
+  for (var j = 0; j < this.cells.length; j++) {
+    if (this.cells[j] === EMPTY) this.cells[j] = MARK;
+  }
+
   var paws = 1;
   if (this.hintsAtSolve === 0) {
     paws = 2;
