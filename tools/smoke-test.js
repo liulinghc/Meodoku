@@ -411,6 +411,40 @@ check('首页标题胶囊 / 猫咪舞台 / 名牌 / 主按钮 / 三宫格依次�
   homeFlow.cards[0].y + homeFlow.cards[0].h < homeFlow.footerY);
 check('新档只解锁第 1 关', app.progress.isUnlocked(1) && !app.progress.isUnlocked(2) &&
   !app.progress.isUnlocked(300));
+
+var HomeScene = require('../js/ui/screens/home');
+var homeIntro = new HomeScene(app);
+homeIntro.L = app.layout.home();
+homeIntro.t = 0.30;
+check('首页入场：标题与舞台先落位，按钮随后升起',
+  homeIntro._intro(0).p === 1 && homeIntro._intro(0.12).p === 1 &&
+  homeIntro._intro(0.26).p > 0 && homeIntro._intro(0.26).p < 1 &&
+  homeIntro._intro(0.38).p === 0);
+homeIntro.t = 0.44;
+check('首页入场：三宫格依次错峰出现',
+  homeIntro._intro(0.38).p > 0 &&
+  homeIntro._intro(0.38).p < 1 &&
+  homeIntro._intro(0.50).p === 0,
+  'first=' + homeIntro._intro(0.38).p.toFixed(2));
+homeIntro.t = 0.70;
+check('首页入场在 0.7s 内收尾',
+  homeIntro._intro(0.38).p === 1 &&
+  homeIntro._intro(0.44).p === 1 &&
+  homeIntro._intro(0.50).p === 1);
+
+var homePar = homeIntro.L.deco.parallax;
+homeIntro.onTouchStart(app.env.width, app.env.height);
+check('首页触摸视差跟随手指并限幅',
+  homeIntro.parTX === homePar.x && homeIntro.parTY === homePar.y,
+  'target=' + homeIntro.parTX.toFixed(1) + ',' + homeIntro.parTY.toFixed(1));
+homeIntro.update(0.25);
+check('首页触摸视差缓动到位',
+  Math.abs(homeIntro.parX - homePar.x) < 0.01 &&
+  Math.abs(homeIntro.parY - homePar.y) < 0.01);
+homeIntro.onTouchEnd(0, 0, false);
+homeIntro.update(0.25);
+check('首页松手后视差回正',
+  Math.abs(homeIntro.parX) < 0.01 && Math.abs(homeIntro.parY) < 0.01);
 check('DPR 上限为 2', app.env.dpr === 2, 'dpr=' + app.env.dpr);
 check('主画布按 DPR 放大', app.renderer.canvas.width === 750, 'width=' + app.renderer.canvas.width);
 
@@ -626,6 +660,29 @@ check('首页 → 关卡地图', sceneName(app) === 'levelmap');
 var mapScene = app.sm.top();
 var nodes = mapScene._computeNodes();
 check('地图节点数与关卡数一致', nodes.length === 20, '实际 ' + nodes.length);
+var mapLayout0 = mapScene.L;
+check('地图章节头为通栏白卡并带进度条',
+  mapLayout0.chapter.x >= 0 &&
+  mapLayout0.chapter.x + mapLayout0.chapter.w <= app.env.width + 0.5 &&
+  mapLayout0.chapter.bar.x >= mapLayout0.chapter.x &&
+  mapLayout0.chapter.bar.x + mapLayout0.chapter.bar.w <=
+    mapLayout0.chapter.x + mapLayout0.chapter.w &&
+  mapLayout0.chapter.title.x < mapLayout0.chapter.progress.x);
+check('地图章节翻页钮在横幅内',
+  mapLayout0.chapter.prev.cx - mapLayout0.chapter.prev.r >= mapLayout0.chapter.x &&
+  mapLayout0.chapter.next.cx + mapLayout0.chapter.next.r <=
+    mapLayout0.chapter.x + mapLayout0.chapter.w,
+  'prev=' + mapLayout0.chapter.prev.cx + ' next=' + mapLayout0.chapter.next.cx);
+check('地图路径锚点已加入布局',
+  mapLayout0.path.dash > 0 && mapLayout0.path.gap > 0 &&
+  mapLayout0.path.width > 0 &&
+  mapLayout0.path.endPad > mapLayout0.nodeR);
+check('地图节点沿蛇形路径折返',
+  nodes[0].x < nodes[1].x && nodes[1].x < nodes[2].x && nodes[2].x < nodes[3].x &&
+  nodes[3].x === nodes[4].x && nodes[4].x > nodes[5].x,
+  'x=' + [nodes[0].x, nodes[3].x, nodes[4].x, nodes[5].x].map(function (v) {
+    return v.toFixed(1);
+  }).join(','));
 tap(nodes[0].x, nodes[0].y);
 frames(app, 1);
 check('地图 → 对局', sceneName(app) === 'game');
@@ -1661,6 +1718,10 @@ check('9×9 对局 → 地图', sceneName(app) === 'levelmap');
 var map3 = app.sm.top();
 map3.render(app.renderer);
 var mapL = map3.L;
+var mapNodes3 = map3._computeNodes();
+check('已通关节点之间的路径段点亮，未通关段保持灰色',
+  map3._segmentDone(mapNodes3[0], mapNodes3[1]) &&
+  !map3._segmentDone(mapNodes3[1], mapNodes3[2]));
 var navFrontier = app.save.data.unlocked;
 tap(map3.nextC.cx, map3.nextC.cy);
 map3.render(app.renderer);
@@ -1676,6 +1737,15 @@ check('章节起点解锁后可切到第 2 章', map3.chapter === 2 &&
   map3._computeNodes()[0].index === 21,
   'chapter=' + map3.chapter);
 check('章节起点解锁后节点可进入', app.progress.isUnlocked(21));
+var slideStart = map3._slideState(app.renderer);
+map3.update(0.13);
+var slideMid = map3._slideState(app.renderer);
+check('切章横向滑入带方向与缓出',
+  !!slideStart && !!slideMid &&
+  slideStart.dx > 0 && slideMid.dx > 0 && slideMid.dx < slideStart.dx,
+  slideStart && slideMid ? slideStart.dx.toFixed(1) + '→' + slideMid.dx.toFixed(1) : 'no slide');
+map3.update(0.2);
+check('切章滑动自动收尾', map3.slide === null);
 app.save.data.unlocked = navFrontier;
 tap(map3.prevC.cx, map3.prevC.cy);
 map3.render(app.renderer);
@@ -1972,6 +2042,24 @@ check('小屏首页内容依次排开不越界',
   ' cta=' + SH.cta.y.toFixed(1) +
   ' cardsBottom=' + (SH.cards[0].y + SH.cards[0].h).toFixed(1) +
   ' footer=' + SH.footerY.toFixed(1));
+
+var SMAP = small.levelmap();
+var smapRows = 5;
+var smapTotalH = (smapRows - 1) * SMAP.nodeGap + SMAP.nodeR * 2;
+var smapStartY = SMAP.list.y +
+  Math.max(SMAP.nodePadTop, (SMAP.list.h - smapTotalH) / 2) + SMAP.nodeR;
+var smapBottom = smapStartY + (smapRows - 1) * SMAP.nodeGap + SMAP.nodeR + 16 * small.s;
+check('小屏地图章节横幅与进度条在屏内',
+  SMAP.chapter.x >= 0 &&
+  SMAP.chapter.x + SMAP.chapter.w <= 320 + 0.5 &&
+  SMAP.chapter.bar.x >= SMAP.chapter.x &&
+  SMAP.chapter.bar.x + SMAP.chapter.bar.w <=
+    SMAP.chapter.x + SMAP.chapter.w &&
+  SMAP.chapter.y + SMAP.chapter.h <= SMAP.list.y);
+check('小屏地图 20 个节点与盖章不越界',
+  smapBottom <= 568 + 0.5 &&
+  SMAP.list.w / 4 + SMAP.nodeR + 10 * small.s <= 320,
+  'bottom=' + smapBottom.toFixed(1) + ' nodeR=' + SMAP.nodeR.toFixed(1));
 
 // 320×568 且带胶囊：顶栏让位后棋盘仍要可用
 var smallMenu = new Layout({

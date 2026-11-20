@@ -206,7 +206,9 @@ Layout.prototype.home = function () {
       pawR: { cx: w - margin - 2 * s, cy: catCY - 58 * s, size: 16 * s },
       starL: { cx: margin + 26 * s, cy: catCY - 84 * s, size: 12 * s },
       starR: { cx: w - margin - 22 * s, cy: catCY + 46 * s, size: 10 * s },
-      stage: { cx: w / 2, cy: catCY, r: stageR, innerR: catSize * 0.60 }
+      stage: { cx: w / 2, cy: catCY, r: stageR, innerR: catSize * 0.60 },
+      // 触摸视差的最大位移；舞台按 0.45 倍跟随，背景装饰按 0.8–1.05 倍分层跟随
+      parallax: { x: 5 * s, y: 4 * s, stage: 0.45, bg: 0.8 }
     },
     footerY: h - this.safeBottom - 22 * s
   };
@@ -344,22 +346,43 @@ Layout.prototype.levelmap = function () {
   var margin = 16 * s;
   var topY = this.topInset();
   var topH = 52 * s;
-  var chapterY = topY + topH + 6 * s;
-  var chapterH = 34 * s;
+
+  // 章节横幅：通栏白卡，左右各一枚翻页圆钮，中间两行（标题 / 进度条）
+  var chapterY = topY + topH + 8 * s;
+  var chapterH = 56 * s;
+  var arrowR = 15 * s;
+  var arrowX = 24 * s;
+  var contentPad = 58 * s;
+  var chapter = {
+    x: margin, y: chapterY, w: this.w - 2 * margin, h: chapterH,
+    prev: { cx: margin + arrowX, cy: chapterY + chapterH / 2, r: arrowR },
+    next: { cx: this.w - margin - arrowX, cy: chapterY + chapterH / 2, r: arrowR },
+    title: { x: margin + contentPad, y: chapterY + 21 * s },
+    progress: { x: this.w - margin - contentPad, y: chapterY + 21 * s },
+    bar: {
+      x: margin + contentPad, y: chapterY + 38 * s,
+      w: this.w - 2 * margin - contentPad * 2, h: 5 * s
+    }
+  };
+
   var listY = chapterY + chapterH + 10 * s;
   var listH = this.h - this.safeBottom - 12 * s - listY;
+  var nodeR = 24 * s;
 
   return {
     s: s,
     margin: margin,
     topBar: { x: margin, y: topY, w: this.w - 2 * margin, h: topH },
     back: { cx: margin + 22 * s, cy: topY + topH / 2, r: 22 * s },
-    chapter: { x: margin, y: chapterY, w: this.w - 2 * margin, h: chapterH },
+    chapter: chapter,
     list: { x: 0, y: listY, w: this.w, h: Math.max(120 * s, listH) },
-    nodeR: 24 * s,
-    nodeGap: 76 * s,
+    nodeR: nodeR,
+    nodeGap: 88 * s,
+    nodeGapMax: 104 * s,
     nodePadTop: 30 * s,
-    nodePadBottom: 40 * s
+    nodePadBottom: 40 * s,
+    // 节点间的虚线路径：手工分段绘制，不依赖 Canvas 的 setLineDash
+    path: { dash: 6 * s, gap: 5 * s, width: 3 * s, endPad: nodeR + 3 * s }
   };
 };
 

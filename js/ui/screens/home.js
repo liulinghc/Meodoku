@@ -9,21 +9,64 @@ var hit = require('../hit');
 var clock = require('../../core/clock');
 var format = require('../../core/format');
 
+// 首页入场编排：标题落下 → 舞台弹出 → 主按钮升起 → 三宫格错峰
+var INTRO = { title: 0, stage: 0.12, cta: 0.26, cards: 0.38, step: 0.06, dur: 0.18 };
+
 function HomeScene(app) {
   this.app = app;
   this.t = 0;
   this.taps = [];
+  this.parX = 0;
+  this.parY = 0;
+  this.parTX = 0;
+  this.parTY = 0;
 }
 
 HomeScene.prototype.enter = function () {
   this.t = 0;
   this.taps = [];
+  this.parX = 0;
+  this.parY = 0;
+  this.parTX = 0;
+  this.parTY = 0;
   this.app.daily.noteSeen();
   this.app.metaRefresh();
 };
 
 HomeScene.prototype.update = function (dt) {
   this.t += dt;
+  // 触摸视差缓动跟随，松手后回正
+  var k = Math.min(1, dt * 12);
+  this.parX += (this.parTX - this.parX) * k;
+  this.parY += (this.parTY - this.parY) * k;
+};
+
+/** 入场进度：0 未开始，1 结束（三次方缓出，只做视觉不锁输入） */
+HomeScene.prototype._intro = function (delay) {
+  var p = Math.min(1, Math.max(0, (this.t - delay) / INTRO.dur));
+  return { p: p, e: 1 - Math.pow(1 - p, 3) };
+};
+
+HomeScene.prototype._parallaxTo = function (x, y) {
+  var L = this.L || this.app.layout.home();
+  var d = L.deco.parallax;
+  var nx = (x / this.app.layout.w - 0.5) * 2;
+  var ny = (y / this.app.layout.h - 0.5) * 2;
+  this.parTX = Math.max(-1, Math.min(1, nx)) * d.x;
+  this.parTY = Math.max(-1, Math.min(1, ny)) * d.y;
+};
+
+HomeScene.prototype.onTouchStart = function (x, y) {
+  this._parallaxTo(x, y);
+};
+
+HomeScene.prototype.onTouchMove = function (x, y) {
+  this._parallaxTo(x, y);
+};
+
+HomeScene.prototype.onTouchCancel = function () {
+  this.parTX = 0;
+  this.parTY = 0;
 };
 
 HomeScene.prototype.render = function (r) {
@@ -42,6 +85,7 @@ HomeScene.prototype.render = function (r) {
   this._renderCta(r, progress);
   this._renderCards(r);
   this._renderFooter(r, progress);
+  r.ctx.globalAlpha = 1;
 };
 
 /** 背景：两团低饱和色块 + 手账式脚印/星星，位置全部来自 layout.home().deco */
@@ -49,24 +93,34 @@ HomeScene.prototype._renderBg = function (r) {
   var th = this.app.theme;
   var s = this.app.layout.s;
   var d = this.L.deco;
+  var px = this.parX;
+  var py = this.parY;
+  var bg = d.parallax.bg;
 
-  r.ctx.globalAlpha = 0.38;
-  r.circle(d.blobA.cx, d.blobA.cy, d.blobA.r, th.color.brandSoft);
-  r.circle(d.blobB.cx, d.blobB.cy, d.blobB.r, th.color.ctaSoft);
+  // 远景色块最淡、跟随最少；手账元素略近；舞台光环贴着舞台移动
+  r.ctx.globalAlpha = 0.20;
+  r.circle(d.blobA.cx + px * bg, d.blobA.cy + py * bg, d.blobA.r, th.color.brandSoft);
+  r.circle(d.blobB.cx + px * bg, d.blobB.cy + py * bg, d.blobB.r, th.color.ctaSoft);
   r.ctx.globalAlpha = 1;
 
-  draw.iconPaw(r, d.pawL.cx, d.pawL.cy, d.pawL.size, draw.alpha(th.color.textSoft, 0.20));
-  draw.iconPaw(r, d.pawR.cx, d.pawR.cy, d.pawR.size, draw.alpha(th.color.textSoft, 0.16));
-  draw.iconStar(r, d.starL.cx, d.starL.cy, d.starL.size, draw.alpha(th.color.gold, 0.35));
-  draw.iconStar(r, d.starR.cx, d.starR.cy, d.starR.size, draw.alpha(th.color.gold, 0.28));
+  draw.iconPaw(r, d.pawL.cx + px * (bg + 0.1), d.pawL.cy + py * (bg + 0.1), d.pawL.size,
+    draw.alpha(th.color.textSoft, 0.12));
+  draw.iconPaw(r, d.pawR.cx + px * (bg + 0.1), d.pawR.cy + py * (bg + 0.1), d.pawR.size,
+    draw.alpha(th.color.textSoft, 0.10));
+  draw.iconStar(r, d.starL.cx + px * (bg + 0.25), d.starL.cy + py * (bg + 0.25), d.starL.size,
+    draw.alpha(th.color.gold, 0.20));
+  draw.iconStar(r, d.starR.cx + px * (bg + 0.25), d.starR.cy + py * (bg + 0.25), d.starR.size,
+    draw.alpha(th.color.gold, 0.16));
 
   // 猫咪舞台外圈的点状光环，随呼吸轻微明暗
   var st = d.stage;
-  var pulse = 0.18 + 0.10 * ((Math.sin(this.t * 1.6) + 1) / 2);
+  var stagePx = px * d.parallax.stage;
+  var stagePy = py * d.parallax.stage;
+  var pulse = 0.12 + 0.07 * ((Math.sin(this.t * 1.6) + 1) / 2);
   for (var i = 0; i < 10; i++) {
     var a = -Math.PI / 2 + i * (Math.PI * 2 / 10);
-    r.circle(st.cx + Math.cos(a) * (st.r + 8 * s),
-      st.cy + Math.sin(a) * (st.r + 8 * s),
+    r.circle(st.cx + stagePx + Math.cos(a) * (st.r + 8 * s),
+      st.cy + stagePy + Math.sin(a) * (st.r + 8 * s),
       2.2 * s, draw.alpha(th.color.brand, pulse));
   }
 };
@@ -114,6 +168,11 @@ HomeScene.prototype._renderTitle = function (r) {
   var s = this.app.layout.s;
   var L = this.L;
   var fs = th.font.homeTitle;
+  var intro = this._intro(INTRO.title);
+
+  r.save();
+  r.ctx.globalAlpha = intro.p;
+  r.ctx.translate(0, -(1 - intro.e) * 10 * s);
 
   // 双色标题 + 暖色投影：前两字正文色，后两字主题橙，整体居中
   var wMain = r.measure(copy.titleMain, fs, '800');
@@ -145,6 +204,7 @@ HomeScene.prototype._renderTitle = function (r) {
     align: 'center',
     maxWidth: k.w - 16 * s
   });
+  r.restore();
 };
 
 HomeScene.prototype._renderCat = function (r) {
@@ -153,18 +213,40 @@ HomeScene.prototype._renderCat = function (r) {
   var L = this.L;
   var cat = this.app.collection.equippedCat();
   var st = L.deco.stage;
+  var par = L.deco.parallax;
+  var cx = st.cx + this.parX * par.stage;
+  var cy = st.cy + this.parY * par.stage;
   var bob = Math.sin(this.t * 1.7) * 3 * s;
+  var intro = this._intro(INTRO.stage);
+  var scale = 0.86 + 0.14 * intro.e + Math.sin(intro.p * Math.PI) * 0.025;
 
-  // 舞台：投影 → 外圈奶油底 → 内圈白卡 → 品牌色细环 → 猫头
-  draw.ellipseFill(r.ctx, st.cx, st.cy + st.r * 0.94, st.r * 0.55, st.r * 0.10, th.color.shadow);
-  r.circle(st.cx, st.cy + 4 * s, st.r, th.color.bgSunken);
-  r.strokeCircle(st.cx, st.cy + 4 * s, st.r, th.color.border, 1);
-  r.circle(st.cx, st.cy + 4 * s, st.innerR, th.color.card);
-  r.strokeCircle(st.cx, st.cy + 4 * s, st.innerR, draw.alpha(th.color.brand, 0.25), 1.5 * s);
+  // 舞台：投影 → 外圈奶油底 → 内圈白卡 → 品牌色细环；入场时轻微弹出
+  r.save();
+  r.ctx.globalAlpha = intro.p;
+  r.ctx.translate(cx, cy);
+  r.ctx.scale(scale, scale);
+  r.ctx.translate(-cx, -cy);
+  draw.ellipseFill(r.ctx, cx, cy + st.r * 0.94, st.r * 0.55, st.r * 0.10, th.color.shadow);
+  r.circle(cx, cy + 4 * s, st.r, th.color.bgSunken);
+  r.strokeCircle(cx, cy + 4 * s, st.r, th.color.border, 1);
+  r.circle(cx, cy + 4 * s, st.innerR, th.color.card);
+  r.strokeCircle(cx, cy + 4 * s, st.innerR, draw.alpha(th.color.brand, 0.25), 1.5 * s);
+  r.restore();
 
+  // 名牌晚半拍淡入，不跟随舞台缩放，避免文字忽大忽小
+  var tagIntro = this._intro(INTRO.stage + 0.03);
+  r.save();
+  r.ctx.globalAlpha = tagIntro.p;
+  r.ctx.translate(0, (1 - tagIntro.e) * 6 * s);
   this._renderCatTag(r, cat, s, th, L);
+  r.restore();
 
-  draw.catFace(r, st.cx, st.cy + bob, L.cat.size, cat, {});
+  r.save();
+  r.ctx.translate(cx, cy);
+  r.ctx.scale(scale, scale);
+  r.ctx.translate(-cx, -cy);
+  draw.catFace(r, cx, cy + bob, L.cat.size, cat, { alpha: intro.p });
+  r.restore();
 };
 
 /** 猫咪名牌：小爪印 + 「名字 · 称号」，压在舞台下沿 */
@@ -198,8 +280,12 @@ HomeScene.prototype._renderCta = function (r, progress) {
   var c = L.cta;
   var label = progress.completedCount() > 0 ? copy.btnContinue : copy.btnStart;
   var depth = 4 * s;
+  var intro = this._intro(INTRO.cta);
 
-  // 立体主按钮：底座 + 主体 + 顶部高光 + 爪印图标
+  // 立体主按钮：底座 + 主体 + 顶部高光 + 爪印图标；入场时从下方升起
+  r.save();
+  r.ctx.globalAlpha = intro.p;
+  r.ctx.translate(0, (1 - intro.e) * 12 * s);
   draw.softShadow(r, c.x, c.y, c.w, c.h, c.h / 2);
   r.roundRect(c.x, c.y + depth, c.w, c.h, c.h / 2, th.color.ctaDeep);
   r.roundRect(c.x, c.y, c.w, c.h, c.h / 2, th.color.cta);
@@ -218,6 +304,7 @@ HomeScene.prototype._renderCta = function (r, progress) {
     weight: '700',
     color: th.color.textOnColor
   });
+  r.restore();
 };
 
 HomeScene.prototype._renderCards = function (r) {
@@ -240,6 +327,11 @@ HomeScene.prototype._renderCards = function (r) {
     var card = L.cards[i];
     var def = defs[i];
     var cx = card.x + card.w / 2;
+    var intro = this._intro(INTRO.cards + i * INTRO.step);
+
+    r.save();
+    r.ctx.globalAlpha = intro.p;
+    r.ctx.translate(0, (1 - intro.e) * 10 * s);
     // 每张卡片一种浅色调，图标底托换成白卡，避免三个白块连成一片
     r.roundRect(card.x, card.y, card.w, card.h, th.radius.card, def.bg);
     r.strokeRoundRect(card.x, card.y, card.w, card.h, th.radius.card,
@@ -265,6 +357,7 @@ HomeScene.prototype._renderCards = function (r) {
       r.circle(card.x + card.w - 10 * s, card.y + 10 * s, dr, th.color.dot);
       r.strokeCircle(card.x + card.w - 10 * s, card.y + 10 * s, dr, th.color.card, 1.5 * s);
     }
+    r.restore();
   }
 };
 
@@ -286,6 +379,8 @@ HomeScene.prototype._renderFooter = function (r, progress) {
 };
 
 HomeScene.prototype.onTouchEnd = function (x, y, isTap) {
+  this.parTX = 0;
+  this.parTY = 0;
   if (!isTap) return;
   var app = this.app;
   var L = this.L || app.layout.home();
