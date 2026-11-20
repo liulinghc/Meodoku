@@ -59,7 +59,7 @@ GuideScene.prototype._renderHeader = function (r, L) {
   var c = L.close;
 
   r.text(copy.guideTitle, r.w / 2, L.titleY, {
-    size: th.font.body,
+    size: th.font.guideTitle,
     weight: '700',
     color: th.color.text,
     align: 'center'
@@ -82,17 +82,17 @@ GuideScene.prototype._renderGoal = function (r, L) {
   var g = L.goal;
 
   r.text(copy.guideGoalTitle, g.x, g.y + 22 * s, {
-    size: th.font.body,
+    size: th.font.guideSection,
     weight: '700',
     color: th.color.text
   });
   r.text(copy.guideGoalLine1, g.x, g.y + 50 * s, {
-    size: th.font.small,
+    size: th.font.guideBody,
     color: th.color.textSoft,
     maxWidth: g.w
   });
   r.text(copy.guideGoalLine2, g.x, g.y + 70 * s, {
-    size: th.font.small,
+    size: th.font.guideBody,
     color: th.color.textSoft,
     maxWidth: g.w
   });
@@ -107,7 +107,7 @@ GuideScene.prototype._renderTap = function (r, L) {
   var cat = this.app.collection.equippedCat();
 
   r.text(copy.guideTapTitle, t.x, t.y + 22 * s, {
-    size: th.font.body,
+    size: th.font.guideSection,
     weight: '700',
     color: th.color.text
   });
@@ -124,7 +124,7 @@ GuideScene.prototype._renderTap = function (r, L) {
       draw.catFace(r, cx, cy + row.size * 0.04, row.size, cat, {});
     } else {
       r.text(copy.guideEmptyMark, cx, cy + 1, {
-        size: th.font.small,
+        size: th.font.guideBody,
         weight: '700',
         color: draw.xColorFor(color),
         align: 'center'
@@ -132,7 +132,7 @@ GuideScene.prototype._renderTap = function (r, L) {
     }
 
     r.text(labels[i], row.x + row.size + 14 * s, cy + 1, {
-      size: th.font.small,
+      size: th.font.guideBody,
       weight: '600',
       color: th.color.text,
       maxWidth: t.w - row.size - 18 * s
@@ -148,14 +148,14 @@ GuideScene.prototype._renderGuard = function (r, L) {
   r.roundRect(t.x, t.y, t.w, t.h, th.radius.card, th.color.bgSunken);
 
   r.text(copy.guideGuardTitle, t.x + 14 * s, t.y + 22 * s, {
-    size: th.font.small,
+    size: th.font.guideBody,
     weight: '700',
     color: th.color.text
   });
   var lines = [copy.guideGuardLine1, copy.guideGuardLine2, copy.guideGuardLine3];
   for (var i = 0; i < lines.length; i++) {
-    r.text(lines[i], t.x + 14 * s, t.y + 44 * s + i * 20 * s, {
-      size: th.font.micro,
+    r.text(lines[i], t.x + 14 * s, t.y + 44 * s + i * 21 * s, {
+      size: th.font.guideNote,
       color: th.color.textSoft,
       maxWidth: t.w - 28 * s
     });

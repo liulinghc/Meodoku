@@ -247,13 +247,13 @@ GameScene.prototype._renderCoach = function (r) {
 
   r.roundRect(c.x + 18 * s, c.y + 22 * s, 28 * s, 5 * s, 2.5 * s, th.color.cta);
   r.text(this.coach.title, L.titleX, L.titleY, {
-    size: th.font.body,
+    size: th.font.coachTitle,
     weight: '700',
     color: th.color.text
   });
   for (var i = 0; i < this.coach.lines.length; i++) {
     r.text(this.coach.lines[i], L.bodyX, L.bodyY + i * L.lineH, {
-      size: th.font.small,
+      size: th.font.coachBody,
       color: th.color.textSoft,
       maxWidth: L.bodyW
     });
@@ -516,13 +516,13 @@ GameScene.prototype._renderBand = function (r) {
     icons[i](r, t.cx, t.cy, 22 * s, th.color.ink);
     // 先画 1px 阴影再画正文，浅蓝底上白字也读得清
     r.text(labels[i], t.cx, t.cy + t.r + 11 * s + 1, {
-      size: th.font.micro,
+      size: th.font.tool,
       weight: '600',
       color: shade,
       align: 'center'
     });
     r.text(labels[i], t.cx, t.cy + t.r + 11 * s, {
-      size: th.font.micro,
+      size: th.font.tool,
       weight: '600',
       color: th.color.textOnColor,
       align: 'center'
@@ -547,14 +547,14 @@ GameScene.prototype._renderBand = function (r) {
   }
 
   r.text(copy.tagline, r.w / 2, L.taglineY + 1, {
-    size: th.font.small,
+    size: th.font.tagline,
     weight: '600',
     color: shade,
     align: 'center',
     maxWidth: r.w - 32 * s
   });
   r.text(copy.tagline, r.w / 2, L.taglineY, {
-    size: th.font.small,
+    size: th.font.tagline,
     weight: '600',
     color: th.color.textOnColor,
     align: 'center',

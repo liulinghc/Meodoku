@@ -48,10 +48,21 @@ var BASE = {
     hudValue: 26,
     hudLabel: 12,
     banner: 22,
-    rule: 12,
+    rule: 13,
     body: 15,
     small: 11,
-    micro: 10
+    micro: 10,
+    // 轻提示 / 玩法说明 / 规则卡 / 工具按钮标签的字号单列，
+    // 避免为它们放大而影响其它页面版式
+    toast: 17,
+    tool: 12,
+    tagline: 13,
+    guideTitle: 18,
+    guideSection: 17,
+    guideBody: 13,
+    guideNote: 12,
+    coachTitle: 17,
+    coachBody: 13
   },
 
   size: {

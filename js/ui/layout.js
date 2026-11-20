@@ -234,7 +234,7 @@ Layout.prototype.coach = function () {
     bodyX: x + pad,
     bodyY: y + 66 * s,
     bodyW: cardW - 2 * pad,
-    lineH: 20 * s,
+    lineH: 21 * s,
     cta: { x: x + pad, y: y + cardH - pad - btnH, w: cardW - 2 * pad, h: btnH }
   };
 };;

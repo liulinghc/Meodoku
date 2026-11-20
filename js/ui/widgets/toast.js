@@ -37,9 +37,9 @@ Toast.prototype.render = function (r) {
   if (this.t < 0.16) a = this.t / 0.16;
   else if (this.t > this.life - 0.28) a = Math.max(0, (this.life - this.t) / 0.28);
 
-  var fs = th.font.body;
-  var padX = 18 * s;
-  var h = 38 * s;
+  var fs = th.font.toast;
+  var padX = 20 * s;
+  var h = 40 * s;
   var w = Math.min(r.w - 48 * s, r.measure(this.text, fs, '500') + padX * 2);
   var x = (r.w - w) / 2;
   var y = r.h * 0.76;
