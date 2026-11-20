@@ -13,7 +13,7 @@ function push(level, msg) {
   buf.push({ t: Date.now(), level: level, msg: text });
   if (buf.length > MAX) buf.shift();
   var fn = console[level] || console.log;
-  if (fn) fn.call(console, '[喵谜格][' + level + ']', text);
+  if (fn) fn.call(console, '[喵喵迷阵][' + level + ']', text);
 }
 
 module.exports = {

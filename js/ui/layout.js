@@ -133,11 +133,21 @@ Layout.prototype.home = function () {
   var topY = this.topInset();
   var topH = 44 * s;
 
+  // 标题 → 副标题胶囊 → 猫咪舞台 → 主按钮 → 三宫格，纵向依次排开。
+  // 矮屏（h < 700）缩小猫咪并按顺序下推主按钮，避免与胶囊或标题互相挤压。
   var titleY = topY + 72 * s;
-  var catCY = h * 0.40;
-  var catSize = 132 * s;
+  var pillH = 26 * s;
+  var pillY = titleY + 22 * s;
 
-  var ctaY = h * 0.60;
+  var catSize = (h < 700 ? 104 : 132) * s;
+  var stageR = catSize * 0.74;
+  var catCY = Math.max(h * 0.40, pillY + pillH + 12 * s + stageR);
+
+  var tagH = 26 * s;
+  var tagW = Math.min(184 * s, w - 2 * margin);
+  var catTagY = catCY + catSize * 0.62 + 8 * s - tagH / 2;
+
+  var ctaY = Math.max(h * 0.60, catTagY + tagH + 18 * s);
   var ctaH = 54 * s;
 
   var cardsY = ctaY + ctaH + 18 * s;
@@ -154,13 +164,25 @@ Layout.prototype.home = function () {
     checkin: { cx: w - margin - 64 * s, cy: topY + 16 * s, r: 18 * s },
     gear: { cx: w - margin - 18 * s, cy: topY + 16 * s, r: 18 * s },
     titleY: titleY,
+    kicker: { x: w / 2 - 60 * s, y: pillY, w: 120 * s, h: pillH },
     cat: { cx: w / 2, cy: catCY, size: catSize },
+    catTag: { x: (w - tagW) / 2, y: catTagY, w: tagW, h: tagH },
     cta: { x: 24 * s, y: ctaY, w: w - 48 * s, h: ctaH },
     cards: [
       { key: 'daily', x: margin, y: cardsY, w: cardW, h: cardH },
       { key: 'album', x: margin + cardW + gap, y: cardsY, w: cardW, h: cardH },
       { key: 'shop', x: margin + (cardW + gap) * 2, y: cardsY, w: cardW, h: cardH }
     ],
+    // 背景装饰只取相对位置，渲染层不写绝对坐标
+    deco: {
+      blobA: { cx: w * 0.90, cy: titleY - 44 * s, r: 96 * s },
+      blobB: { cx: w * 0.06, cy: catCY + 118 * s, r: 72 * s },
+      pawL: { cx: margin + 4 * s, cy: titleY + 20 * s, size: 22 * s },
+      pawR: { cx: w - margin - 2 * s, cy: catCY - 58 * s, size: 16 * s },
+      starL: { cx: margin + 26 * s, cy: catCY - 84 * s, size: 12 * s },
+      starR: { cx: w - margin - 22 * s, cy: catCY + 46 * s, size: 10 * s },
+      stage: { cx: w / 2, cy: catCY, r: stageR, innerR: catSize * 0.60 }
+    },
     footerY: h - this.safeBottom - 22 * s
   };
 };

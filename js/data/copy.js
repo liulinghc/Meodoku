@@ -2,7 +2,10 @@
  * 文案集中管理。改文案只改这里，界面代码不写死中文。
  */
 module.exports = {
-  title: '喵谜格',
+  title: '喵喵迷阵',
+  // 首页标题双色排布："喵喵"用正文色，"迷阵"用主题橙，避免整行过于板正
+  titleMain: '喵喵',
+  titleAccent: '迷阵',
   subtitle: '猫咪逻辑方阵',
 
   btnStart: '开 始 游 戏',

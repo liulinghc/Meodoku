@@ -288,7 +288,7 @@ var HTML = [
   '<head>',
   '<meta charset="utf-8">',
   '<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">',
-  '<title>喵谜格 · 浏览器预览</title>',
+  '<title>喵喵迷阵 · 浏览器预览</title>',
   '<style>',
   '  html, body { margin: 0; padding: 0; height: 100%; background: #241f1b; }',
   '  body { display: flex; align-items: center; justify-content: center; }',

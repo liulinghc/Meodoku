@@ -370,7 +370,8 @@ check('玩法说明以弹窗展示（不整屏）',
     return v.toFixed(1);
   }).join(','));
 check('弹窗下方保留首页画面',
-  app.renderer.ctx.texts.indexOf(copyMod.title) !== -1 &&
+  app.renderer.ctx.texts.indexOf(copyMod.titleMain) !== -1 &&
+  app.renderer.ctx.texts.indexOf(copyMod.titleAccent) !== -1 &&
   app.renderer.ctx.texts.indexOf(copyMod.guideTitle) !== -1);
 check('玩法说明卡片避开胶囊区', guideL.card.y >= capBottom,
   'cardY=' + guideL.card.y + ' capBottom=' + capBottom);
@@ -392,6 +393,17 @@ frames(app, 2);
 check('读完三页关闭玩法说明回到首页', sceneName(app) === 'home');
 check('玩法说明已记入存档', app.save.data.guideSeen === true);
 check('首页有绘制调用', app.renderer.ctx.ops > 100, 'ops=' + app.renderer.ctx.ops);
+check('游戏名称更新为喵喵迷阵',
+  copyMod.title === '喵喵迷阵' &&
+  require('../js/data/config').APP_NAME === '喵喵迷阵');
+var homeFlow = app.layout.home();
+check('首页标题胶囊 / 猫咪舞台 / 名牌 / 主按钮 / 三宫格依次排开',
+  homeFlow.deco.stage.cy - homeFlow.deco.stage.r >
+    homeFlow.kicker.y + homeFlow.kicker.h &&
+  homeFlow.catTag.y > homeFlow.deco.stage.cy &&
+  homeFlow.catTag.y + homeFlow.catTag.h <= homeFlow.cta.y &&
+  homeFlow.cta.y + homeFlow.cta.h <= homeFlow.cards[0].y &&
+  homeFlow.cards[0].y + homeFlow.cards[0].h < homeFlow.footerY);
 check('新档只解锁第 1 关', app.progress.isUnlocked(1) && !app.progress.isUnlocked(2) &&
   !app.progress.isUnlocked(300));
 check('DPR 上限为 2', app.env.dpr === 2, 'dpr=' + app.env.dpr);
@@ -1619,6 +1631,17 @@ check('小屏 9×9 格子边长 ≥ 24px', S9.geom.tile >= 24, 'tile=' + S9.geom
 check('小屏 9×9 图例不溢出', S9.legend.item * 9 + S9.legend.gap * 8 <= 320,
   'legend=' + (S9.legend.item * 9 + S9.legend.gap * 8).toFixed(1));
 
+var SH = small.home();
+check('小屏首页内容依次排开不越界',
+  SH.deco.stage.cy - SH.deco.stage.r > SH.kicker.y + SH.kicker.h &&
+  SH.catTag.y + SH.catTag.h <= SH.cta.y &&
+  SH.cta.y + SH.cta.h <= SH.cards[0].y &&
+  SH.cards[0].y + SH.cards[0].h < SH.footerY && SH.footerY <= 568,
+  'tagBottom=' + (SH.catTag.y + SH.catTag.h).toFixed(1) +
+  ' cta=' + SH.cta.y.toFixed(1) +
+  ' cardsBottom=' + (SH.cards[0].y + SH.cards[0].h).toFixed(1) +
+  ' footer=' + SH.footerY.toFixed(1));
+
 // 320×568 且带胶囊：顶栏让位后棋盘仍要可用
 var smallMenu = new Layout({
   width: 320, height: 568, dpr: 2, safeTop: 20, safeBottom: 0,
@@ -1635,6 +1658,17 @@ check('小屏胶囊下 9×9 格子边长 ≥ 24px', SM9.geom.tile >= 24,
   'tile=' + SM9.geom.tile.toFixed(1));
 check('小屏胶囊下 4×4 格子边长 ≥ 40px', smallMenu.game(4).geom.tile >= 40,
   'tile=' + smallMenu.game(4).geom.tile.toFixed(1));
+
+var SHM = smallMenu.home();
+check('小屏胶囊下首页整体让开胶囊且不越界',
+  SHM.topBar.y >= 56 &&
+  SHM.deco.stage.cy - SHM.deco.stage.r > SHM.kicker.y + SHM.kicker.h &&
+  SHM.catTag.y + SHM.catTag.h <= SHM.cta.y &&
+  SHM.cards[0].y + SHM.cards[0].h < SHM.footerY,
+  'stageTop=' + (SHM.deco.stage.cy - SHM.deco.stage.r).toFixed(1) +
+  ' pillBottom=' + (SHM.kicker.y + SHM.kicker.h).toFixed(1) +
+  ' tagBottom=' + (SHM.catTag.y + SHM.catTag.h).toFixed(1) +
+  ' cta=' + SHM.cta.y.toFixed(1));
 
 // S5 五个子页面：320×568 全部不越界、不重叠
 var SDAILY = small.daily();

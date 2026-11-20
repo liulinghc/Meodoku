@@ -18,6 +18,8 @@ var BASE = {
     bandDeep: '#3F97BA',
     cta: '#F58B4C',
     ctaSoft: '#FDE4D2',
+    ctaDeep: '#DE7233',       // 首页主按钮的立体底座
+    titleShadow: '#EFD8C2',   // 首页标题的暖色投影
     conflict: '#E4572E',
     highlight: '#FBE8A6',
     selected: '#FFFFFF',
@@ -62,7 +64,12 @@ var BASE = {
     guideBody: 13,
     guideNote: 12,
     coachTitle: 17,
-    coachBody: 13
+    coachBody: 13,
+    // 首页专用字号，避免为首页视觉放大而影响其它页面
+    homeTitle: 42,
+    homeKicker: 13,
+    homeCatTag: 12,
+    homeCta: 24
   },
 
   size: {

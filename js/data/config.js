@@ -3,7 +3,7 @@
  * 数值改动集中在这里，避免散落到业务代码。
  */
 module.exports = {
-  APP_NAME: '喵谜格',
+  APP_NAME: '喵喵迷阵',
   VERSION: '0.5.1',
   STAGE: 'S5.1',
 

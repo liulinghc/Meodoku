@@ -29,25 +29,46 @@ HomeScene.prototype.update = function (dt) {
 HomeScene.prototype.render = function (r) {
   var app = this.app;
   var th = app.theme;
-  var s = app.layout.s;
   var L = app.layout.home();
   var progress = app.progress;
   this.L = L;
 
   r.fill(th.color.bg);
 
-  // 背景装饰：两团低饱和色块，避免画面过于空旷
-  r.ctx.globalAlpha = 0.55;
-  r.circle(r.w * 0.90, L.titleY - 42 * s, 96 * s, th.color.brandSoft);
-  r.circle(r.w * 0.04, L.cat.cy + 118 * s, 72 * s, th.color.ctaSoft);
-  r.ctx.globalAlpha = 1;
-
+  this._renderBg(r);
   this._renderTop(r);
   this._renderTitle(r);
   this._renderCat(r);
   this._renderCta(r, progress);
   this._renderCards(r);
   this._renderFooter(r, progress);
+};
+
+/** 背景：两团低饱和色块 + 手账式脚印/星星，位置全部来自 layout.home().deco */
+HomeScene.prototype._renderBg = function (r) {
+  var th = this.app.theme;
+  var s = this.app.layout.s;
+  var d = this.L.deco;
+
+  r.ctx.globalAlpha = 0.55;
+  r.circle(d.blobA.cx, d.blobA.cy, d.blobA.r, th.color.brandSoft);
+  r.circle(d.blobB.cx, d.blobB.cy, d.blobB.r, th.color.ctaSoft);
+  r.ctx.globalAlpha = 1;
+
+  draw.iconPaw(r, d.pawL.cx, d.pawL.cy, d.pawL.size, draw.alpha(th.color.textSoft, 0.20));
+  draw.iconPaw(r, d.pawR.cx, d.pawR.cy, d.pawR.size, draw.alpha(th.color.textSoft, 0.16));
+  draw.iconStar(r, d.starL.cx, d.starL.cy, d.starL.size, draw.alpha(th.color.gold, 0.35));
+  draw.iconStar(r, d.starR.cx, d.starR.cy, d.starR.size, draw.alpha(th.color.gold, 0.28));
+
+  // 猫咪舞台外圈的点状光环，随呼吸轻微明暗
+  var st = d.stage;
+  var pulse = 0.18 + 0.10 * ((Math.sin(this.t * 1.6) + 1) / 2);
+  for (var i = 0; i < 10; i++) {
+    var a = -Math.PI / 2 + i * (Math.PI * 2 / 10);
+    r.circle(st.cx + Math.cos(a) * (st.r + 8 * s),
+      st.cy + Math.sin(a) * (st.r + 8 * s),
+      2.2 * s, draw.alpha(th.color.brand, pulse));
+  }
 };
 
 HomeScene.prototype._renderTop = function (r) {
@@ -95,18 +116,37 @@ HomeScene.prototype._renderTitle = function (r) {
   var th = this.app.theme;
   var s = this.app.layout.s;
   var L = this.L;
+  var fs = th.font.homeTitle;
 
-  r.text(copy.title, r.w / 2, L.titleY, {
-    size: Math.round(th.font.title * 1.08),
-    weight: '800',
-    color: th.color.text,
-    align: 'center'
+  // 双色标题 + 暖色投影：前两字正文色，后两字主题橙，整体居中
+  var wMain = r.measure(copy.titleMain, fs, '800');
+  var wAcc = r.measure(copy.titleAccent, fs, '800');
+  var x0 = (r.w - wMain - wAcc) / 2;
+  var dy = 2.5 * s;
+
+  r.text(copy.titleMain, x0, L.titleY + dy, {
+    size: fs, weight: '800', color: th.color.titleShadow
   });
-  r.text(copy.subtitle, r.w / 2, L.titleY + 31 * s, {
-    size: th.font.body,
-    weight: '500',
+  r.text(copy.titleAccent, x0 + wMain, L.titleY + dy, {
+    size: fs, weight: '800', color: th.color.titleShadow
+  });
+  r.text(copy.titleMain, x0, L.titleY, {
+    size: fs, weight: '800', color: th.color.text
+  });
+  r.text(copy.titleAccent, x0 + wMain, L.titleY, {
+    size: fs, weight: '800', color: th.color.cta
+  });
+
+  // 副标题胶囊
+  var k = L.kicker;
+  r.roundRect(k.x, k.y, k.w, k.h, k.h / 2, th.color.card);
+  r.strokeRoundRect(k.x, k.y, k.w, k.h, k.h / 2, th.color.border, 1);
+  r.text(copy.subtitle, r.w / 2, k.y + k.h / 2 + 0.5, {
+    size: th.font.homeKicker,
+    weight: '600',
     color: th.color.textSoft,
-    align: 'center'
+    align: 'center',
+    maxWidth: k.w - 16 * s
   });
 };
 
@@ -114,27 +154,72 @@ HomeScene.prototype._renderCat = function (r) {
   var th = this.app.theme;
   var s = this.app.layout.s;
   var L = this.L;
+  var cat = this.app.collection.equippedCat();
+  var st = L.deco.stage;
   var bob = Math.sin(this.t * 1.7) * 3 * s;
 
-  draw.ellipseFill(r.ctx, L.cat.cx, L.cat.cy + L.cat.size * 0.42, L.cat.size * 0.26, L.cat.size * 0.06, 'rgba(90, 60, 40, 0.10)');
-  r.circle(L.cat.cx, L.cat.cy + 4 * s, L.cat.size * 0.60, th.color.card);
-  r.strokeCircle(L.cat.cx, L.cat.cy + 4 * s, L.cat.size * 0.60, th.color.border, 1);
-  draw.catFace(r, L.cat.cx, L.cat.cy + bob, L.cat.size, this.app.collection.equippedCat(), {});
+  // 舞台：投影 → 外圈奶油底 → 内圈白卡 → 品牌色细环 → 猫头
+  draw.ellipseFill(r.ctx, st.cx, st.cy + st.r * 0.94, st.r * 0.55, st.r * 0.10, th.color.shadow);
+  r.circle(st.cx, st.cy + 4 * s, st.r, th.color.bgSunken);
+  r.strokeCircle(st.cx, st.cy + 4 * s, st.r, th.color.border, 1);
+  r.circle(st.cx, st.cy + 4 * s, st.innerR, th.color.card);
+  r.strokeCircle(st.cx, st.cy + 4 * s, st.innerR, draw.alpha(th.color.brand, 0.25), 1.5 * s);
+
+  this._renderCatTag(r, cat, s, th, L);
+
+  draw.catFace(r, st.cx, st.cy + bob, L.cat.size, cat, {});
+};
+
+/** 猫咪名牌：小爪印 + 「名字 · 称号」，压在舞台下沿 */
+HomeScene.prototype._renderCatTag = function (r, cat, s, th, L) {
+  var tag = L.catTag;
+  var cx = tag.x + tag.w / 2;
+  var cy = tag.y + tag.h / 2 + 0.5;
+  var fs = th.font.homeCatTag;
+  var label = cat.name + ' · ' + cat.title;
+  var icon = 12 * s;
+  var gap = 6 * s;
+  var textW = r.measure(label, fs, '700');
+  var startX = cx - (icon + gap + textW) / 2;
+
+  draw.softShadow(r, tag.x, tag.y, tag.w, tag.h, tag.h / 2);
+  r.roundRect(tag.x, tag.y, tag.w, tag.h, tag.h / 2, th.color.card);
+  r.strokeRoundRect(tag.x, tag.y, tag.w, tag.h, tag.h / 2, th.color.border, 1);
+  draw.iconPaw(r, startX + icon / 2, cy, icon, th.color.cta);
+  r.text(label, startX + icon + gap, cy, {
+    size: fs,
+    weight: '700',
+    color: th.color.text,
+    maxWidth: tag.w - 12 * s
+  });
 };
 
 HomeScene.prototype._renderCta = function (r, progress) {
   var th = this.app.theme;
+  var s = this.app.layout.s;
   var L = this.L;
   var c = L.cta;
   var label = progress.completedCount() > 0 ? copy.btnContinue : copy.btnStart;
+  var depth = 4 * s;
 
+  // 立体主按钮：底座 + 主体 + 顶部高光 + 爪印图标
   draw.softShadow(r, c.x, c.y, c.w, c.h, c.h / 2);
+  r.roundRect(c.x, c.y + depth, c.w, c.h, c.h / 2, th.color.ctaDeep);
   r.roundRect(c.x, c.y, c.w, c.h, c.h / 2, th.color.cta);
-  r.text(label, r.w / 2, c.y + c.h / 2 + 1, {
-    size: th.font.banner,
+  r.roundRect(c.x + c.w * 0.16, c.y + 5 * s, c.w * 0.68, 3 * s, 1.5 * s,
+    draw.alpha(th.color.textOnColor, 0.22));
+
+  var fs = th.font.homeCta;
+  var tw = r.measure(label, fs, '700');
+  var icon = 22 * s;
+  var gap = 10 * s;
+  var startX = r.w / 2 - (icon + gap + tw) / 2;
+  var cy = c.y + c.h / 2 + 1;
+  draw.iconPaw(r, startX + icon / 2, cy, icon, th.color.textOnColor);
+  r.text(label, startX + icon + gap, cy, {
+    size: fs,
     weight: '700',
-    color: th.color.textOnColor,
-    align: 'center'
+    color: th.color.textOnColor
   });
 };
 
@@ -158,18 +243,20 @@ HomeScene.prototype._renderCards = function (r) {
     var card = L.cards[i];
     var def = defs[i];
     var cx = card.x + card.w / 2;
-    r.roundRect(card.x, card.y, card.w, card.h, th.radius.card, th.color.card);
-    r.strokeRoundRect(card.x, card.y, card.w, card.h, th.radius.card, th.color.border, 1);
-    r.circle(cx, card.y + 26 * s, 15 * s, def.bg);
-    def.icon(r, cx, card.y + 26 * s, 18 * s, def.fg);
-    r.text(def.title, cx, card.y + 52 * s, {
+    // 每张卡片一种浅色调，图标底托换成白卡，避免三个白块连成一片
+    r.roundRect(card.x, card.y, card.w, card.h, th.radius.card, def.bg);
+    r.strokeRoundRect(card.x, card.y, card.w, card.h, th.radius.card,
+      draw.alpha(def.fg, 0.20), 1);
+    r.circle(cx, card.y + 27 * s, 16 * s, th.color.card);
+    def.icon(r, cx, card.y + 27 * s, 18 * s, def.fg);
+    r.text(def.title, cx, card.y + 54 * s, {
       size: th.font.small,
       weight: '700',
       color: th.color.text,
       align: 'center',
       maxWidth: card.w - 8 * s
     });
-    r.text(def.sub, cx, card.y + 68 * s, {
+    r.text(def.sub, cx, card.y + 70 * s, {
       size: th.font.micro,
       color: th.color.textSoft,
       align: 'center',

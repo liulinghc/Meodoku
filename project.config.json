@@ -1,7 +1,7 @@
 {
   "appid": "wx8469fd5699d27f8f",
   "projectname": "meodoku",
-  "description": "喵谜格 · 猫咪逻辑方阵",
+  "description": "喵喵迷阵 · 猫咪逻辑方阵",
   "compileType": "game",
   "libVersion": "3.0.0",
   "setting": {
