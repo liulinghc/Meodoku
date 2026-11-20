@@ -55,6 +55,21 @@ function isTapHintLevel(index, dailyMode) {
 }
 
 /**
+ * 引导关的无操作提示阈值：随关卡线性放宽，
+ * 第 1 关最短 3 秒，到第 10 关最长 10 秒（保留一位小数）。
+ * 非引导关夹到两端，调用方仍需先过 isTapHintLevel。
+ */
+function tapHintSeconds(index) {
+  var min = config.TAP_HINT_SECONDS_MIN;
+  var max = config.TAP_HINT_SECONDS_MAX;
+  var last = config.TAP_HINT_LEVELS - 1;
+  if (last <= 0) return max;
+  var i = index < 1 ? 1 :
+    (index > config.TAP_HINT_LEVELS ? config.TAP_HINT_LEVELS : index);
+  return Math.round((min + (max - min) * (i - 1) / last) * 10) / 10;
+}
+
+/**
  * 当前关应展示的规则卡；没有或已读返回 null。
  * level 使用 levels/index 解码后的对象（含 givens / focus / n）。
  */
@@ -86,5 +101,6 @@ module.exports = {
   isFreeHintLevel: isFreeHintLevel,
   isMerciful: isMerciful,
   isTapHintLevel: isTapHintLevel,
+  tapHintSeconds: tapHintSeconds,
   coachFor: coachFor
 };

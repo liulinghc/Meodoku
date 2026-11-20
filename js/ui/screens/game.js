@@ -444,7 +444,7 @@ GameScene.prototype._renderBoard = function (r) {
 GameScene.prototype._tapHintTarget = function () {
   if (!tutorial.isTapHintLevel(this.index, this.dailyMode)) return -1;
   if (this.solvedFlag || this.coach) return -1;
-  if (this.idleT < config.TAP_HINT_SECONDS) return -1;
+  if (this.idleT < tutorial.tapHintSeconds(this.index)) return -1;
   return this._hintCell();
 };
 

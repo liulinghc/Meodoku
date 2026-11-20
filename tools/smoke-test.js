@@ -505,16 +505,25 @@ check('预放猫点击无效，不能删除', l1.cells[givenCell] === 2 &&
   l1.moves === movesAtLock && app.toast.text === copy.toastGivenLocked,
   'cell=' + l1.cells[givenCell] + ' moves=' + l1.moves + ' toast=' + app.toast.text);
 
-// 引导关：3 秒无操作后在正确格显示“点两下”操作引导
+// 引导关：无操作后在正确格显示“点两下”操作引导，阈值随关卡从 3 秒放宽到 10 秒
 var tutorialSvc = require('../js/services/tutorial');
 var gameCfg = require('../js/data/config');
 check('双击引导仅作用于前 10 关', tutorialSvc.isTapHintLevel(1, false) &&
   tutorialSvc.isTapHintLevel(10, false) && !tutorialSvc.isTapHintLevel(11, false) &&
   !tutorialSvc.isTapHintLevel(3, true));
-l1.idleT = gameCfg.TAP_HINT_SECONDS - 0.1;
+check('双击引导阈值随关卡从 3 秒放宽到 10 秒', (function () {
+  if (tutorialSvc.tapHintSeconds(1) !== gameCfg.TAP_HINT_SECONDS_MIN) return false;
+  if (tutorialSvc.tapHintSeconds(10) !== gameCfg.TAP_HINT_SECONDS_MAX) return false;
+  for (var k = 2; k <= 10; k++) {
+    if (tutorialSvc.tapHintSeconds(k) <= tutorialSvc.tapHintSeconds(k - 1)) return false;
+  }
+  return true;
+})(), 'L1=' + tutorialSvc.tapHintSeconds(1) + ' L10=' + tutorialSvc.tapHintSeconds(10));
+var l1Wait = tutorialSvc.tapHintSeconds(1);
+l1.idleT = l1Wait - 0.1;
 check('引导关 3 秒内不显示双击提示', l1._tapHintTarget() === -1,
   'idleT=' + l1.idleT.toFixed(2));
-l1.idleT = gameCfg.TAP_HINT_SECONDS;
+l1.idleT = l1Wait;
 var tipIdx = l1._tapHintTarget();
 check('3 秒无操作后指向正确落子格', tipIdx >= 0 &&
   l1.level.solution[Math.floor(tipIdx / l1.n)] === tipIdx % l1.n &&
@@ -525,7 +534,7 @@ check('双击提示已绘制在棋盘上', app.renderer.ctx.texts.indexOf(copy.t
   'texts=' + app.renderer.ctx.texts.join('/'));
 
 l1._apply(tipIdx, 1, true);
-l1.idleT = gameCfg.TAP_HINT_SECONDS;
+l1.idleT = l1Wait;
 frames(app, 1);
 check('正确格已打叉时改提示“点一下”',
   app.renderer.ctx.texts.indexOf(copy.tapHintOnce) !== -1 &&
