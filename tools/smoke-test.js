@@ -483,6 +483,54 @@ check('按下即产生点按水波',
 frames(app, 16);
 check('点按水波自动结束', app.touchFx.life === 0);
 
+/* ---------------- 2c. 猫咪形象 v2：16 只猫的外观参数 ---------------- */
+
+console.log('[2c] 猫咪形象 v2');
+var catsMod = require('../js/data/cats');
+var CATS = catsMod.all;
+var EAR_SET = { point: 1, round: 1, fold: 1 };
+var EYE_SET = { round: 1, sleepy: 1, bright: 1 };
+var PATTERN_SET = { blaze: 1, mask: 1, tabby: 1, patch: 1 };
+var ACC_SET = { bell: 1, scarf: 1, glasses: 1, flower: 1 };
+
+check('16 只猫都配置了耳形/眼神/斑纹/配饰',
+  CATS.length === 16 && CATS.every(function (c) {
+    return EAR_SET[c.ear] && EYE_SET[c.eyes] && PATTERN_SET[c.pattern] && ACC_SET[c.accessory];
+  }));
+
+var signatures = CATS.map(function (c) {
+  return [c.ear, c.eyes, c.pattern, c.accessory].join('/');
+});
+check('16 只猫外观签名两两不同',
+  new Set(signatures).size === CATS.length,
+  '唯一签名=' + new Set(signatures).size);
+check('耳形/眼神/斑纹/配饰四类都有多种变化',
+  new Set(CATS.map(function (c) { return c.ear; })).size === 3 &&
+  new Set(CATS.map(function (c) { return c.eyes; })).size === 3 &&
+  new Set(CATS.map(function (c) { return c.pattern; })).size === 4 &&
+  new Set(CATS.map(function (c) { return c.accessory; })).size === 4);
+check('catFace 调用签名保持不变', drawMod.catFace.length === 6);
+
+function faceOps(cat, size, expression) {
+  var c = new FakeCtx();
+  drawMod.catFace({ ctx: c }, 100, 100, size, cat, { expression: expression });
+  return c.ops;
+}
+
+check('每只猫在 28px 格内仍能画出完整细节',
+  CATS.every(function (c) { return faceOps(c, 28) >= 30; }),
+  '最小绘制指令数=' + Math.min.apply(null, CATS.map(function (c) { return faceOps(c, 28); })));
+check('16 只猫在 44px / 120px 尺寸下均可渲染',
+  CATS.every(function (c) { return faceOps(c, 44) > 0 && faceOps(c, 120) > 0; }));
+check('normal / happy / surprised / sleepy 四种表情均可绘制',
+  ['normal', 'happy', 'surprised', 'sleepy'].every(function (e) {
+    return faceOps(CATS[0], 120, e) > 0;
+  }));
+check('未知表情安全回退到 normal',
+  faceOps(CATS[0], 44, 'unknown') === faceOps(CATS[0], 44, 'normal'));
+check('旧数据缺少外观参数时向后兼容',
+  faceOps({ base: '#CCCCCC', patch: '#FFFFFF', inner: '#F4B8C8' }, 44) > 0);
+
 /* ---------------- 3. 页面跳转 ---------------- */
 
 console.log('[3] 导航');

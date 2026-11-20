@@ -240,6 +240,14 @@ var RUNTIME = String.raw`
   } else if (app && scene === 'guide') {
     if (!app.sm.top() || app.sm.top().sceneName !== 'guide') app.sm.push('guide');
   } else if (app && /^(daily|checkin|album|achievements|shop)$/.test(scene || '')) {
+    // 图鉴预览：?scene=album&demo=all 解锁全部 16 只猫，方便检查猫头差异
+    if (scene === 'album' && q.get('demo') === 'all') {
+      var catList = load('js/data/cats.js').all;
+      for (var ci = 0; ci < catList.length; ci++) {
+        app.save.data.collection.unlocked[catList[ci].id] = 1;
+      }
+      app.save.data.collection.equipped = catList[0].id;
+    }
     app.sm.push(scene);
   } else if (app && scene === 'game') {
     var level = parseInt(q.get('level') || '1', 10);

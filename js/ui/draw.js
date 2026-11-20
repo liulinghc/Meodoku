@@ -63,7 +63,18 @@ function softShadow(r, x, y, w, h, rad) {
 
 /* ---------------- 猫头 ---------------- */
 
-function drawEar(ctx, cx, cy, R, side, fill, inner, ink, lw) {
+var CAT_EARS = { point: 1, round: 1, fold: 1 };
+var CAT_EYES = { round: 1, sleepy: 1, bright: 1 };
+var CAT_PATTERNS = { blaze: 1, mask: 1, tabby: 1, patch: 1 };
+var CAT_ACCESSORIES = { bell: 1, scarf: 1, glasses: 1, flower: 1 };
+var CAT_EXPRESSIONS = { normal: 1, happy: 1, surprised: 1, sleepy: 1 };
+
+function pick(value, allowed, fallback) {
+  return allowed[value] ? value : fallback;
+}
+
+/** 尖耳：最经典的三角耳 */
+function drawPointEar(ctx, cx, cy, R, side, fill, inner, ink, lw) {
   var sg = side;
   var b1x = cx + sg * R * 0.94, b1y = cy - R * 0.34;
   var b2x = cx + sg * R * 0.22, b2y = cy - R * 1.00;
@@ -90,15 +101,325 @@ function drawEar(ctx, cx, cy, R, side, fill, inner, ink, lw) {
   ctx.fill();
 }
 
+/** 圆耳：半圆外露，像幼猫 */
+function drawRoundEar(ctx, cx, cy, R, side, fill, inner, ink, lw) {
+  var ex = cx + side * R * 0.68;
+  var ey = cy - R * 0.72;
+  var er = R * 0.40;
+
+  ctx.beginPath();
+  ctx.arc(ex, ey, er, 0, Math.PI * 2);
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = lw;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(ex, ey + R * 0.02, er * 0.52, 0, Math.PI * 2);
+  ctx.fillStyle = inner;
+  ctx.fill();
+}
+
+/** 折耳：耳尖向外折一小块 */
+function drawFoldEar(ctx, cx, cy, R, side, fill, inner, ink, lw) {
+  var sg = side;
+
+  ctx.beginPath();
+  ctx.moveTo(cx + sg * R * 0.94, cy - R * 0.26);
+  ctx.lineTo(cx + sg * R * 0.68, cy - R * 1.10);
+  ctx.lineTo(cx + sg * R * 1.00, cy - R * 0.94);
+  ctx.lineTo(cx + sg * R * 0.30, cy - R * 0.94);
+  ctx.closePath();
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = lw;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(cx + sg * R * 0.80, cy - R * 0.42);
+  ctx.lineTo(cx + sg * R * 0.66, cy - R * 0.92);
+  ctx.lineTo(cx + sg * R * 0.42, cy - R * 0.86);
+  ctx.closePath();
+  ctx.fillStyle = inner;
+  ctx.fill();
+}
+
+function drawCatEar(ctx, cx, cy, R, side, ear, fill, inner, ink, lw) {
+  if (ear === 'round') drawRoundEar(ctx, cx, cy, R, side, fill, inner, ink, lw);
+  else if (ear === 'fold') drawFoldEar(ctx, cx, cy, R, side, fill, inner, ink, lw);
+  else drawPointEar(ctx, cx, cy, R, side, fill, inner, ink, lw);
+}
+
+/** 斑纹（已裁剪在头内）：blaze=鼻梁 / mask=面罩 / tabby=虎斑 / patch=补丁 */
+function drawCatPattern(ctx, cx, cy, R, pattern, patch, ink, base) {
+  if (pattern === 'mask') {
+    ellipseFill(ctx, cx - R * 0.38, cy - R * 0.08, R * 0.32, R * 0.36, patch);
+    ellipseFill(ctx, cx + R * 0.38, cy - R * 0.08, R * 0.32, R * 0.36, patch);
+    ellipseFill(ctx, cx, cy + R * 0.40, R * 0.40, R * 0.22, patch);
+  } else if (pattern === 'tabby') {
+    ctx.strokeStyle = mix(base, ink, 0.32);
+    ctx.lineWidth = Math.max(0.8, R * 0.09);
+    ctx.lineCap = 'round';
+    var stripes = [
+      [0, -0.86, 0, -0.48],
+      [-0.24, -0.82, -0.18, -0.50],
+      [0.24, -0.82, 0.18, -0.50],
+      [-0.62, 0.04, -0.88, -0.02],
+      [-0.60, 0.20, -0.86, 0.14],
+      [0.62, 0.04, 0.88, -0.02],
+      [0.60, 0.20, 0.86, 0.14]
+    ];
+    for (var i = 0; i < stripes.length; i++) {
+      var s = stripes[i];
+      ctx.beginPath();
+      ctx.moveTo(cx + R * s[0], cy + R * s[1]);
+      ctx.lineTo(cx + R * s[2], cy + R * s[3]);
+      ctx.stroke();
+    }
+  } else if (pattern === 'patch') {
+    ellipseFill(ctx, cx + R * 0.42, cy - R * 0.14, R * 0.34, R * 0.42, patch);
+    ellipseFill(ctx, cx, cy + R * 0.36, R * 0.42, R * 0.27, patch);
+    ellipseFill(ctx, cx - R * 0.52, cy + R * 0.40, R * 0.22, R * 0.16, patch);
+  } else {
+    ellipseFill(ctx, cx, cy - R * 0.50, R * 0.30, R * 0.44, patch);
+    ellipseFill(ctx, cx, cy + R * 0.36, R * 0.42, R * 0.27, patch);
+  }
+}
+
+/**
+ * 眼睛：round=圆眼 / sleepy=睡眼 / bright=亮眼；
+ * expression 覆盖：happy=弯月眼、surprised=瞪圆、sleepy=闭眼。
+ */
+function drawCatEyes(ctx, cx, cy, R, style, expr, ink, hasDetail) {
+  var eyeDX = R * 0.38;
+  var eyeY = cy - R * 0.06;
+  var lw = Math.max(1, R * 0.09);
+
+  for (var si = -1; si <= 1; si += 2) {
+    var ex = cx + si * eyeDX;
+
+    if (expr === 'happy') {
+      ctx.beginPath();
+      ctx.moveTo(ex - R * 0.17, eyeY + R * 0.05);
+      ctx.quadraticCurveTo(ex, eyeY - R * 0.16, ex + R * 0.17, eyeY + R * 0.05);
+      ctx.strokeStyle = ink;
+      ctx.lineWidth = lw;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      continue;
+    }
+
+    if (expr === 'sleepy' || (expr === 'normal' && style === 'sleepy')) {
+      ctx.beginPath();
+      ctx.moveTo(ex - R * 0.17, eyeY);
+      ctx.quadraticCurveTo(ex, eyeY + R * 0.16, ex + R * 0.17, eyeY);
+      ctx.strokeStyle = ink;
+      ctx.lineWidth = lw;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      continue;
+    }
+
+    var wide = expr === 'surprised';
+    var sclera = R * (wide ? 0.27 : style === 'bright' ? 0.245 : 0.225);
+    ctx.beginPath();
+    ctx.arc(ex, eyeY, sclera, 0, Math.PI * 2);
+    ctx.fillStyle = themeBase.color.card;
+    ctx.fill();
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = Math.max(0.7, R * 0.05);
+    ctx.stroke();
+
+    var pr = sclera * (style === 'bright' ? 0.62 : 0.55);
+    ctx.beginPath();
+    ctx.arc(ex, eyeY + sclera * 0.08, pr, 0, Math.PI * 2);
+    ctx.fillStyle = ink;
+    ctx.fill();
+
+    if (hasDetail) {
+      ctx.beginPath();
+      ctx.arc(ex - pr * 0.38, eyeY - pr * 0.40, pr * 0.38, 0, Math.PI * 2);
+      ctx.fillStyle = themeBase.color.card;
+      ctx.fill();
+      if (style === 'bright' && !wide) {
+        ctx.beginPath();
+        ctx.arc(ex + pr * 0.34, eyeY + pr * 0.42, pr * 0.18, 0, Math.PI * 2);
+        ctx.fillStyle = themeBase.color.card;
+        ctx.fill();
+      }
+    }
+  }
+}
+
+function drawCatMouth(ctx, cx, cy, R, expr, ink, lw, alphaValue, hasDetail) {
+  if (expr === 'surprised') {
+    ctx.beginPath();
+    ctx.arc(cx, cy + R * 0.42, R * 0.075, 0, Math.PI * 2);
+    ctx.fillStyle = ink;
+    ctx.fill();
+    return;
+  }
+
+  if (expr === 'happy') {
+    ctx.beginPath();
+    ctx.arc(cx, cy + R * 0.34, R * 0.15, 0.15 * Math.PI, 0.85 * Math.PI);
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = Math.max(1, lw * 0.62);
+    ctx.lineCap = 'round';
+    ctx.globalAlpha = alphaValue * 0.6;
+    ctx.stroke();
+    ctx.globalAlpha = alphaValue;
+    if (hasDetail) {
+      ctx.beginPath();
+      ctx.arc(cx, cy + R * 0.45, R * 0.055, 0, Math.PI);
+      ctx.fillStyle = themeBase.color.catBlush;
+      ctx.fill();
+    }
+    return;
+  }
+
+  if (expr === 'sleepy') {
+    ctx.beginPath();
+    ctx.moveTo(cx - R * 0.10, cy + R * 0.42);
+    ctx.lineTo(cx + R * 0.10, cy + R * 0.42);
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = Math.max(0.8, lw * 0.62);
+    ctx.globalAlpha = alphaValue * 0.55;
+    ctx.stroke();
+    ctx.globalAlpha = alphaValue;
+    return;
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(cx - R * 0.13, cy + R * 0.38);
+  ctx.quadraticCurveTo(cx - R * 0.065, cy + R * 0.49, cx, cy + R * 0.42);
+  ctx.quadraticCurveTo(cx + R * 0.065, cy + R * 0.49, cx + R * 0.13, cy + R * 0.38);
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = Math.max(0.8, lw * 0.62);
+  ctx.globalAlpha = alphaValue * 0.55;
+  ctx.stroke();
+  ctx.globalAlpha = alphaValue;
+}
+
+/** 配饰：bell=铃铛 / scarf=围巾 / glasses=眼镜 / flower=小花 */
+function drawCatAccessory(ctx, cx, cy, R, type, ink, hasDetail) {
+  if (type === 'bell') {
+    ctx.beginPath();
+    ctx.moveTo(cx - R * 0.30, cy + R * 0.80);
+    ctx.lineTo(cx + R * 0.30, cy + R * 0.80);
+    ctx.strokeStyle = themeBase.color.ctaDeep;
+    ctx.lineWidth = Math.max(1, R * 0.06);
+    ctx.stroke();
+
+    var br = R * 0.13;
+    ctx.beginPath();
+    ctx.arc(cx, cy + R * 0.97, br, 0, Math.PI * 2);
+    ctx.fillStyle = themeBase.color.coinFace;
+    ctx.fill();
+    ctx.strokeStyle = themeBase.color.coinDeep;
+    ctx.lineWidth = Math.max(0.7, R * 0.045);
+    ctx.stroke();
+    if (hasDetail) {
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + R * 0.93);
+      ctx.lineTo(cx, cy + R * 1.01);
+      ctx.strokeStyle = themeBase.color.coinDeep;
+      ctx.lineWidth = Math.max(0.6, R * 0.03);
+      ctx.stroke();
+    }
+    return;
+  }
+
+  if (type === 'scarf') {
+    var w = R * 1.14;
+    var h = R * 0.25;
+    var x = cx - w / 2;
+    var y = cy + R * 0.80;
+    var rad = h * 0.5;
+    ctx.beginPath();
+    ctx.moveTo(x + rad, y);
+    ctx.lineTo(x + w - rad, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + rad);
+    ctx.lineTo(x + w, y + h - rad);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - rad, y + h);
+    ctx.lineTo(x + rad, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - rad);
+    ctx.lineTo(x, y + rad);
+    ctx.quadraticCurveTo(x, y, x + rad, y);
+    ctx.closePath();
+    ctx.fillStyle = themeBase.color.cta;
+    ctx.fill();
+    ctx.strokeStyle = themeBase.color.ctaDeep;
+    ctx.lineWidth = Math.max(0.7, R * 0.04);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(cx + R * 0.34, cy + R * 1.00, R * 0.075, 0, Math.PI * 2);
+    ctx.fillStyle = themeBase.color.ctaDeep;
+    ctx.fill();
+    return;
+  }
+
+  if (type === 'glasses') {
+    var eyeDX = R * 0.38;
+    var eyeY = cy - R * 0.06;
+    var gr = R * 0.27;
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = Math.max(0.9, R * 0.055);
+    ctx.fillStyle = alpha(themeBase.color.card, 0.18);
+    ctx.beginPath();
+    ctx.arc(cx - eyeDX, eyeY, gr, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx + eyeDX, eyeY, gr, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - eyeDX + gr, eyeY);
+    ctx.lineTo(cx + eyeDX - gr, eyeY);
+    ctx.stroke();
+    return;
+  }
+
+  // flower
+  var fx = cx - R * 0.56;
+  var fy = cy - R * 0.56;
+  var pr = R * 0.11;
+  var spread = R * 0.10;
+  ctx.fillStyle = themeBase.color.brand;
+  for (var i = 0; i < 5; i++) {
+    var a = -Math.PI / 2 + (Math.PI * 2 / 5) * i;
+    ctx.beginPath();
+    ctx.arc(fx + Math.cos(a) * spread, fy + Math.sin(a) * spread, pr, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.arc(fx, fy, pr * (hasDetail ? 0.72 : 0.9), 0, Math.PI * 2);
+  ctx.fillStyle = themeBase.color.coinFace;
+  ctx.fill();
+}
+
 /**
  * 贴纸式猫头。size 为外接框宽度，猫头占满框。
+ * 参数：cat.ear / cat.eyes / cat.pattern / cat.accessory；
+ * opts.expression: normal / happy / surprised / sleepy。
+ * 签名保持不变，美术替换时内部改成 drawImage 即可。
  */
 function catFace(r, cx, cy, size, cat, opts) {
   var ctx = r.ctx;
-  var R = size * 0.34;
+  var R = size * 0.35;
   var ink = (opts && opts.ink) || themeBase.color.catInk;
   var lw = Math.max(1, R * 0.10);
   var alpha = (opts && opts.alpha != null) ? opts.alpha : 1;
+  var expr = pick(opts && opts.expression, CAT_EXPRESSIONS, 'normal');
+  var ear = pick(cat.ear, CAT_EARS, 'point');
+  var eyeStyle = pick(cat.eyes, CAT_EYES, 'round');
+  var pattern = pick(cat.pattern, CAT_PATTERNS, 'blaze');
+  var accessory = pick(cat.accessory, CAT_ACCESSORIES, '');
   var base = cat.base;
   var patch = cat.patch || themeBase.color.card;
   var inner = cat.inner || themeBase.color.catInner;
@@ -109,8 +430,8 @@ function catFace(r, cx, cy, size, cat, opts) {
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
 
-  drawEar(ctx, cx, cy, R, -1, base, inner, ink, lw);
-  drawEar(ctx, cx, cy, R, 1, base, inner, ink, lw);
+  drawCatEar(ctx, cx, cy, R, -1, ear, base, inner, ink, lw);
+  drawCatEar(ctx, cx, cy, R, 1, ear, base, inner, ink, lw);
 
   // 头
   ctx.beginPath();
@@ -118,42 +439,18 @@ function catFace(r, cx, cy, size, cat, opts) {
   ctx.fillStyle = base;
   ctx.fill();
 
-  // 斑纹：额头 + 口鼻（裁剪在头内）
+  // 两层平涂：底色 + 下半张脸的暗面；斑纹压在暗面之上
   ctx.save();
   ctx.beginPath();
   ctx.arc(cx, cy, R, 0, Math.PI * 2);
   ctx.clip();
-  ellipseFill(ctx, cx, cy - R * 0.50, R * 0.30, R * 0.44, patch);
-  ellipseFill(ctx, cx, cy + R * 0.36, R * 0.42, R * 0.27, patch);
+  ctx.globalAlpha = alpha * 0.5;
+  ellipseFill(ctx, cx, cy + R * 0.60, R * 0.84, R * 0.42, mix(base, ink, 0.14));
+  ctx.globalAlpha = alpha;
+  drawCatPattern(ctx, cx, cy, R, pattern, patch, ink, base);
   ctx.restore();
 
-  // 眼睛：白眼球 + 描边 + 瞳孔 + 高光 —— 深色猫也能看清
-  var eyeDX = R * 0.37;
-  var eyeY = cy - R * 0.04;
-  var sclera = R * 0.20;
-  for (var si = -1; si <= 1; si += 2) {
-    var ex = cx + si * eyeDX;
-    ctx.beginPath();
-    ctx.arc(ex, eyeY, sclera, 0, Math.PI * 2);
-    ctx.fillStyle = themeBase.color.card;
-    ctx.fill();
-    ctx.strokeStyle = ink;
-    ctx.lineWidth = Math.max(0.7, lw * 0.5);
-    ctx.stroke();
-
-    var pr = sclera * 0.55;
-    ctx.beginPath();
-    ctx.arc(ex, eyeY + sclera * 0.06, pr, 0, Math.PI * 2);
-    ctx.fillStyle = ink;
-    ctx.fill();
-
-    if (hasDetail) {
-      ctx.beginPath();
-      ctx.arc(ex - pr * 0.40, eyeY - pr * 0.42, pr * 0.38, 0, Math.PI * 2);
-      ctx.fillStyle = themeBase.color.card;
-      ctx.fill();
-    }
-  }
+  drawCatEyes(ctx, cx, cy, R, eyeStyle, expr, ink, hasDetail);
 
   // 鼻子
   ctx.beginPath();
@@ -164,16 +461,7 @@ function catFace(r, cx, cy, size, cat, opts) {
   ctx.fillStyle = themeBase.color.catNose;
   ctx.fill();
 
-  // 嘴
-  ctx.beginPath();
-  ctx.moveTo(cx - R * 0.13, cy + R * 0.38);
-  ctx.quadraticCurveTo(cx - R * 0.065, cy + R * 0.49, cx, cy + R * 0.42);
-  ctx.quadraticCurveTo(cx + R * 0.065, cy + R * 0.49, cx + R * 0.13, cy + R * 0.38);
-  ctx.strokeStyle = ink;
-  ctx.lineWidth = Math.max(0.8, lw * 0.62);
-  ctx.globalAlpha = alpha * 0.55;
-  ctx.stroke();
-  ctx.globalAlpha = alpha;
+  drawCatMouth(ctx, cx, cy, R, expr, ink, lw, alpha, hasDetail);
 
   // 腮红
   if (hasDetail) {
@@ -193,11 +481,11 @@ function catFace(r, cx, cy, size, cat, opts) {
       var wy = cy + R * (0.20 + i * 0.14);
       ctx.beginPath();
       ctx.moveTo(cx - R * 0.78, wy);
-      ctx.lineTo(cx - R * 1.16, wy - R * 0.08);
+      ctx.lineTo(cx - R * 1.14, wy - R * 0.08);
       ctx.stroke();
       ctx.beginPath();
       ctx.moveTo(cx + R * 0.78, wy);
-      ctx.lineTo(cx + R * 1.16, wy - R * 0.08);
+      ctx.lineTo(cx + R * 1.14, wy - R * 0.08);
       ctx.stroke();
     }
     ctx.globalAlpha = alpha;
@@ -209,6 +497,8 @@ function catFace(r, cx, cy, size, cat, opts) {
   ctx.strokeStyle = ink;
   ctx.lineWidth = lw;
   ctx.stroke();
+
+  if (accessory) drawCatAccessory(ctx, cx, cy, R, accessory, ink, hasDetail);
 
   ctx.restore();
 }

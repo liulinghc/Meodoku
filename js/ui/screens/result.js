@@ -80,7 +80,7 @@ ResultScene.prototype._renderCat = function (r) {
 
   r.circle(L.cat.cx, L.cat.cy + 3 * s, L.cat.r, th.color.card);
   r.strokeCircle(L.cat.cx, L.cat.cy + 3 * s, L.cat.r, th.color.border, 1);
-  draw.catFace(r, L.cat.cx, L.cat.cy + bob, L.cat.size, cat, {});
+  draw.catFace(r, L.cat.cx, L.cat.cy + bob, L.cat.size, cat, { expression: 'happy' });
 };
 
 ResultScene.prototype._renderTitle = function (r, info) {
