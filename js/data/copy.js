@@ -137,6 +137,8 @@ module.exports = {
   toastGivenLocked: '带小锁的猫不能移动',
   toastMistakeSafe: '没关系，前 5 关不会失败，改一改继续',
   toastIdleHint: '卡住了？可以点下面的「提示」',
+  tapHintDouble: '点两下',
+  tapHintOnce: '点一下',
   hintFreeBadge: '免',
 
   errorRow: '同一行不能有两只猫',

@@ -28,6 +28,8 @@ module.exports = {
   FREE_HINT_LEVELS: 10,     // 前 10 关提示免费
   MERCY_LEVELS: 5,          // 前 5 关不设失误上限（当前版本本来就不会因失误失败）
   IDLE_HINT_SECONDS: 20,    // 连续无操作多久后给一次温和提示
+  TAP_HINT_LEVELS: 10,      // 前 10 关为引导关，显示位置级操作引导
+  TAP_HINT_SECONDS: 3,      // 引导关无操作多久后提示“点两下”
 
   CHAPTER_SIZE: 20,
   CHAPTER_COUNT: 15,

@@ -49,6 +49,11 @@ function isMerciful(index, dailyMode) {
   return !dailyMode && index >= 1 && index <= config.MERCY_LEVELS;
 }
 
+/** 是否为引导关：无操作时会在正确格子上显示“点两下”操作引导 */
+function isTapHintLevel(index, dailyMode) {
+  return !dailyMode && index >= 1 && index <= config.TAP_HINT_LEVELS;
+}
+
 /**
  * 当前关应展示的规则卡；没有或已读返回 null。
  * level 使用 levels/index 解码后的对象（含 givens / focus / n）。
@@ -80,5 +85,6 @@ module.exports = {
   isBeginner: isBeginner,
   isFreeHintLevel: isFreeHintLevel,
   isMerciful: isMerciful,
+  isTapHintLevel: isTapHintLevel,
   coachFor: coachFor
 };

@@ -437,6 +437,59 @@ GameScene.prototype._renderBoard = function (r) {
   }
 
   this._renderFx(r, shakeX);
+  this._renderTapHint(r, shakeX);
+};
+
+/** 引导关无操作 3 秒后，指向下一处正确落子格 */
+GameScene.prototype._tapHintTarget = function () {
+  if (!tutorial.isTapHintLevel(this.index, this.dailyMode)) return -1;
+  if (this.solvedFlag || this.coach) return -1;
+  if (this.idleT < config.TAP_HINT_SECONDS) return -1;
+  return this._hintCell();
+};
+
+GameScene.prototype._renderTapHint = function (r, shakeX) {
+  var idx = this._tapHintTarget();
+  if (idx < 0) return;
+
+  var th = this.app.theme;
+  var s = this.app.layout.s;
+  var L = this.L;
+  var rc = this.app.layout.cellRect(L.geom, Math.floor(idx / this.n), idx % this.n);
+  var ax = L.board.x + rc.x + shakeX;
+  var ay = L.board.y + rc.y;
+  var cx = ax + rc.size / 2;
+  var cy = ay + rc.size / 2;
+  var now = clock.now();
+  var pulse = (Math.sin(now / 260) + 1) / 2;
+
+  r.strokeRoundRect(ax + 1 * s, ay + 1 * s, rc.size - 2 * s, rc.size - 2 * s,
+    L.geom.radius, draw.alpha(th.color.cta, 0.55 + 0.35 * pulse), 3 * s);
+
+  // 两圈错开的扩散环表示“连点两下”
+  for (var k = 0; k < 2; k++) {
+    var phase = ((now / 520) + k * 0.5) % 1;
+    r.strokeCircle(cx, cy, rc.size * (0.13 + 0.30 * phase),
+      draw.alpha(th.color.cta, 0.34 * (1 - phase)), 2 * s);
+  }
+
+  var label = this.cells[idx] === MARK ? copy.tapHintOnce : copy.tapHintDouble;
+  var fs = th.font.tool;
+  var pillH = Math.min(24 * s, rc.size * 0.42);
+  var pillW = Math.min(rc.size - 6 * s, r.measure(label, fs, '700') + 18 * s);
+  var px = cx - pillW / 2;
+  var py = cy - pillH / 2;
+
+  r.roundRect(px, py, pillW, pillH, pillH / 2, th.color.card);
+  r.strokeRoundRect(px, py, pillW, pillH, pillH / 2,
+    draw.alpha(th.color.cta, 0.55), 1 * s);
+  r.text(label, cx, cy + 1, {
+    size: fs,
+    weight: '700',
+    color: th.color.cta,
+    align: 'center',
+    maxWidth: pillW - 8 * s
+  });
 };
 
 /** 教学关突破口：在空格上画柔和的呼吸光，放下猫后自动消失 */
