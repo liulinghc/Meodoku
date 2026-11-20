@@ -34,10 +34,11 @@ var BASE = {
     ink: '#2E2A28',
     xDark: '#6B4A35',
     xLight: '#FFFFFF',
-    catInk: '#2E2A28',
-    catInner: '#F4B8C8',
-    catNose: '#E8879B',
-    catBlush: '#F6A6B8',
+    catInk: '#3A3230',        // 五官深色：暖炭墨，避免纯黑
+    catLine: '#6E594F',       // 浅色猫轮廓：暖棕细线，轻手绘感
+    catInner: '#F2C4CE',      // 耳内软粉
+    catNose: '#D98F9B',       // 低饱和鼻粉
+    catBlush: '#F2B6C1',      // 低饱和腮红
     gold: '#B8862B',
     coinFace: '#F2C94C',
     coinDeep: '#D9A62E',

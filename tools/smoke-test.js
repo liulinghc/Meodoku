@@ -31,6 +31,10 @@ FakeCtx.prototype.clearRect = function () { this.ops++; this.texts.length = 0; }
 FakeCtx.prototype.fillText = function (s) { this.ops++; this.texts.push(String(s)); };
 FakeCtx.prototype.measureText = function (s) { return { width: String(s).length * 8 }; };
 FakeCtx.prototype.drawImage = function () { this.ops++; };
+function FakeGradient() {}
+FakeGradient.prototype.addColorStop = function () {};
+FakeCtx.prototype.createLinearGradient = function () { this.ops++; return new FakeGradient(); };
+FakeCtx.prototype.createRadialGradient = function () { this.ops++; return new FakeGradient(); };
 
 function FakeCanvas(w, h) {
   this.width = w || 375;
@@ -483,16 +487,16 @@ check('按下即产生点按水波',
 frames(app, 16);
 check('点按水波自动结束', app.touchFx.life === 0);
 
-/* ---------------- 2c. 猫咪形象 v3：16 只猫的贴纸式外观 ---------------- */
+/* ---------------- 2c. 猫咪形象 v4：16 只猫的马卡龙柔光外观 ---------------- */
 
-console.log('[2c] 猫咪形象 v3');
+console.log('[2c] 猫咪形象 v4');
 var catsMod = require('../js/data/cats');
 var themeBase = require('../js/data/theme').base;
 var CATS = catsMod.all;
 var EAR_SET = { point: 1, round: 1, fold: 1 };
 var EYE_SET = { dot: 1, sparkle: 1, gentle: 1, wide: 1, happy: 1, sleepy: 1 };
 var MOUTH_SET = { smile: 1, w: 1, open: 1, tongue: 1, line: 1, pout: 1, smirk: 1, fang: 1 };
-var PATTERN_SET = { plain: 1, blaze: 1, tabby: 1, muzzle: 1, spot: 1 };
+var PATTERN_SET = { plain: 1, blaze: 1, tabby: 1, muzzle: 1, spot: 1, calico: 1 };
 var ACC_SET = {
   bell: 1, scarf: 1, glasses: 1, flower: 1, tear: 1, bow: 1,
   star: 1, leaf: 1, collar: 1, headphones: 1, crown: 1
@@ -514,10 +518,14 @@ check('耳形/眼神/嘴型/斑纹/配饰五类都有多种变化',
   new Set(CATS.map(function (c) { return c.ear; })).size === 3 &&
   new Set(CATS.map(function (c) { return c.eyes; })).size === 6 &&
   new Set(CATS.map(function (c) { return c.mouth; })).size === 8 &&
-  new Set(CATS.map(function (c) { return c.pattern; })).size === 5 &&
+  new Set(CATS.map(function (c) { return c.pattern; })).size === 6 &&
   new Set(CATS.map(function (c) { return c.accessory; })).size === 11);
 check('所有猫都不使用单眼罩式斑纹',
   CATS.every(function (c) { return c.pattern !== 'mask' && c.pattern !== 'patch'; }));
+check('三花猫使用双色斑块且避开单眼罩式设计',
+  (function (c) {
+    return c.pattern === 'calico' && !!c.patch2 && c.patch2 !== c.patch;
+  })(catsMod.get('yingjing')));
 check('墨墨使用亮点眼+浅色口鼻+铃铛，无单眼罩',
   (function (c) {
     return c.ear === 'point' && c.eyes === 'sparkle' && c.mouth === 'smile' &&
@@ -544,7 +552,7 @@ check('全部 11 种配饰都接入了真实绘制',
     cat.accessory = acc;
     return faceOps(cat, 120) - plainOps >= 2;
   }));
-check('全部 6 种眼神 / 8 种嘴型 / 5 种斑纹都能绘制',
+check('全部 6 种眼神 / 8 种嘴型 / 6 种斑纹都能绘制',
   Object.keys(EYE_SET).every(function (eyes) {
     var cat = {};
     for (var k in plainCat) cat[k] = plainCat[k];

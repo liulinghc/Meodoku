@@ -66,7 +66,7 @@ function softShadow(r, x, y, w, h, rad) {
 var CAT_EARS = { point: 1, round: 1, fold: 1 };
 var CAT_EYES = { dot: 1, sparkle: 1, gentle: 1, wide: 1, happy: 1, sleepy: 1 };
 var CAT_MOUTHS = { smile: 1, w: 1, open: 1, tongue: 1, line: 1, pout: 1, smirk: 1, fang: 1 };
-var CAT_PATTERNS = { plain: 1, blaze: 1, tabby: 1, muzzle: 1, spot: 1 };
+var CAT_PATTERNS = { plain: 1, blaze: 1, tabby: 1, muzzle: 1, spot: 1, calico: 1 };
 var CAT_ACCESSORIES = {
   bell: 1, scarf: 1, glasses: 1, flower: 1, tear: 1, bow: 1,
   star: 1, leaf: 1, collar: 1, headphones: 1, crown: 1
@@ -81,13 +81,13 @@ function token(name, fallback) {
   return themeBase.color[name] || fallback;
 }
 
-/** 宽圆角方脸：比正圆更幼态，也更贴贴纸画风 */
+/** 宽圆角方脸：比正圆更幼态，也更贴软萌日系贴纸画风 */
 function headPath(ctx, cx, cy, R) {
-  var w = R * 2.02;
-  var h = R * 1.86;
+  var w = R * 2.04;
+  var h = R * 1.90;
   var x = cx - w / 2;
   var y = cy - h / 2 + R * 0.02;
-  var rad = R * 0.60;
+  var rad = R * 0.66;
 
   ctx.beginPath();
   ctx.moveTo(x + rad, y);
@@ -168,15 +168,15 @@ function drawRoundEar(ctx, cx, cy, R, side, fill, inner, ink, lw) {
   ctx.fill();
 }
 
-/** 折耳：耳尖向外折一小块，轮廓仍是猫耳 */
+/** 折耳：矮圆的小折耳贴在头顶，避免高尖角像犄角 */
 function drawFoldEar(ctx, cx, cy, R, side, fill, inner, ink, lw) {
   var sg = side;
 
   ctx.beginPath();
-  ctx.moveTo(cx + sg * R * 0.92, cy - R * 0.52);
-  ctx.lineTo(cx + sg * R * 0.64, cy - R * 1.14);
-  ctx.quadraticCurveTo(cx + sg * R * 0.58, cy - R * 1.24, cx + sg * R * 0.50, cy - R * 1.14);
-  ctx.lineTo(cx + sg * R * 0.36, cy - R * 0.86);
+  ctx.moveTo(cx + sg * R * 0.90, cy - R * 0.54);
+  ctx.lineTo(cx + sg * R * 0.86, cy - R * 0.92);
+  ctx.quadraticCurveTo(cx + sg * R * 0.84, cy - R * 1.06, cx + sg * R * 0.70, cy - R * 1.04);
+  ctx.quadraticCurveTo(cx + sg * R * 0.54, cy - R * 1.00, cx + sg * R * 0.38, cy - R * 0.86);
   ctx.closePath();
   ctx.fillStyle = fill;
   ctx.fill();
@@ -185,13 +185,13 @@ function drawFoldEar(ctx, cx, cy, R, side, fill, inner, ink, lw) {
   ctx.lineJoin = 'round';
   ctx.stroke();
 
-  // 折下来的小耳尖：小而圆，避免像尖角
+  // 折下来的小耳尖：贴近头顶的一块软折片
   ctx.beginPath();
-  ctx.moveTo(cx + sg * R * 0.62, cy - R * 1.12);
-  ctx.quadraticCurveTo(cx + sg * R * 0.78, cy - R * 1.14, cx + sg * R * 0.86, cy - R * 1.02);
-  ctx.quadraticCurveTo(cx + sg * R * 0.74, cy - R * 0.96, cx + sg * R * 0.55, cy - R * 0.98);
+  ctx.moveTo(cx + sg * R * 0.82, cy - R * 0.88);
+  ctx.quadraticCurveTo(cx + sg * R * 0.74, cy - R * 1.00, cx + sg * R * 0.58, cy - R * 0.96);
+  ctx.quadraticCurveTo(cx + sg * R * 0.64, cy - R * 0.88, cx + sg * R * 0.82, cy - R * 0.88);
   ctx.closePath();
-  ctx.fillStyle = mix(fill, ink, 0.12);
+  ctx.fillStyle = mix(fill, ink, 0.10);
   ctx.fill();
   ctx.strokeStyle = ink;
   ctx.lineWidth = Math.max(0.6, lw * 0.55);
@@ -199,8 +199,8 @@ function drawFoldEar(ctx, cx, cy, R, side, fill, inner, ink, lw) {
 
   ctx.beginPath();
   ctx.moveTo(cx + sg * R * 0.80, cy - R * 0.62);
-  ctx.lineTo(cx + sg * R * 0.62, cy - R * 1.02);
-  ctx.lineTo(cx + sg * R * 0.46, cy - R * 0.84);
+  ctx.lineTo(cx + sg * R * 0.72, cy - R * 0.92);
+  ctx.lineTo(cx + sg * R * 0.50, cy - R * 0.82);
   ctx.closePath();
   ctx.fillStyle = inner;
   ctx.fill();
@@ -212,8 +212,8 @@ function drawCatEar(ctx, cx, cy, R, side, ear, fill, inner, ink, lw) {
   else drawPointEar(ctx, cx, cy, R, side, fill, inner, ink, lw);
 }
 
-/** 斑纹（已裁剪在头内）：plain / blaze / tabby / muzzle / spot，均不使用单眼罩 */
-function drawCatPattern(ctx, cx, cy, R, pattern, patch, ink, base) {
+/** 斑纹（已裁剪在头内）：plain / blaze / tabby / muzzle / spot / calico，均不使用单眼罩 */
+function drawCatPattern(ctx, cx, cy, R, pattern, patch, patch2, ink, base) {
   if (pattern === 'tabby') {
     ctx.strokeStyle = mix(base, ink, 0.28);
     ctx.lineWidth = Math.max(0.8, R * 0.085);
@@ -241,6 +241,11 @@ function drawCatPattern(ctx, cx, cy, R, pattern, patch, ink, base) {
     ellipseFill(ctx, cx, cy + R * 0.38, R * 0.28, R * 0.155, patch);
   } else if (pattern === 'spot') {
     ellipseFill(ctx, cx + R * 0.34, cy - R * 0.50, R * 0.16, R * 0.18, patch);
+  } else if (pattern === 'calico') {
+    // 三花：奶油色口鼻 + 两处双色斑块，斑块避开眼睛，保持干净
+    ellipseFill(ctx, cx - R * 0.56, cy - R * 0.52, R * 0.30, R * 0.22, patch);
+    ellipseFill(ctx, cx + R * 0.64, cy + R * 0.38, R * 0.24, R * 0.17, patch2);
+    ellipseFill(ctx, cx, cy + R * 0.38, R * 0.26, R * 0.145, patch);
   }
 }
 
@@ -252,7 +257,7 @@ function drawCatEyes(ctx, cx, cy, R, style, expr, ink, base, hasDetail) {
   var eyeDX = R * 0.36;
   var eyeY = cy - R * 0.02;
   var dark = luminance(base) < 0.45;
-  var lineColor = dark ? themeBase.color.card : ink;
+  var lineColor = dark ? themeBase.color.card : themeBase.color.catLine;
   var happy = expr === 'happy' || (expr === 'normal' && style === 'happy');
   var sleepy = expr === 'sleepy' || (expr === 'normal' && style === 'sleepy');
   var wide = expr === 'surprised' || (expr === 'normal' && style === 'wide');
@@ -265,7 +270,7 @@ function drawCatEyes(ctx, cx, cy, R, style, expr, ink, base, hasDetail) {
       ctx.moveTo(ex - R * 0.16, eyeY + R * 0.04);
       ctx.quadraticCurveTo(ex, eyeY - R * 0.13, ex + R * 0.16, eyeY + R * 0.04);
       ctx.strokeStyle = lineColor;
-      ctx.lineWidth = Math.max(1, R * 0.075);
+      ctx.lineWidth = Math.max(1, R * 0.065);
       ctx.lineCap = 'round';
       ctx.stroke();
       continue;
@@ -276,7 +281,7 @@ function drawCatEyes(ctx, cx, cy, R, style, expr, ink, base, hasDetail) {
       ctx.moveTo(ex - R * 0.16, eyeY);
       ctx.quadraticCurveTo(ex, eyeY + R * 0.13, ex + R * 0.16, eyeY);
       ctx.strokeStyle = lineColor;
-      ctx.lineWidth = Math.max(1, R * 0.075);
+      ctx.lineWidth = Math.max(1, R * 0.065);
       ctx.lineCap = 'round';
       ctx.stroke();
       continue;
@@ -296,6 +301,10 @@ function drawCatEyes(ctx, cx, cy, R, style, expr, ink, base, hasDetail) {
         ctx.arc(ex - wrx * 0.34, eyeY - wry * 0.38, wry * 0.30, 0, Math.PI * 2);
         ctx.fillStyle = themeBase.color.card;
         ctx.fill();
+        ctx.beginPath();
+        ctx.arc(ex + wrx * 0.36, eyeY + wry * 0.34, wry * 0.15, 0, Math.PI * 2);
+        ctx.fillStyle = themeBase.color.card;
+        ctx.fill();
       }
       continue;
     }
@@ -310,17 +319,16 @@ function drawCatEyes(ctx, cx, cy, R, style, expr, ink, base, hasDetail) {
     }
 
     if (hasDetail) {
-      var hr = ry * 0.30;
+      var hr = ry * 0.32;
       ctx.beginPath();
       ctx.arc(ex - rx * 0.34, eyeY - ry * 0.38, hr, 0, Math.PI * 2);
       ctx.fillStyle = themeBase.color.card;
       ctx.fill();
-      if (style === 'sparkle') {
-        ctx.beginPath();
-        ctx.arc(ex + rx * 0.38, eyeY + ry * 0.34, hr * 0.55, 0, Math.PI * 2);
-        ctx.fillStyle = themeBase.color.card;
-        ctx.fill();
-      }
+      // 第二点高光：让眼睛更明亮，但保持实心眼、不描白圈
+      ctx.beginPath();
+      ctx.arc(ex + rx * 0.40, eyeY + ry * 0.34, hr * (style === 'sparkle' ? 0.58 : 0.46), 0, Math.PI * 2);
+      ctx.fillStyle = themeBase.color.card;
+      ctx.fill();
     }
 
     if (style === 'gentle') {
@@ -722,16 +730,23 @@ function drawCatAccessory(ctx, cx, cy, R, type, accColor, ink, hasDetail) {
 }
 
 /**
- * 贴纸式猫头。size 为外接框宽度，猫头占满框。
+ * 软萌日系贴纸猫头。size 为外接框宽度，头部略大、占满框。
  * 参数：cat.ear / eyes / mouth / pattern / accessory / acc；
+ * 浅色猫用暖棕细线，深色猫自动换浅色轮廓；大图用一次渐变做柔光，
+ * 棋盘小图用平涂，避免大量猫头每帧创建渐变对象。
  * opts.expression: normal / happy / surprised / sleepy。
  * 签名保持不变，美术替换时内部改成 drawImage 即可。
  */
 function catFace(r, cx, cy, size, cat, opts) {
   var ctx = r.ctx;
-  var R = size * 0.35;
+  var R = size * 0.37;
   var ink = (opts && opts.ink) || themeBase.color.catInk;
-  var lw = Math.max(1, R * 0.085);
+  var base = cat.base;
+  var dark = luminance(base) < 0.45;
+  // 统一暖棕细线；深色脸改用暖白轮廓保证可读性
+  var line = dark ? mix(base, themeBase.color.card, 0.62) : themeBase.color.catLine;
+  var detailInk = dark ? ink : themeBase.color.catLine;
+  var lw = Math.max(1, R * 0.065);
   var alphaValue = (opts && opts.alpha != null) ? opts.alpha : 1;
   var expr = pick(opts && opts.expression, CAT_EXPRESSIONS, 'normal');
   var ear = pick(cat.ear, CAT_EARS, 'point');
@@ -740,32 +755,54 @@ function catFace(r, cx, cy, size, cat, opts) {
   var pattern = pick(cat.pattern, CAT_PATTERNS, 'plain');
   var accessory = pick(cat.accessory, CAT_ACCESSORIES, '');
   var accColor = token(cat.acc, themeBase.color.cta);
-  var base = cat.base;
   var patch = cat.patch || themeBase.color.card;
+  var patch2 = cat.patch2 || patch;
   var inner = cat.inner || themeBase.color.catInner;
   var hasDetail = R > 8;
-  var dark = luminance(base) < 0.45;
 
   ctx.save();
   ctx.globalAlpha = alphaValue;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
 
-  drawCatEar(ctx, cx, cy, R, -1, ear, base, inner, ink, lw);
-  drawCatEar(ctx, cx, cy, R, 1, ear, base, inner, ink, lw);
+  drawCatEar(ctx, cx, cy, R, -1, ear, base, inner, line, lw);
+  drawCatEar(ctx, cx, cy, R, 1, ear, base, inner, line, lw);
 
   headPath(ctx, cx, cy, R);
   ctx.fillStyle = base;
   ctx.fill();
 
-  // 两层平涂：底色 + 下半脸暗面；斑纹压在暗面之上
+  // 底色 + 左上柔光 + 下半脸浅暗面；斑纹压在光影之上。
+  // 大图用一次渐变做柔光，棋盘小图用平涂，避免每只猫都创建渐变对象。
   ctx.save();
   headPath(ctx, cx, cy, R);
   ctx.clip();
-  ctx.globalAlpha = alphaValue * 0.38;
-  ellipseFill(ctx, cx, cy + R * 0.62, R * 0.82, R * 0.36, mix(base, ink, 0.12));
   ctx.globalAlpha = alphaValue;
-  drawCatPattern(ctx, cx, cy, R, pattern, patch, ink, base);
+  if (size > 64) {
+    var hx = cx - R * 0.28;
+    var hy = cy - R * 0.44;
+    var hg = ctx.createRadialGradient(hx, hy, R * 0.06, hx, hy, R * 0.92);
+    hg.addColorStop(0, alpha(themeBase.color.card, 0.17));
+    hg.addColorStop(0.58, alpha(themeBase.color.card, 0.055));
+    hg.addColorStop(1, alpha(themeBase.color.card, 0));
+    ctx.fillStyle = hg;
+    ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
+
+    var shade = mix(base, ink, 0.10);
+    var sg = ctx.createLinearGradient(0, cy - R * 0.12, 0, cy + R * 1.02);
+    sg.addColorStop(0, alpha(shade, 0));
+    sg.addColorStop(0.62, alpha(shade, 0.13));
+    sg.addColorStop(1, alpha(shade, 0.24));
+    ctx.fillStyle = sg;
+    ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
+  } else {
+    ctx.globalAlpha = alphaValue * 0.10;
+    ellipseFill(ctx, cx - R * 0.28, cy - R * 0.42, R * 0.62, R * 0.36, themeBase.color.card);
+    ctx.globalAlpha = alphaValue * 0.22;
+    ellipseFill(ctx, cx, cy + R * 0.66, R * 0.82, R * 0.32, mix(base, ink, 0.10));
+  }
+  ctx.globalAlpha = alphaValue;
+  drawCatPattern(ctx, cx, cy, R, pattern, patch, patch2, ink, base);
   ctx.restore();
 
   drawCatEyes(ctx, cx, cy, R, eyeStyle, expr, ink, base, hasDetail);
@@ -779,22 +816,22 @@ function catFace(r, cx, cy, size, cat, opts) {
   ctx.fillStyle = themeBase.color.catNose;
   ctx.fill();
 
-  drawCatMouth(ctx, cx, cy, R, mouthStyle, expr, ink, lw, alphaValue, hasDetail);
+  drawCatMouth(ctx, cx, cy, R, mouthStyle, expr, detailInk, lw, alphaValue, hasDetail);
 
   // 腮红
   if (hasDetail) {
     ctx.fillStyle = themeBase.color.catBlush;
-    ctx.globalAlpha = alphaValue * (dark ? 0.72 : 0.45);
+    ctx.globalAlpha = alphaValue * (dark ? 0.68 : 0.42);
     ctx.beginPath(); ctx.arc(cx - R * 0.62, cy + R * 0.27, R * 0.16, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(cx + R * 0.62, cy + R * 0.27, R * 0.16, 0, Math.PI * 2); ctx.fill();
     ctx.globalAlpha = alphaValue;
   }
 
-  // 胡须
+  // 胡须（只在大尺寸显示，避免小图变乱）
   if (size > 48) {
-    ctx.strokeStyle = dark ? themeBase.color.card : ink;
+    ctx.strokeStyle = line;
     ctx.lineWidth = Math.max(0.7, R * 0.04);
-    ctx.globalAlpha = alphaValue * (dark ? 0.45 : 0.30);
+    ctx.globalAlpha = alphaValue * (dark ? 0.45 : 0.28);
     for (var i = 0; i < 2; i++) {
       var wy = cy + R * (0.12 + i * 0.14);
       ctx.beginPath();
@@ -811,11 +848,11 @@ function catFace(r, cx, cy, size, cat, opts) {
 
   // 轮廓（最后描，压住斑纹边缘）
   headPath(ctx, cx, cy, R);
-  ctx.strokeStyle = ink;
+  ctx.strokeStyle = line;
   ctx.lineWidth = lw;
   ctx.stroke();
 
-  if (accessory) drawCatAccessory(ctx, cx, cy, R, accessory, accColor, ink, hasDetail);
+  if (accessory) drawCatAccessory(ctx, cx, cy, R, accessory, accColor, detailInk, hasDetail);
 
   ctx.restore();
 }
