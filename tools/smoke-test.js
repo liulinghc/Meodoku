@@ -483,32 +483,46 @@ check('按下即产生点按水波',
 frames(app, 16);
 check('点按水波自动结束', app.touchFx.life === 0);
 
-/* ---------------- 2c. 猫咪形象 v2：16 只猫的外观参数 ---------------- */
+/* ---------------- 2c. 猫咪形象 v3：16 只猫的贴纸式外观 ---------------- */
 
-console.log('[2c] 猫咪形象 v2');
+console.log('[2c] 猫咪形象 v3');
 var catsMod = require('../js/data/cats');
+var themeBase = require('../js/data/theme').base;
 var CATS = catsMod.all;
 var EAR_SET = { point: 1, round: 1, fold: 1 };
-var EYE_SET = { round: 1, sleepy: 1, bright: 1 };
-var PATTERN_SET = { blaze: 1, mask: 1, tabby: 1, patch: 1 };
-var ACC_SET = { bell: 1, scarf: 1, glasses: 1, flower: 1 };
+var EYE_SET = { dot: 1, sparkle: 1, gentle: 1, wide: 1, happy: 1, sleepy: 1 };
+var MOUTH_SET = { smile: 1, w: 1, open: 1, tongue: 1, line: 1, pout: 1, smirk: 1, fang: 1 };
+var PATTERN_SET = { plain: 1, blaze: 1, tabby: 1, muzzle: 1, spot: 1 };
+var ACC_SET = {
+  bell: 1, scarf: 1, glasses: 1, flower: 1, tear: 1, bow: 1,
+  star: 1, leaf: 1, collar: 1, headphones: 1, crown: 1
+};
 
-check('16 只猫都配置了耳形/眼神/斑纹/配饰',
+check('16 只猫都配置了耳形/眼神/嘴型/斑纹/配饰/配饰色',
   CATS.length === 16 && CATS.every(function (c) {
-    return EAR_SET[c.ear] && EYE_SET[c.eyes] && PATTERN_SET[c.pattern] && ACC_SET[c.accessory];
+    return EAR_SET[c.ear] && EYE_SET[c.eyes] && MOUTH_SET[c.mouth] &&
+      PATTERN_SET[c.pattern] && ACC_SET[c.accessory] && themeBase.color[c.acc];
   }));
 
 var signatures = CATS.map(function (c) {
-  return [c.ear, c.eyes, c.pattern, c.accessory].join('/');
+  return [c.ear, c.eyes, c.mouth, c.pattern, c.accessory, c.acc].join('/');
 });
-check('16 只猫外观签名两两不同',
+check('16 只猫外观签名两两不同（含嘴型与配饰色）',
   new Set(signatures).size === CATS.length,
   '唯一签名=' + new Set(signatures).size);
-check('耳形/眼神/斑纹/配饰四类都有多种变化',
+check('耳形/眼神/嘴型/斑纹/配饰五类都有多种变化',
   new Set(CATS.map(function (c) { return c.ear; })).size === 3 &&
-  new Set(CATS.map(function (c) { return c.eyes; })).size === 3 &&
-  new Set(CATS.map(function (c) { return c.pattern; })).size === 4 &&
-  new Set(CATS.map(function (c) { return c.accessory; })).size === 4);
+  new Set(CATS.map(function (c) { return c.eyes; })).size === 6 &&
+  new Set(CATS.map(function (c) { return c.mouth; })).size === 8 &&
+  new Set(CATS.map(function (c) { return c.pattern; })).size === 5 &&
+  new Set(CATS.map(function (c) { return c.accessory; })).size === 11);
+check('所有猫都不使用单眼罩式斑纹',
+  CATS.every(function (c) { return c.pattern !== 'mask' && c.pattern !== 'patch'; }));
+check('墨墨使用亮点眼+浅色口鼻+铃铛，无单眼罩',
+  (function (c) {
+    return c.ear === 'point' && c.eyes === 'sparkle' && c.mouth === 'smile' &&
+      c.pattern === 'muzzle' && c.accessory === 'bell' && c.acc === 'gold';
+  })(catsMod.get('mo')));
 check('catFace 调用签名保持不变', drawMod.catFace.length === 6);
 
 function faceOps(cat, size, expression) {
@@ -516,6 +530,39 @@ function faceOps(cat, size, expression) {
   drawMod.catFace({ ctx: c }, 100, 100, size, cat, { expression: expression });
   return c.ops;
 }
+
+var plainCat = {
+  base: '#CCCCCC', patch: '#FFFFFF', inner: '#F4B8C8',
+  ear: 'round', eyes: 'dot', mouth: 'smile', pattern: 'plain',
+  accessory: '', acc: 'brand'
+};
+var plainOps = faceOps(plainCat, 120);
+check('全部 11 种配饰都接入了真实绘制',
+  Object.keys(ACC_SET).every(function (acc) {
+    var cat = {};
+    for (var k in plainCat) cat[k] = plainCat[k];
+    cat.accessory = acc;
+    return faceOps(cat, 120) - plainOps >= 2;
+  }));
+check('全部 6 种眼神 / 8 种嘴型 / 5 种斑纹都能绘制',
+  Object.keys(EYE_SET).every(function (eyes) {
+    var cat = {};
+    for (var k in plainCat) cat[k] = plainCat[k];
+    cat.eyes = eyes;
+    return faceOps(cat, 44) > 0;
+  }) &&
+  Object.keys(MOUTH_SET).every(function (mouth) {
+    var cat = {};
+    for (var k in plainCat) cat[k] = plainCat[k];
+    cat.mouth = mouth;
+    return faceOps(cat, 44) > 0;
+  }) &&
+  Object.keys(PATTERN_SET).every(function (pattern) {
+    var cat = {};
+    for (var k in plainCat) cat[k] = plainCat[k];
+    cat.pattern = pattern;
+    return faceOps(cat, 44) > 0;
+  }));
 
 check('每只猫在 28px 格内仍能画出完整细节',
   CATS.every(function (c) { return faceOps(c, 28) >= 30; }),
