@@ -742,15 +742,52 @@ var G = app.layout.game(n);
 
 check('通用交互关卡无预放/无高亮/无规则卡', game.index === 7 &&
   game.givens.length === 0 && game.focus === -1 && !game.coach);
+check('非教学关规则条三卡等亮', game._activeRule() === -1,
+  'active=' + game._activeRule());
 check('静态棋盘图层已生成', !!game.boardLayer);
 check('棋盘不越界（底部色带之上）', G.board.y + G.board.size <= G.band.y + 0.5,
   'bottom=' + (G.board.y + G.board.size).toFixed(1) + ' band=' + G.band.y.toFixed(1));
 check('所有棋盘格子边长 ≥ 28px', G.geom.tile >= 28, 'tile=' + G.geom.tile.toFixed(1));
 
+// 阶段 3：对局页纵向层级 —— HUD 胶囊 / 低对比图例 / 三卡规则条 / 内衬棋盘
+check('HUD 两枚胶囊在屏幕内且不重叠',
+  G.hud.progress.x >= 0 &&
+  G.hud.time.x + G.hud.time.w <= app.env.width + 0.5 &&
+  G.hud.progress.x + G.hud.progress.w + G.hud.gap <= G.hud.time.x + 0.5,
+  'p=' + G.hud.progress.x.toFixed(1) + ' t=' + G.hud.time.x.toFixed(1));
+check('HUD 胶囊位于标题栏下方、图例上方',
+  G.hud.y >= G.topBar.y + G.topBar.h && G.hud.y + G.hud.h < G.legend.y,
+  'hudBottom=' + (G.hud.y + G.hud.h).toFixed(1) + ' legend=' + G.legend.y.toFixed(1));
+check('图例在 HUD 与规则条之间',
+  G.legend.y >= G.hud.y + G.hud.h && G.legend.y + G.legend.h < G.rules.y);
+check('规则条在棋盘上方且不重叠',
+  G.rules.y + G.rules.h <= G.board.y + 0.5,
+  'rulesBottom=' + (G.rules.y + G.rules.h).toFixed(1) + ' board=' + G.board.y.toFixed(1));
+check('规则条为三块等宽文字卡且放得下',
+  G.rules.cardW > 0 &&
+  G.rules.x + G.rules.cardW * 3 + G.rules.gap * 2 <= G.rules.x + G.rules.w + 0.5,
+  'cardW=' + G.rules.cardW.toFixed(1));
+check('棋盘带内衬边距', G.board.inset > 0, 'inset=' + G.board.inset.toFixed(1));
+check('工具胶囊在底部色带内且互不重叠', (function () {
+  for (var ti = 0; ti < G.tools.length; ti++) {
+    var c = G.tools[ti].capsule;
+    if (!c || c.y < G.band.y - 0.5 || c.y + c.h > app.env.height + 0.5) return false;
+    if (ti && G.tools[ti - 1].capsule.x + G.tools[ti - 1].capsule.w > c.x + 0.5) return false;
+  }
+  return true;
+})());
+
+tap(G.tools[0].capsule.x + 2 * app.layout.s,
+  G.tools[0].capsule.y + G.tools[0].capsule.h / 2);
+check('工具胶囊左缘也可点中', app.toast.text === copy.toastNoUndo,
+  'toast=' + app.toast.text);
+
 tapCell(app, game, 0, 0);
 check('点一次 → X 标记', game.cells[0] === 1, 'cell=' + game.cells[0]);
+check('X 标记带书写动画时间戳', !!game.markAt[0], 'markAt=' + game.markAt[0]);
 tapCell(app, game, 0, 0);
 check('点两次 → 猫', game.cells[0] === 2, 'cell=' + game.cells[0]);
+check('放猫后清除 X 动画时间戳', game.markAt[0] === undefined);
 check('合法放置有反馈波纹', game.fx.length > 0 && game.fx[0].kind === 'ok');
 check('统计已记录放猫', app.progress.catsPlaced() === 1, 'catsPlaced=' + app.progress.catsPlaced());
 check('步数已记录', game.moves === 2, 'moves=' + game.moves);
@@ -776,6 +813,8 @@ check('撤销回到 X', game.cells[1] === 1, 'cell=' + game.cells[1]);
 
 tap(restartBtn.cx, restartBtn.cy);
 check('重开清空棋盘', game.cells[0] === 0 && game.cells[1] === 0);
+check('重开清除 X 动画时间戳', Object.keys(game.markAt).length === 0,
+  'markAt=' + Object.keys(game.markAt).join('/'));
 check('重开重置计时', game.elapsed < 0.05, 'elapsed=' + game.elapsed.toFixed(3));
 check('重开重置步数与失误', game.moves === 0 && game.mistakes === 0);
 check('重开有明确提示', app.toast.text === copy.toastRestarted);
@@ -872,6 +911,11 @@ check('通关记录含猫爪与最佳用时', (function () {
   return !!e && e.paws === 1 && e.bestTimeMs > 0;
 })());
 
+frames(app, 2);
+check('通关先播放庆祝动画再结算',
+  game.celebrateT > 0 && sceneName(app) === 'game',
+  'celebrateT=' + game.celebrateT.toFixed(2) + ' scene=' + sceneName(app));
+
 frames(app, 50);
 check('通关后进入结算页', sceneName(app) === 'result');
 var result = app.sm.top();
@@ -896,10 +940,14 @@ check('新对局计时重置', app.sm.top().elapsed < 0.2, 'elapsed=' + app.sm.t
 
 var game2 = app.sm.top();
 check('L2 规则卡换成“行列各一只”', !!game2.coach && game2.coach.id === 'rowcol');
+check('L2 规则条高亮“行列各一”', game2._activeRule() === 1,
+  'active=' + game2._activeRule());
 if (game2.coach) {
   var coach2 = app.layout.coach();
   tap(coach2.cta.x + coach2.cta.w / 2, coach2.cta.y + coach2.cta.h / 2);
   frames(app, 1);
+  check('规则卡关闭后本关规则条仍保持高亮', game2._activeRule() === 1,
+    'active=' + game2._activeRule());
 }
 tap(G.back.cx, G.back.cy);
 frames(app, 2);
@@ -933,6 +981,21 @@ frames(app, 2);
 check('结算 → 返回地图', sceneName(app) === 'levelmap');
 check('地图当前关推进到第 3 关', levelsSvc.current(app.progress) === 3);
 check('通关第 2 关解锁第 3 关', app.progress.isUnlocked(3) && !app.progress.isUnlocked(4));
+
+// 第 3 关首次出现“每区一猫”规则卡，规则条应切到第 1 张卡
+app.sm.push('game', { levelIndex: 3 });
+frames(app, 1);
+var game3 = app.sm.top();
+check('L3 规则卡为“每区一猫”', !!game3.coach && game3.coach.id === 'region');
+check('L3 规则条高亮“每区一猫”', game3._activeRule() === 0,
+  'active=' + game3._activeRule());
+if (game3.coach) {
+  var coach3 = app.layout.coach();
+  tap(coach3.cta.x + coach3.cta.w / 2, coach3.cta.y + coach3.cta.h / 2);
+  frames(app, 1);
+}
+app.sm.pop();
+frames(app, 1);
 check('地图可读取历史猫爪评分', app.progress.pawsOf(1) === 1 && app.progress.pawsOf(2) === 3,
   'paws=' + app.progress.pawsOf(1) + '/' + app.progress.pawsOf(2));
 
@@ -974,6 +1037,12 @@ check('9×9 棋盘不越界', G9.board.y + G9.board.size <= G9.band.y + 0.5,
   'bottom=' + (G9.board.y + G9.board.size).toFixed(1) + ' band=' + G9.band.y.toFixed(1));
 check('9×9 格子边长 ≥ 28px', G9.geom.tile >= 28, 'tile=' + G9.geom.tile.toFixed(1));
 check('9×9 使用单行规则条', G9.collapsed === true);
+check('9×9 仍为三块等宽规则卡',
+  G9.rules.x + G9.rules.cardW * 3 + G9.rules.gap * 2 <=
+    G9.rules.x + G9.rules.w + 0.5);
+check('9×9 工具胶囊不越界',
+  G9.tools[0].capsule.x >= 0 &&
+  G9.tools[2].capsule.x + G9.tools[2].capsule.w <= app.env.width + 0.5);
 var G8 = app.layout.game(8);
 check('8×8 棋盘布局可用', G8.board.y + G8.board.size <= G8.band.y + 0.5 &&
   G8.geom.tile >= 28, 'tile=' + G8.geom.tile.toFixed(1));
@@ -1770,6 +1839,28 @@ check('小屏棋盘不越界', SG.board.y + SG.board.size <= SG.band.y + 0.5,
   'bottom=' + (SG.board.y + SG.board.size).toFixed(1) + ' band=' + SG.band.y.toFixed(1));
 check('小屏缩放被限制在 0.9~1.15', small.s >= 0.9 && small.s <= 1.15, 's=' + small.s);
 check('小屏图例不溢出', small.game(9).legend.item >= 14, 'item=' + small.game(9).legend.item.toFixed(1));
+check('小屏对局纵向层级不重叠',
+  SG.hud.y + SG.hud.h <= SG.legend.y &&
+  SG.legend.y + SG.legend.h <= SG.rules.y &&
+  SG.rules.y + SG.rules.h <= SG.board.y,
+  'hud=' + SG.hud.y.toFixed(1) + ' legend=' + SG.legend.y.toFixed(1) +
+  ' rules=' + SG.rules.y.toFixed(1) + ' board=' + SG.board.y.toFixed(1));
+check('小屏 HUD 胶囊不溢出',
+  SG.hud.progress.x >= 0 &&
+  SG.hud.time.x + SG.hud.time.w <= 320 + 0.5);
+check('小屏规则三卡放得下',
+  SG.rules.cardW > 20 &&
+  SG.rules.x + SG.rules.cardW * 3 + SG.rules.gap * 2 <= SG.rules.x + SG.rules.w + 0.5,
+  'cardW=' + SG.rules.cardW.toFixed(1));
+check('小屏工具胶囊在屏内且不重叠', (function () {
+  for (var ti = 0; ti < SG.tools.length; ti++) {
+    var c = SG.tools[ti].capsule;
+    if (!c || c.x < 0 || c.x + c.w > 320 + 0.5) return false;
+    if (c.y + c.h > 568 + 0.5) return false;
+    if (ti && SG.tools[ti - 1].capsule.x + SG.tools[ti - 1].capsule.w > c.x + 0.5) return false;
+  }
+  return true;
+})());
 
 var SR = small.result();
 check('小屏结算主按钮在屏内', SR.cta.y + SR.cta.h <= 568 + 0.5);

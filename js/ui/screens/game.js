@@ -42,6 +42,7 @@ function GameScene(app) {
   this.givenSet = {};
   this.focus = -1;       // 教学关高亮格
   this.popAt = {};
+  this.markAt = {};      // 打叉时间戳，用于逐笔显现
   this.undoStack = [];
   this.conflict = {};
   this.solvedFlag = false;
@@ -124,6 +125,7 @@ GameScene.prototype.enter = function (params) {
     }
   }
   this.popAt = {};
+  this.markAt = {};
   this.undoStack = [];
   this.conflict = {};
   this.solvedFlag = false;
@@ -228,6 +230,7 @@ GameScene.prototype.render = function (r) {
   r.fill(th.color.bg);
 
   this._renderTop(r);
+  this._renderHud(r);
   this._renderLegend(r);
   this._renderRules(r);
   this._renderBoard(r);
@@ -296,7 +299,6 @@ GameScene.prototype._renderTop = function (r) {
   var info = this.n + ' × ' + this.n;
   if (this.dailyMode) info = copy.dailyGameTag + '  ·  ' + info;
   if (tierName) info += '  ·  ' + tierName;
-  info += '  ·  ' + format.duration(Math.round(this.elapsed * 1000));
   r.text(info, r.w / 2, L.topBar.y + 37 * s, {
     size: th.font.micro,
     color: th.color.textSoft,
@@ -304,61 +306,105 @@ GameScene.prototype._renderTop = function (r) {
   });
 };
 
-GameScene.prototype._renderLegend = function (r) {
+/** 标题下的两枚白色 HUD 胶囊：进度 / 用时与失误 */
+GameScene.prototype._renderHud = function (r) {
   var th = this.app.theme;
   var s = this.app.layout.s;
-  var L = this.L;
-  var lg = L.legend;
+  var hud = this.L.hud;
+  var p = hud.progress;
+  var t = hud.time;
+  var midY = p.y + p.h / 2;
+  var found = this._foundCount();
+
+  draw.softShadow(r, p.x, p.y, p.w, p.h, p.h / 2);
+  r.roundRect(p.x, p.y, p.w, p.h, p.h / 2, th.color.card);
+  draw.catFace(r, p.x + p.h * 0.62, p.y + p.h * 0.54, p.h * 0.78,
+    this._catFor(0), {});
+  r.text(copy.hudFoundLabel, p.x + p.h * 1.02, midY + 1, {
+    size: th.font.small,
+    color: th.color.textSoft
+  });
+  r.text(found + '/' + this.n, p.x + p.w - 12 * s, midY + 1, {
+    size: th.font.body,
+    weight: '800',
+    color: th.color.progress,
+    align: 'right'
+  });
+
+  draw.softShadow(r, t.x, t.y, t.w, t.h, t.h / 2);
+  r.roundRect(t.x, t.y, t.w, t.h, t.h / 2, th.color.card);
+  draw.iconClock(r, t.x + t.h * 0.62, midY, t.h * 0.48, th.color.textSoft);
+  r.text(format.duration(Math.round(this.elapsed * 1000)), t.x + t.h * 1.02, midY + 1, {
+    size: th.font.body,
+    weight: '700',
+    color: th.color.text
+  });
+
+  var divX = t.x + t.w - 70 * s;
+  r.line(divX, t.y + 8 * s, divX, t.y + t.h - 8 * s, th.color.border, 1);
+  var mistakeColor = this.mistakes > 0 ? th.color.conflict : th.color.textSoft;
+  draw.iconPaw(r, divX + 11 * s, midY, t.h * 0.42, mistakeColor);
+  r.text(format(copy.hudMistakes, this.mistakes), t.x + t.w - 10 * s, midY + 1, {
+    size: th.font.small,
+    weight: '600',
+    color: mistakeColor,
+    align: 'right'
+  });
+};
+
+/** 当前关正在教学的规则条下标；没有教学规则返回 -1 */
+GameScene.prototype._activeRule = function () {
+  return tutorial.ruleStripIndex(this.index, this.dailyMode);
+};
+
+GameScene.prototype._renderLegend = function (r) {
+  var s = this.app.layout.s;
+  var lg = this.L.legend;
   var n = this.n;
   var item = lg.item;
   var totalW = n * item + (n - 1) * lg.gap;
   var x0 = (r.w - totalW) / 2;
   var y0 = lg.y + (lg.h - item) / 2;
 
+  // 低对比辅助行：只保留色区进度，不与棋盘争夺注意力
+  r.ctx.globalAlpha = 0.76;
   for (var g = 0; g < n; g++) {
     var x = x0 + g * (item + lg.gap);
     var color = this._regionColor(g);
     var found = this._regionHasCat(g);
+    r.roundRect(x, y0, item, item, 5 * s, color);
 
     if (found) {
-      r.ctx.globalAlpha = 0.32;
-      r.roundRect(x, y0, item, item, 6 * s, color);
-      r.ctx.globalAlpha = 1;
-      draw.iconCheck(r, x + item / 2, y0 + item / 2, item * 0.62, draw.xColorFor(color));
+      r.ctx.globalAlpha = 0.48;
+      draw.iconCheck(r, x + item / 2, y0 + item / 2, item * 0.52, draw.xColorFor(color));
+      r.ctx.globalAlpha = 0.76;
     } else {
-      r.roundRect(x, y0, item, item, 6 * s, color);
-      draw.catFace(r, x + item / 2, y0 + item * 0.52, item * 0.84, this._catFor(g), {});
+      draw.catFace(r, x + item / 2, y0 + item * 0.52, item * 0.82, this._catFor(g), {});
     }
   }
+  r.ctx.globalAlpha = 1;
 };
 
 GameScene.prototype._renderRules = function (r) {
   var th = this.app.theme;
   var s = this.app.layout.s;
   var ru = this.L.rules;
-
-  if (this.n >= 8) {
-    r.roundRect(ru.x, ru.y, ru.w, ru.h, th.radius.card, th.color.card);
-    r.text(copy.ruleColor + '  ·  ' + copy.ruleRowCol + '  ·  ' + copy.ruleTouch, r.w / 2, ru.y + ru.h / 2, {
-      size: th.font.rule,
-      weight: '500',
-      color: th.color.textSoft,
-      align: 'center'
-    });
-    return;
-  }
-
+  var active = this._activeRule();
   var labels = [copy.ruleColor, copy.ruleRowCol, copy.ruleTouch];
+
   for (var i = 0; i < 3; i++) {
     var x = ru.x + i * (ru.cardW + ru.gap);
-    r.roundRect(x, ru.y, ru.cardW, ru.h, th.radius.card, th.color.card);
-    r.strokeRoundRect(x, ru.y, ru.cardW, ru.h, th.radius.card, th.color.border, 1);
-    draw.ruleIcon(r, i + 1, x + 22 * s, ru.y + ru.h / 2, 24 * s, th.color.cta, th.color.text);
-    r.text(labels[i], x + 42 * s, ru.y + ru.h / 2, {
+    var on = i === active;
+    r.roundRect(x, ru.y, ru.cardW, ru.h, th.radius.card,
+      on ? th.color.ctaSoft : th.color.card);
+    r.strokeRoundRect(x, ru.y, ru.cardW, ru.h, th.radius.card,
+      on ? th.color.cta : draw.alpha(th.color.border, 0.72), on ? 2 * s : 1 * s);
+    r.text(labels[i], x + ru.cardW / 2, ru.y + ru.h / 2 + 1, {
       size: th.font.rule,
-      weight: '600',
-      color: th.color.text,
-      maxWidth: ru.cardW - 46 * s
+      weight: on ? '700' : '600',
+      color: on ? th.color.cta : th.color.textSoft,
+      align: 'center',
+      maxWidth: ru.cardW - 12 * s
     });
   }
 };
@@ -403,17 +449,54 @@ GameScene.prototype._renderBoard = function (r) {
     }
 
     if (v === MARK) {
-      draw.xMark(r, cx, cy, rc.size * 1.24, draw.xColorFor(color));
+      var xk = 1;
+      if (this.markAt[i]) {
+        xk = (now - this.markAt[i]) / 180;
+        if (xk < 0) xk = 0;
+        if (xk > 1) xk = 1;
+      }
+      draw.xMarkPartial(r, cx, cy, rc.size * 1.24, draw.xColorFor(color), xk);
     } else {
+      // 落猫格浅绿内衬，让猫从色块上“坐”出来
+      var inset = rc.size * 0.055;
+      r.roundRect(ax + inset, ay + inset, rc.size - inset * 2, rc.size - inset * 2,
+        geom.radius * 0.72, th.color.successSoft);
+
+      // 通关时所有猫背后一圈金色呼吸光（压在内衬之上、猫头之下）
+      if (this.solvedFlag) {
+        var hp = (Math.sin(this.celebrateT * 8 + i * 1.3) + 1) / 2;
+        r.circle(cx, cy, rc.size * 0.50, draw.alpha(th.color.gold, 0.10 + 0.10 * hp));
+        r.strokeCircle(cx, cy, rc.size * 0.46,
+          draw.alpha(th.color.gold, 0.28 + 0.22 * hp), 2 * s);
+      }
+
       var k = 1;
+      var pop = 0;
       if (this.popAt[i]) {
         k = (now - this.popAt[i]) / POP_MS;
         if (k < 0) k = 0;
         if (k > 1) k = 1;
+        pop = Math.sin(Math.PI * k);
       }
       var ease = 1 - Math.pow(1 - k, 3);
-      var scale = 0.7 + 0.3 * ease + 0.06 * Math.sin(Math.PI * k);
-      draw.catFace(r, cx, cy + rc.size * 0.05, rc.size * 0.98 * scale, this._catFor(g), {});
+      var scale = 0.72 + 0.28 * ease + 0.06 * pop;
+
+      // 落猫挤压回弹：横向略拉宽、纵向略压扁，回正时带一点弹跳
+      r.ctx.save();
+      r.ctx.translate(cx, cy);
+      r.ctx.scale(1 + 0.10 * pop, 1 - 0.08 * pop);
+      draw.catFace(r, 0, rc.size * 0.05, rc.size * 0.98 * scale, this._catFor(g), {});
+      r.ctx.restore();
+
+      // 最后一处落猫短促描边高亮
+      if (this.popAt[i]) {
+        var age = now - this.popAt[i];
+        if (age >= 0 && age < 420) {
+          var hk = 1 - age / 420;
+          r.strokeRoundRect(ax - 1 * s, ay - 1 * s, rc.size + 2 * s, rc.size + 2 * s,
+            geom.radius, draw.alpha(th.color.highlight, 0.95 * hk), 3 * s);
+        }
+      }
 
       // 预放猫加锁标：视觉上明确“这只不能动”
       if (this.givenSet[i]) {
@@ -427,12 +510,40 @@ GameScene.prototype._renderBoard = function (r) {
     }
 
     if (this.conflict[i]) {
-      r.strokeRoundRect(ax + 1.5, ay + 1.5, rc.size - 3, rc.size - 3, geom.radius, draw.alpha(th.color.conflict, 0.9), 2.5 * s);
+      var cp = (Math.sin(now / 110) + 1) / 2;
+      r.roundRect(ax + 1.5 * s, ay + 1.5 * s, rc.size - 3 * s, rc.size - 3 * s,
+        geom.radius, draw.alpha(th.color.conflict, 0.06 + 0.10 * cp));
+      r.strokeRoundRect(ax + 1.5 * s, ay + 1.5 * s, rc.size - 3 * s, rc.size - 3 * s,
+        geom.radius, draw.alpha(th.color.conflict, 0.72 + 0.24 * cp), 2.5 * s);
     }
   }
 
   this._renderFx(r, shakeX);
   this._renderTapHint(r, shakeX);
+  if (this.solvedFlag) this._renderCelebrateSweep(r, shakeX);
+};
+
+/** 通关时一道高光扫过棋盘中心，随后进入结算 */
+GameScene.prototype._renderCelebrateSweep = function (r, shakeX) {
+  if (this.celebrateT > 0.7) return;
+  var th = this.app.theme;
+  var s = this.app.layout.s;
+  var L = this.L;
+  var size = L.board.size;
+  var ctx = r.ctx;
+  var t = Math.min(1, this.celebrateT / 0.55);
+  var x = -size * 0.8 + size * 1.6 * t;
+
+  ctx.save();
+  r.roundPath(L.board.x + shakeX, L.board.y, size, size, th.radius.board);
+  ctx.clip();
+  ctx.translate(L.board.x + shakeX + size / 2, L.board.y + size / 2);
+  ctx.rotate(-0.55);
+  ctx.fillStyle = draw.alpha(th.color.card, 0.16);
+  ctx.fillRect(x, -size, size * 0.26, size * 2);
+  ctx.fillStyle = draw.alpha(th.color.highlight, 0.10 + 0.10 * (1 - t));
+  ctx.fillRect(x + size * 0.20, -size, size * 0.06, size * 2);
+  ctx.restore();
 };
 
 /** 引导关无操作 3 秒后，指向下一处正确落子格 */
@@ -544,45 +655,60 @@ GameScene.prototype._renderBand = function (r) {
   var L = this.L;
   var band = L.band;
 
-  draw.waveBand(r, 0, band.y, r.w, band.h, th.color.band, th.color.bandDeep);
+  // 天蓝圆角底座：上圆角、向下延伸出屏幕，底座下沿留一层深色厚度
+  var dockX = 8 * s;
+  var dockY = band.y + 4 * s;
+  var dockW = r.w - 16 * s;
+  var dockH = band.h + 20 * s;
+  r.roundRect(dockX, dockY + 5 * s, dockW, dockH, 26 * s, th.color.bandDeep);
+  r.roundRect(dockX, dockY, dockW, dockH, 26 * s, th.color.band);
+
+  // 淡爪印纹理：只在底座空白处，不抢工具胶囊
+  r.ctx.globalAlpha = 0.10;
+  for (var pi = 0; pi < L.bandPaws.length; pi++) {
+    var paw = L.bandPaws[pi];
+    draw.iconPaw(r, paw.cx, paw.cy, paw.size, th.color.card);
+  }
+  r.ctx.globalAlpha = 1;
 
   var icons = [draw.iconUndo, draw.iconRestart, draw.iconBulb];
   var labels = [copy.toolUndo, copy.toolRestart, copy.toolHint];
-  var shade = 'rgba(18, 62, 82, 0.28)';
 
   for (var i = 0; i < L.tools.length; i++) {
     var t = L.tools[i];
+    var cap = t.capsule;
 
-    // 闲置一段时间后，提示按钮柔和呼吸，提醒玩家可以求助
+    // 闲置一段时间后，提示胶囊柔和呼吸，提醒玩家可以求助
     if (t.key === 'hint' && this.hintGlowT > 0) {
       var gk = (Math.sin(clock.now() / 260) + 1) / 2;
-      r.strokeCircle(t.cx, t.cy, t.r + (5 + 3 * gk) * s,
-        draw.alpha(th.color.highlight, 0.45 + 0.45 * gk), 3 * s);
+      r.strokeRoundRect(cap.x - 2 * s, cap.y - 2 * s, cap.w + 4 * s, cap.h + 4 * s,
+        cap.h / 2 + 2 * s, draw.alpha(th.color.highlight, 0.45 + 0.45 * gk), 3 * s);
     }
 
-    r.circle(t.cx, t.cy, t.r, 'rgba(255, 255, 255, 0.95)');
-    icons[i](r, t.cx, t.cy, 22 * s, th.color.ink);
-    // 先画 1px 阴影再画正文，浅蓝底上白字也读得清
-    r.text(labels[i], t.cx, t.cy + t.r + 11 * s + 1, {
+    draw.softShadow(r, cap.x, cap.y, cap.w, cap.h, cap.h / 2);
+    r.roundRect(cap.x, cap.y, cap.w, cap.h, cap.h / 2, th.color.card);
+
+    var iconSize = 20 * s;
+    var gap = 6 * s;
+    var labelW = r.measure(labels[i], th.font.tool, '600');
+    var groupW = iconSize + gap + labelW;
+    var gx = cap.x + (cap.w - groupW) / 2;
+    var capMidY = cap.y + cap.h / 2;
+    icons[i](r, gx + iconSize / 2, capMidY, iconSize, th.color.text);
+    r.text(labels[i], gx + iconSize + gap, capMidY + 1, {
       size: th.font.tool,
       weight: '600',
-      color: shade,
-      align: 'center'
-    });
-    r.text(labels[i], t.cx, t.cy + t.r + 11 * s, {
-      size: th.font.tool,
-      weight: '600',
-      color: th.color.textOnColor,
-      align: 'center'
+      color: th.color.text,
+      align: 'left'
     });
 
-    // 提示按钮右上角：教学关显示“免”，其余显示剩余提示券
+    // 提示胶囊右上角：教学关显示“免”，其余显示剩余提示券
     if (t.key === 'hint') {
       var free = this._freeHint();
       var tickets = this.app.progress.tickets();
       var br = 9 * s;
-      var bx = t.cx + t.r * 0.70;
-      var by = t.cy - t.r * 0.70;
+      var bx = cap.x + cap.w - br - 1 * s;
+      var by = cap.y + br;
       r.circle(bx, by, br, free || tickets > 0 ? th.color.cta : th.color.bgSunken);
       r.strokeCircle(bx, by, br, th.color.card, 1.5 * s);
       r.text(free ? copy.hintFreeBadge : String(Math.min(99, tickets)), bx, by + 0.5, {
@@ -597,7 +723,7 @@ GameScene.prototype._renderBand = function (r) {
   r.text(copy.tagline, r.w / 2, L.taglineY + 1, {
     size: th.font.tagline,
     weight: '600',
-    color: shade,
+    color: th.color.bandShadow,
     align: 'center',
     maxWidth: r.w - 32 * s
   });
@@ -630,14 +756,18 @@ GameScene.prototype._buildBoardLayer = function () {
   var ctx = lr.ctx;
 
   // 两层低透明度外扩当作阴影，避免每帧 shadowBlur
-  ctx.fillStyle = 'rgba(90, 60, 40, 0.06)';
+  ctx.fillStyle = th.color.shadowSoft;
   lr.roundPath(margin, margin + 4, size, size, th.radius.board);
   ctx.fill();
-  ctx.fillStyle = 'rgba(90, 60, 40, 0.05)';
+  ctx.fillStyle = th.color.shadowSofter;
   lr.roundPath(margin, margin + 8, size, size, th.radius.board);
   ctx.fill();
 
+  // 白色底板 + 暖色内衬：格缝露出内衬，形成竞品同款“画框”
   lr.roundRect(margin, margin, size, size, th.radius.board, th.color.card);
+  var inset = L.board.inset || 3 * s;
+  lr.roundRect(margin + inset, margin + inset, size - inset * 2, size - inset * 2,
+    Math.max(6 * s, th.radius.board - inset), th.color.surfaceWarm);
   lr.strokeRoundRect(margin, margin, size, size, th.radius.board, th.color.border, 1);
 
   for (var row = 0; row < this.n; row++) {
@@ -670,6 +800,20 @@ GameScene.prototype._regionHasCat = function (g) {
     if (this.cells[i] === CAT && this.regions[i] === g) return true;
   }
   return false;
+};
+
+/** 已放猫的色区数量（同一区重复放猫只算 1） */
+GameScene.prototype._foundCount = function () {
+  var seen = {};
+  var count = 0;
+  for (var i = 0; i < this.cells.length; i++) {
+    if (this.cells[i] !== CAT) continue;
+    var g = this.regions[i];
+    if (seen[g]) continue;
+    seen[g] = true;
+    count++;
+  }
+  return count;
 };
 
 GameScene.prototype._recompute = function () {
@@ -718,9 +862,12 @@ GameScene.prototype._apply = function (i, v, silent) {
   this.cells[i] = v;
   if (v === CAT) {
     this.popAt[i] = clock.now();
+    delete this.markAt[i];
     if (!silent) this.app.progress.addCatsPlaced(1);
   } else {
     delete this.popAt[i];
+    if (v === MARK) this.markAt[i] = clock.now();
+    else delete this.markAt[i];
   }
   this._recompute();
 
@@ -791,6 +938,7 @@ GameScene.prototype._undo = function () {
   if (op.snapshot) {
     this.cells = op.snapshot.slice();
     this.popAt = {};
+    this.markAt = {};
     this._applyGivens();
     this.app.progress.addUndos();
     this._recompute();
@@ -826,6 +974,7 @@ GameScene.prototype._restart = function () {
 
   for (var j = 0; j < this.cells.length; j++) this.cells[j] = EMPTY;
   this.popAt = {};
+  this.markAt = {};
   this.fx = [];
   this.shakeT = 0;
   this.elapsed = 0;
@@ -969,8 +1118,12 @@ GameScene.prototype._settle = function () {
   }
 
   // 通关瞬间把剩余空格补成打叉，结算前的庆祝画面盘面完整，不做空白结算
+  var markNow = clock.now();
   for (var j = 0; j < this.cells.length; j++) {
-    if (this.cells[j] === EMPTY) this.cells[j] = MARK;
+    if (this.cells[j] === EMPTY) {
+      this.cells[j] = MARK;
+      this.markAt[j] = markNow;
+    }
   }
 
   var paws = 1;
@@ -1088,7 +1241,8 @@ GameScene.prototype.onTouchEnd = function (x, y, isTap) {
   }
   for (var i = 0; i < L.tools.length; i++) {
     var t = L.tools[i];
-    if (hit.inCircle(x, y, t)) {
+    var onTool = t.capsule ? hit.inRect(x, y, t.capsule) : hit.inCircle(x, y, t);
+    if (onTool) {
       if (t.key === 'undo') this._undo();
       else if (t.key === 'restart') this._restart();
       else this._hint();

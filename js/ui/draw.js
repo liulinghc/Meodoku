@@ -846,19 +846,47 @@ function catFace(r, cx, cy, size, cat, opts) {
 /* ---------------- X 标记 ---------------- */
 
 function xMark(r, cx, cy, size, color) {
+  drawX(r, cx, cy, size, color, 1);
+}
+
+/** 逐笔显现的 X：p1/p2 分别为两笔的进度，1 为完整 */
+function drawX(r, cx, cy, size, color, progress) {
   var ctx = r.ctx;
   var half = size * 0.26;
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = Math.max(2, size * 0.15);
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(cx - half, cy - half);
-  ctx.lineTo(cx + half, cy + half);
-  ctx.moveTo(cx + half, cy - half);
-  ctx.lineTo(cx - half, cy + half);
-  ctx.stroke();
-  ctx.restore();
+  var p = progress == null ? 1 : Math.max(0, Math.min(1, progress));
+  var p1 = Math.min(1, p * 2);
+  var p2 = Math.max(0, p * 2 - 1);
+  var lw = Math.max(2, size * 0.17);
+  var shadow = size >= 18 ? Math.max(0.8, size * 0.025) : 0;
+
+  function pass(dx, dy, stroke, alphaValue) {
+    if (!p1 && !p2) return;
+    ctx.save();
+    ctx.globalAlpha = alphaValue;
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = lw;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    if (p1 > 0) {
+      ctx.moveTo(cx - half + dx, cy - half + dy);
+      ctx.lineTo(cx - half + dx + half * 2 * p1, cy - half + dy + half * 2 * p1);
+    }
+    if (p2 > 0) {
+      ctx.moveTo(cx + half + dx, cy - half + dy);
+      ctx.lineTo(cx + half + dx - half * 2 * p2, cy - half + dy + half * 2 * p2);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 轻投影：让 X 从色块上“浮”起来，小图（规则示意）不画
+  if (shadow) pass(0, shadow, themeBase.color.ink, 0.14);
+  pass(0, 0, color, 1);
+}
+
+function xMarkPartial(r, cx, cy, size, color, progress) {
+  drawX(r, cx, cy, size, color, progress);
 }
 
 /* ---------------- 图标 ---------------- */
@@ -1053,6 +1081,20 @@ function iconCalendar(r, cx, cy, size, color) {
   r.circle(cx + w * 0.18, y + h * 0.62, size * 0.045, color);
 }
 
+function iconClock(r, cx, cy, size, color) {
+  var ctx = r.ctx;
+  var rad = size * 0.38;
+  r.strokeCircle(cx, cy, rad, color, Math.max(1.2, size * 0.085));
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(1.2, size * 0.085);
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - rad * 0.52);
+  ctx.lineTo(cx, cy);
+  ctx.lineTo(cx + rad * 0.40, cy + rad * 0.18);
+  ctx.stroke();
+}
+
 function iconTicket(r, cx, cy, size, color) {
   var ctx = r.ctx;
   var w = size * 0.56;
@@ -1196,6 +1238,7 @@ module.exports = {
   softShadow: softShadow,
   catFace: catFace,
   xMark: xMark,
+  xMarkPartial: xMarkPartial,
   iconCircle: iconCircle,
   iconBack: iconBack,
   iconGear: iconGear,
@@ -1204,6 +1247,7 @@ module.exports = {
   iconEraser: iconEraser,
   iconBulb: iconBulb,
   iconCalendar: iconCalendar,
+  iconClock: iconClock,
   iconTicket: iconTicket,
   iconFlame: iconFlame,
   iconStar: iconStar,

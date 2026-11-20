@@ -9,6 +9,8 @@
  *   node tools/build-preview.js
  *   open preview/index.html
  *   # 也可直接指定场景：preview/index.html?scene=map | ?scene=game&level=12
+ *   # 大棋盘/后期关卡：?scene=game&level=300&unlock=1（仅预览放开解锁）
+ *   # 对局演示：&demo=marks | conflict | solve | win
  *   # 玩法说明：?scene=guide；S5 页面：?scene=daily | checkin | album | achievements | shop
  *
  * 注意：这是近似环境（尺寸固定 375×812、DPR=2），
@@ -251,12 +253,15 @@ var RUNTIME = String.raw`
     app.sm.push(scene);
   } else if (app && scene === 'game') {
     var level = parseInt(q.get('level') || '1', 10);
+    // ?unlock=1 仅供预览直接检查大棋盘/后期关卡，不改变游戏内解锁逻辑
+    if (q.get('unlock') === '1') app.save.data.unlocked = 9999;
     app.sm.push('levelmap');
     app.sm.push('game', { levelIndex: level });
 
     // 开发态演示：
     //   solve 摆出答案 / marks 打两个 X 再摆答案 / hint 用一次提示再摆完
     //   mistake 先放错再撤销、最后摆完 / conflict 造一行两猫冲突
+    //   win 摆出答案并停在庆祝画面，便于检查金圈与棋盘扫光
     var demo = q.get('demo');
     if (demo) {
       var g = app.sm.top();
@@ -273,7 +278,8 @@ var RUNTIME = String.raw`
           g._undo(); g._undo();          // 撤销冲突操作
           g._undo(); g._undo();          // 撤销第一只猫，盘面归空
         }
-        if (demo === 'solve' || demo === 'marks' || demo === 'hint' || demo === 'mistake') {
+        if (demo === 'solve' || demo === 'marks' || demo === 'hint' ||
+            demo === 'mistake' || demo === 'win') {
           g.elapsed = 47; // 预览专用：让截图里的用时不是 00:00
           for (var r = 0; r < g.n; r++) {
             var idx = r * g.n + sol[r];
@@ -281,8 +287,17 @@ var RUNTIME = String.raw`
             g._cycle(idx);
             g._cycle(idx);
           }
-          // 预览专用：手动推进 1.6s，跨过 0.7s 结算延时，并让结算页动画展开到可读状态
-          for (var f = 0; f < 16; f++) app.frame(0.1);
+          if (demo === 'win') {
+            // 预览专用：清掉落子波纹并冻结 update，停在庆祝画面检查金圈与扫光
+            g.fx = [];
+            g.settleDelay = 999;
+            g.celebrateT = 0.18;
+            g.update = function () {};
+            app.frame(0.05);
+          } else {
+            // 预览专用：手动推进 1.6s，跨过结算延时，让结算页动画展开到可读状态
+            for (var f = 0; f < 16; f++) app.frame(0.1);
+          }
         }
       }
     }

@@ -62,22 +62,36 @@ Layout.prototype.game = function (n) {
   var margin = 16 * s;
   var collapsed = n >= 8;
 
-  // 矮屏（如 320×568 / 375×667）压缩页头与图例，把高度还给棋盘，
-  // 否则胶囊让位后 9×9 格子会掉到 24–28px 的可读阈值以下。
+  // 矮屏（如 320×568 / 375×667）压缩页头、HUD、图例与规则条，
+  // 把高度还给棋盘，否则胶囊让位后 9×9 格子会掉到 24–28px 的可读阈值以下。
   var short = h < 700;
   var topY = this.topInset();
   var topH = (short ? 46 : 52) * s;
 
-  var legendY = topY + topH + 2 * s;
-  var legendH = (short ? 26 : 30) * s;
+  // 标题下两枚 HUD 胶囊：进度 / 用时与失误
+  var hudGap = 8 * s;
+  var hudH = (short ? 26 : 30) * s;
+  var hudY = topY + topH + 3 * s;
+  var hudW = (w - 2 * margin - hudGap) / 2;
 
-  var rulesY = legendY + legendH + 6 * s;
-  var rulesH = (collapsed ? 32 : 66) * s;
+  // 低对比区域图例：小尺寸、无底色强调，只作为色区进度辅助行
+  var legendGap = 6 * s;
+  var legendItem = Math.min((short ? 16 : 18) * s,
+    (w - 2 * margin - (n - 1) * legendGap) / n);
+  if (legendItem < 14 * s) legendItem = 14 * s;
+  var legendY = hudY + hudH + 3 * s;
+  var legendH = legendItem + 2 * s;
+
+  // 规则条：始终三块等宽文字卡；8×9 路使用更矮的紧凑版
+  var rulesY = legendY + legendH + 4 * s;
+  var rulesH = collapsed ? (short ? 30 : 32) * s : (short ? 44 : 48) * s;
+  var cardGap = 8 * s;
+  var cardW = (w - 2 * margin - 2 * cardGap) / 3;
 
   var bandH = 116 * s;
   var bandY = h - this.safeBottom - bandH;
 
-  var availTop = rulesY + rulesH + 8 * s;
+  var availTop = rulesY + rulesH + 6 * s;
   var availBottom = bandY - 10 * s;
   var byW = w - 2 * margin;
   var byH = Math.max(120 * s, availBottom - availTop);
@@ -87,17 +101,22 @@ Layout.prototype.game = function (n) {
   var boardY = availTop + Math.max(0, (availBottom - availTop - size) / 2);
   var boardX = (w - size) / 2;
 
-  // 图例：N 个色块猫头，宽度自适应
-  var legendGap = 6 * s;
-  var legendItem = Math.min(24 * s, (w - 2 * margin - (n - 1) * legendGap) / n);
-  if (legendItem < 14 * s) legendItem = 14 * s;
-
-  // 规则卡
-  var cardGap = 8 * s;
-  var cardW = (w - 2 * margin - 2 * cardGap) / 3;
-
-  var toolR = 23 * s;
-  var toolY = bandY + 32 * s;
+  // 底部工具胶囊：三等分排开，保留 cx/cy/r 以兼容旧输入测试
+  var toolGap = 8 * s;
+  var toolW = (w - 2 * margin - toolGap * 2) / 3;
+  var toolH = (short ? 38 : 42) * s;
+  var toolY = bandY + (short ? 28 : 30) * s;
+  var toolKeys = ['undo', 'restart', 'hint'];
+  var tools = [];
+  for (var ti = 0; ti < 3; ti++) {
+    var tx = margin + ti * (toolW + toolGap);
+    tools.push({
+      key: toolKeys[ti],
+      x: tx, y: toolY, w: toolW, h: toolH,
+      capsule: { x: tx, y: toolY, w: toolW, h: toolH },
+      cx: tx + toolW / 2, cy: toolY + toolH / 2, r: toolH / 2
+    });
+  }
 
   return {
     n: n,
@@ -108,17 +127,23 @@ Layout.prototype.game = function (n) {
     back: { cx: margin + 22 * s, cy: topY + topH / 2, r: 22 * s },
     help: { cx: w - margin - 70 * s, cy: topY + topH / 2, r: 22 * s },
     gear: { cx: w - margin - 22 * s, cy: topY + topH / 2, r: 22 * s },
+    hud: {
+      y: hudY, h: hudH, gap: hudGap,
+      progress: { x: margin, y: hudY, w: hudW, h: hudH },
+      time: { x: margin + hudW + hudGap, y: hudY, w: hudW, h: hudH }
+    },
     legend: { x: margin, y: legendY, w: w - 2 * margin, h: legendH, item: legendItem, gap: legendGap },
     rules: { x: margin, y: rulesY, w: w - 2 * margin, h: rulesH, cardW: cardW, gap: cardGap },
-    board: { x: boardX, y: boardY, size: size },
+    board: { x: boardX, y: boardY, size: size, inset: 3 * s },
     geom: this.boardGeom(n, size),
     band: { y: bandY, h: bandH + this.safeBottom },
-    tools: [
-      { key: 'undo', cx: w / 2 - 64 * s, cy: toolY, r: toolR },
-      { key: 'restart', cx: w / 2, cy: toolY, r: toolR },
-      { key: 'hint', cx: w / 2 + 64 * s, cy: toolY, r: toolR }
+    tools: tools,
+    bandPaws: [
+      { cx: w * 0.08, cy: bandY + 24 * s, size: 16 * s },
+      { cx: w * 0.92, cy: bandY + 58 * s, size: 14 * s },
+      { cx: w * 0.16, cy: bandY + 76 * s, size: 11 * s }
     ],
-    taglineY: bandY + 86 * s
+    taglineY: bandY + (short ? 82 : 88) * s
   };
 };
 

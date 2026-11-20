@@ -37,6 +37,18 @@ function isKnownCoach(id) {
   return false;
 }
 
+/**
+ * 对局页规则条应高亮的下标：0 每区一猫 / 1 行列各一 / -1 常态。
+ * 与规则卡共用 LEVEL_CARDS，保证“教哪条就亮哪条”；每日挑战不套用。
+ */
+function ruleStripIndex(index, dailyMode) {
+  if (dailyMode) return -1;
+  var id = LEVEL_CARDS[index];
+  if (id === 'region') return 0;
+  if (id === 'rowcol') return 1;
+  return -1;
+}
+
 function isBeginner(index) {
   return index >= 1 && index <= config.FREE_HINT_LEVELS;
 }
@@ -97,6 +109,7 @@ module.exports = {
   LEVEL_CARDS: LEVEL_CARDS,
   knownCoachIds: knownCoachIds,
   isKnownCoach: isKnownCoach,
+  ruleStripIndex: ruleStripIndex,
   isBeginner: isBeginner,
   isFreeHintLevel: isFreeHintLevel,
   isMerciful: isMerciful,

@@ -43,6 +43,8 @@ var BASE = {
     coinFace: '#F2C94C',
     coinDeep: '#D9A62E',
     success: '#5FAF7C',
+    successSoft: '#EAF6EC',   // 落猫格浅绿内衬
+    bandShadow: 'rgba(18, 62, 82, 0.28)', // 天蓝工具底座上的深色描字
     rarityCommon: '#8C7A69',
     rarityRare: '#5C8DD6',
     rarityEpic: '#A06BC8',

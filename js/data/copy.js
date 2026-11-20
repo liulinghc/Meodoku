@@ -37,6 +37,9 @@ module.exports = {
   ruleRowCol: '行列各一',
   ruleTouch: '猫不相邻',
 
+  hudFoundLabel: '已找',
+  hudMistakes: '失误 %d',
+
   toolUndo: '撤销',
   toolRestart: '重开',
   toolHint: '提示',
