@@ -932,9 +932,81 @@ check('结算按钮在安全区内', R.cta.y + R.cta.h <= app.env.height - app.e
 check('结算信息卡不与按钮重叠', R.stats.y + R.stats.h < R.cta.y);
 check('结算内容避开胶囊区', R.cat.cy - R.cat.r >= capBottom,
   'catTop=' + (R.cat.cy - R.cat.r) + ' capBottom=' + capBottom);
+check('结算主按钮带立体底座', R.ctaDepth > 0, 'depth=' + R.ctaDepth);
+check('结算最佳缎带挂在信息卡右上角',
+  R.stats.ribbon.x >= R.stats.x &&
+  R.stats.ribbon.x + R.stats.ribbon.w <= R.stats.x + R.stats.w + 0.5 &&
+  R.stats.ribbon.y < R.stats.y &&
+  R.stats.ribbon.y + R.stats.ribbon.h > R.stats.y,
+  'ribbon=' + R.stats.ribbon.x.toFixed(1) + ',' + R.stats.ribbon.y.toFixed(1));
 
+// 阶段 4：分阶段入场、逐爪盖章、数字滚动、双层彩纸与角标
+result.t = 0;
+check('结算分阶段入场：首帧从猫开始',
+  result._stage('cat').a === 0 && result._stage('title').a === 0 &&
+  result._stage('stats').a === 0);
+result.t = 0.1;
+check('结算分阶段入场：标题晚于猫',
+  result._stage('cat').a > result._stage('title').a &&
+  result._stage('title').a > 0 && result._stage('stats').a === 0);
+result.t = 0.25;
+check('猫爪逐个盖章：第一枚先落',
+  result._pawK(0) > 0 && result._pawK(1) === 0 && result._pawK(2) === 0);
+result.t = 0.45;
+check('猫爪逐个盖章：三枚依次落下',
+  result._pawK(0) === 1 && result._pawK(1) > 0 && result._pawK(1) < 1 &&
+  result._pawK(2) > 0 && result._pawK(2) < 1);
+
+var fmtResult = require('../js/core/format');
+result.t = 0.5;
+app.renderer.begin();
+result.render(app.renderer);
+var resultTextsMid = app.renderer.ctx.texts.slice();
+check('结算用时与步数从 0 滚动',
+  resultTextsMid.indexOf('00:00') >= 0 && resultTextsMid.indexOf('0') >= 0);
+
+result.t = 1.2;
+app.renderer.begin();
+result.render(app.renderer);
+var resultTextsEnd = app.renderer.ctx.texts.slice();
+check('结算数字滚动到最终值',
+  resultTextsEnd.indexOf(fmtResult.duration(result.info.timeMs)) >= 0 &&
+  resultTextsEnd.indexOf(String(result.info.moves)) >= 0);
+check('新纪录缎带文案已绘制',
+  resultTextsEnd.indexOf(copy.resultBestTagNew) >= 0);
+check('结算彩纸分远近两层且不超过 24 个', (function () {
+  var far = 0;
+  var near = 0;
+  for (var pi = 0; pi < result.particles.length; pi++) {
+    if (result.particles[pi].layer === 0) far++;
+    else if (result.particles[pi].layer === 1) near++;
+  }
+  return result.particles.length === 24 && far === 10 && near === 14;
+})());
+check('结算奖励只放射一次（重绘不新增粒子）', (function () {
+  var before = result.particles.length;
+  result.t = 0.62;
+  app.renderer.begin();
+  result.render(app.renderer);
+  app.renderer.begin();
+  result.render(app.renderer);
+  return result.particles.length === before;
+})());
+check('结算重复进入会重置动画',
+  (function () {
+    result.enter(result.info);
+    var reset = result.t === 0 && result.particles.length === 24;
+    result.t = 1.2;
+    app.renderer.begin();
+    result.render(app.renderer);
+    return reset;
+  })());
+
+// 动效未结束时按钮也必须可点击（不锁输入）
+result.t = 0;
 tap(R.cta.x + R.cta.w / 2, R.cta.y + R.cta.h / 2);
 frames(app, 2);
+check('入场动效未结束时点击仍生效', sceneName(app) === 'game' && app.sm.top().index === 2);
 check('下一关 → 新对局', sceneName(app) === 'game' && app.sm.top().index === 2);
 check('新对局计时重置', app.sm.top().elapsed < 0.2, 'elapsed=' + app.sm.top().elapsed.toFixed(2));
 
@@ -1866,6 +1938,10 @@ var SR = small.result();
 check('小屏结算主按钮在屏内', SR.cta.y + SR.cta.h <= 568 + 0.5);
 check('小屏结算次按钮在屏内', SR.map.y + SR.map.h <= 568 + 0.5);
 check('小屏结算信息卡不与按钮重叠', SR.stats.y + SR.stats.h < SR.cta.y);
+check('小屏结算最佳缎带不越界',
+  SR.stats.ribbon.x >= SR.stats.x &&
+  SR.stats.ribbon.x + SR.stats.ribbon.w <= SR.stats.x + SR.stats.w + 0.5,
+  'ribbonRight=' + (SR.stats.ribbon.x + SR.stats.ribbon.w).toFixed(1));
 check('小屏三爪横排放得下', SR.paws.size * 3 + SR.paws.gap * 2 <= 320);
 
 var S4 = small.game(4);

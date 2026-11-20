@@ -307,7 +307,10 @@ Layout.prototype.result = function () {
   var pawsSize = 34 * s;
   var pawsGap = 18 * s;
   var statsH = 86 * s;
+  var statsW = w - 2 * margin;
   var statsTop = contentTop + contentH * 0.60;
+  var ribbonW = 62 * s;
+  var ribbonH = 20 * s;
 
   return {
     s: s,
@@ -317,9 +320,19 @@ Layout.prototype.result = function () {
     subY: contentTop + contentH * 0.30 + 34 * s,
     paws: { cy: contentTop + contentH * 0.47, size: pawsSize, gap: pawsGap },
     ratingY: contentTop + contentH * 0.53,
-    stats: { x: w / 2 - (w - 2 * margin) / 2, y: statsTop, w: w - 2 * margin, h: statsH },
+    stats: {
+      x: margin, y: statsTop, w: statsW, h: statsH,
+      // 最佳成绩角标压在信息卡右上边缘，避免另占一行
+      ribbon: {
+        x: margin + statsW - ribbonW - 10 * s,
+        y: statsTop - ribbonH * 0.5,
+        w: ribbonW,
+        h: ribbonH
+      }
+    },
     reward: { cy: statsTop + statsH + 30 * s },
     cta: { x: margin, y: ctaY, w: w - 2 * margin, h: ctaH },
+    ctaDepth: 4 * s,
     map: { x: margin, y: ctaY + ctaH + gap, w: w - 2 * margin, h: mapH }
   };
 };

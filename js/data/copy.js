@@ -162,6 +162,8 @@ module.exports = {
   resultMoves: '步数',
   resultBest: '最佳用时 %s',
   resultBestNew: '新纪录 · 最佳用时 %s',
+  resultBestTag: '最佳',
+  resultBestTagNew: '新纪录',
   resultCoins: '金币 +%d',
   resultReplay: '再次通关，本关无重复奖励',
   resultNext: '下 一 关',
