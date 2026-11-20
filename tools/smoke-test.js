@@ -302,6 +302,7 @@ check('全部关卡相邻区域色差 ≥ 30（含皮肤）', (function () {
   }
   return ok;
 })(), 'worst=' + colorWorst.de.toFixed(1) + ' @ ' + colorWorst.at);
+console.log('    最小相邻 ΔE=' + colorWorst.de.toFixed(1) + '（' + colorWorst.at + '）');
 
 // 本地动态生成能力：运行时域模块同一套管线（每日挑战后续直接复用）
 var runtimeGen = require('../js/domain/generate');
@@ -437,6 +438,50 @@ var noMenuLayout = new LayoutNoMenu(noMenuEnv);
 check('胶囊 API 异常时安全降级', noMenuEnv.menu === null &&
   Math.abs(noMenuLayout.topInset() -
     (noMenuEnv.safeTop + 8 * noMenuLayout.s)) < 0.001);
+
+/* ---------------- 2b. 画风底座：令牌 / 转场 / 点按反馈 ---------------- */
+
+console.log('[2b] 画风底座');
+var drawMod = require('../js/ui/draw');
+var themeBase = require('../js/data/theme').base;
+var homeFx = app.layout.home();
+check('共享圆形图标按钮已导出', typeof drawMod.iconCircle === 'function');
+check('圆润中文字体栈已启用', /PingFang SC/.test(app.renderer.ctx.font || ''),
+  'font=' + app.renderer.ctx.font);
+check('子页面标题字号大于正文、小于首页标题',
+  app.theme.font.pageTitle > app.theme.font.body &&
+  app.theme.font.pageTitle < app.theme.font.homeTitle,
+  'pageTitle=' + app.theme.font.pageTitle + ' body=' + app.theme.font.body);
+check('底色与主文字为暖色纸感',
+  themeBase.color.bg === '#F7F1E9' && themeBase.color.text === '#6E4A42');
+
+app.transition.start();
+check('转场从 0 开始', app.transition.progress() === 0);
+frames(app, 1);
+var tp = app.transition.progress();
+check('转场淡入中（0 < p < 1）', tp > 0 && tp < 1, 'p=' + tp.toFixed(3));
+frames(app, 12);
+check('转场在 200ms 内收尾', app.transition.progress() === 1);
+check('转场不修改画布透明度', app.renderer.ctx.globalAlpha === 1);
+
+app.transition.start();
+frames(app, 1);
+tap(homeFx.help.cx, homeFx.help.cy);
+frames(app, 1);
+check('转场期间点击仍然生效', sceneName(app) === 'guide');
+var guideFx = app.layout.guide();
+tap(guideFx.close.cx, guideFx.close.cy);
+frames(app, 1);
+check('关闭后回到首页', sceneName(app) === 'home');
+
+var fxX = 2;
+var fxY = app.env.height - 2;
+tap(fxX, fxY);
+check('按下即产生点按水波',
+  app.touchFx.life > 0 && app.touchFx.x === fxX && app.touchFx.y === fxY,
+  'life=' + app.touchFx.life);
+frames(app, 16);
+check('点按水波自动结束', app.touchFx.life === 0);
 
 /* ---------------- 3. 页面跳转 ---------------- */
 

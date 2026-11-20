@@ -294,7 +294,7 @@ var HTML = [
   '  body { display: flex; align-items: center; justify-content: center; }',
   '  #stage { position: relative; width: 375px; height: 812px;',
   '           box-shadow: 0 0 48px rgba(0,0,0,0.55); }',
-  '  #game { display: block; width: 375px; height: 812px; background: #FDF4E7; }',
+  '  #game { display: block; width: 375px; height: 812px; background: #F7F1E9; }',
   '  /* 预览专用：模拟微信右上角胶囊，验证游戏 UI 不与其重叠 */',
   '  #capsule { position: absolute; top: 48px; right: 10px; width: 87px; height: 32px;',
   '             box-sizing: border-box; border-radius: 16px;',

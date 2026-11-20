@@ -38,14 +38,10 @@ LevelmapScene.prototype.enter = function (params) {
 LevelmapScene.prototype.render = function (r) {
   var app = this.app;
   var th = app.theme;
-  var s = app.layout.s;
   var L = app.layout.levelmap();
   this.L = L;
 
   r.fill(th.color.bg);
-  r.ctx.globalAlpha = 0.5;
-  r.circle(r.w * 0.92, L.topBar.y + 160 * s, 90 * s, th.color.brandSoft);
-  r.ctx.globalAlpha = 1;
 
   this._renderTop(r);
   this._renderChapter(r);
@@ -57,13 +53,11 @@ LevelmapScene.prototype._renderTop = function (r) {
   var s = this.app.layout.s;
   var L = this.L;
 
-  r.circle(L.back.cx, L.back.cy, L.back.r, th.color.card);
-  r.strokeCircle(L.back.cx, L.back.cy, L.back.r, th.color.border, 1);
-  draw.iconBack(r, L.back.cx, L.back.cy, 20 * s, th.color.text);
+  draw.iconCircle(r, L.back.cx, L.back.cy, L.back.r, th.color.card, draw.iconBack, 20 * s, th.color.text);
 
   r.text(copy.levelmapTitle, r.w / 2, L.topBar.y + L.topBar.h / 2, {
-    size: th.font.body,
-    weight: '700',
+    size: th.font.pageTitle,
+    weight: '800',
     color: th.color.text,
     align: 'center'
   });

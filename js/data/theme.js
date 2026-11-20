@@ -5,28 +5,42 @@
  */
 var BASE = {
   color: {
-    bg: '#FDF4E7',
-    bgSunken: '#F6EADA',
+    bg: '#F7F1E9',            // 暖象牙底，贴近竞品的低饱和奶油纸感
+    bgSunken: '#F0E6DA',
     card: '#FFFFFF',
-    border: '#EFE4D3',
-    text: '#5B4335',
-    textSoft: '#9C8776',
+    border: '#E9DDD1',
+    text: '#6E4A42',          // 暖棕主文字，对比度仍 ≥ 7:1
+    textSoft: '#9C867C',
     textOnColor: '#FFFFFF',
-    brand: '#7ECBE8',
-    brandSoft: '#DCF3FB',
+    brand: '#7FCEEA',
+    brandSoft: '#E2F5FC',
     band: '#57B0D2',
     bandDeep: '#3F97BA',
     cta: '#F58B4C',
-    ctaSoft: '#FDE4D2',
-    ctaDeep: '#DE7233',       // 首页主按钮的立体底座
-    titleShadow: '#EFD8C2',   // 首页标题的暖色投影
+    ctaSoft: '#FCE6D7',
+    ctaDeep: '#DE7233',       // 主按钮的立体底座
+    titleShadow: '#EFD8C6',   // 首页标题的暖色投影
+    surfaceWarm: '#F9F0E7',   // 未选中标签页的浅奶油底
+    progress: '#3E9B4E',      // 进度数字（竞品同款绿色）
+    pressed: 'rgba(110, 74, 66, 0.10)', // 按压反馈叠加
+    ripple: 'rgba(110, 74, 66, 0.16)',  // 全局点按水波
     conflict: '#E4572E',
     highlight: '#FBE8A6',
     selected: '#FFFFFF',
-    shadow: 'rgba(90, 60, 40, 0.10)',
+    shadow: 'rgba(90, 60, 40, 0.08)',
+    shadowSoft: 'rgba(90, 60, 40, 0.05)',
+    shadowSofter: 'rgba(90, 60, 40, 0.035)',
     mask: 'rgba(60, 40, 30, 0.38)',
     ink: '#2E2A28',
+    xDark: '#6B4A35',
+    xLight: '#FFFFFF',
+    catInk: '#2E2A28',
+    catInner: '#F4B8C8',
+    catNose: '#E8879B',
+    catBlush: '#F6A6B8',
     gold: '#B8862B',
+    coinFace: '#F2C94C',
+    coinDeep: '#D9A62E',
     success: '#5FAF7C',
     rarityCommon: '#8C7A69',
     rarityRare: '#5C8DD6',
@@ -36,10 +50,12 @@ var BASE = {
 
   // 区域色板：色相与明度都拉开，实际取色由 ui/region-colors 按相邻关系分配。
   // 仍是糖果色系，但不再按编号顺序直接映射。
+  // 在旧色板基础上向白色混入 12%，保留多色相与可识别性，
+  // 同时更接近竞品的粉彩色块；冒烟测试仍要求相邻 ΔE ≥ 30。
   region: [
-    '#E85D75', '#4FAF6E', '#4A90D9', '#E8B33C',
-    '#9B59B6', '#EF7B4F', '#2FA9A0', '#8C5E3C',
-    '#C75B9E', '#7C8B9E', '#8CC152', '#5B6FD6'
+    '#EB7086', '#64B97F', '#609DDE', '#EBBC53',
+    '#A76DBF', '#F18B64', '#48B3AB', '#9A7153',
+    '#CE6FAA', '#8C99AA', '#9AC867', '#6F80DB'
   ],
 
   radius: { board: 20, tileLg: 12, tileSm: 8, card: 14, chip: 10, pill: 28 },
@@ -47,6 +63,7 @@ var BASE = {
 
   font: {
     title: 34,
+    pageTitle: 20,   // 子页面居中标题：比正文大、比首页标题克制
     hudValue: 26,
     hudLabel: 12,
     banner: 22,
@@ -79,7 +96,14 @@ var BASE = {
     tool: 46
   },
 
-  motion: { fast: 0.12, mid: 0.24, slow: 0.4 }
+  motion: {
+    press: 0.09,        // 按压反馈
+    ripple: 0.22,       // 全局点按水波
+    fast: 0.12,
+    transition: 0.2,    // 场景淡入 + 轻微缩放
+    mid: 0.24,
+    slow: 0.4
+  }
 };
 
 var SKINS = [
@@ -87,19 +111,19 @@ var SKINS = [
   // 皮肤同样保留多色相，靠整体冷暖与明度形成风格差异；
   // 不能做成单色渐变，否则区域边界无法辨认。
   { id: 'skin-mint', colors: [
-    '#E87A98', '#63C9A0', '#3FAFC4', '#E3CC5A',
-    '#9E7BCB', '#EF8A6A', '#2E8E87', '#9A7157',
-    '#D07BAE', '#7D92A0', '#A6CC66', '#5D7ED8'
+    '#EB8AA4', '#76CFAB', '#56B9CB', '#E6D26E',
+    '#AA8BD1', '#F1987C', '#479C95', '#A6826B',
+    '#D68BB8', '#8D9FAB', '#B1D278', '#708DDD'
   ] },
   { id: 'skin-sakura', colors: [
-    '#EE7894', '#67B57F', '#6FA3DE', '#EDBF55',
-    '#A66FBC', '#F28B6B', '#3EAAA3', '#A47050',
-    '#D76CA6', '#8A95A4', '#9FC866', '#7386DA'
+    '#F088A1', '#79BE8E', '#80AEE2', '#EFC769',
+    '#B180C4', '#F4997D', '#55B4AE', '#AF8165',
+    '#DC7EB1', '#98A2AF', '#ABCF78', '#8495DE'
   ] },
   { id: 'skin-night', colors: [
-    '#C65B74', '#4E9B70', '#5577C7', '#C9A03E',
-    '#8F63B8', '#C47A55', '#3E9A94', '#8A6244',
-    '#E79BB8', '#6B7B90', '#8AA04F', '#8FD0E0'
+    '#CD6F85', '#63A781', '#6987CE', '#CFAB55',
+    '#9C76C1', '#CB8A69', '#55A6A1', '#98755A',
+    '#EAA7C1', '#7D8B9D', '#98AB64', '#9CD6E4'
   ] }
 ];
 

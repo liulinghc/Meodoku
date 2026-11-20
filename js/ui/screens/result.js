@@ -56,17 +56,11 @@ ResultScene.prototype.update = function (dt) {
 ResultScene.prototype.render = function (r) {
   var app = this.app;
   var th = app.theme;
-  var s = app.layout.s;
   var L = app.layout.result();
   var info = this.info || {};
   this.L = L;
 
   r.fill(th.color.bg);
-
-  r.ctx.globalAlpha = 0.5;
-  r.circle(r.w * 0.92, L.cat.cy + 20 * s, 86 * s, th.color.brandSoft);
-  r.circle(r.w * 0.06, L.stats.y + 30 * s, 64 * s, th.color.ctaSoft);
-  r.ctx.globalAlpha = 1;
 
   this._renderConfetti(r);
   this._renderCat(r);

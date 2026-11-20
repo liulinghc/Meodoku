@@ -50,7 +50,7 @@ HomeScene.prototype._renderBg = function (r) {
   var s = this.app.layout.s;
   var d = this.L.deco;
 
-  r.ctx.globalAlpha = 0.55;
+  r.ctx.globalAlpha = 0.38;
   r.circle(d.blobA.cx, d.blobA.cy, d.blobA.r, th.color.brandSoft);
   r.circle(d.blobB.cx, d.blobB.cy, d.blobB.r, th.color.ctaSoft);
   r.ctx.globalAlpha = 1;
@@ -76,10 +76,10 @@ HomeScene.prototype._renderTop = function (r) {
   var s = this.app.layout.s;
   var L = this.L;
 
-  // 金币胶囊
+  // 金币胶囊：白底无描边，靠投影与背景分开
+  draw.softShadow(r, L.coin.x, L.coin.y, L.coin.w, L.coin.h, L.coin.h / 2);
   r.roundRect(L.coin.x, L.coin.y, L.coin.w, L.coin.h, L.coin.h / 2, th.color.card);
-  r.strokeRoundRect(L.coin.x, L.coin.y, L.coin.w, L.coin.h, L.coin.h / 2, th.color.border, 1);
-  draw.iconCoin(r, L.coin.x + 17 * s, L.coin.y + L.coin.h / 2, 18 * s, '#F2C94C');
+  draw.iconCoin(r, L.coin.x + 17 * s, L.coin.y + L.coin.h / 2, 18 * s);
   r.text(String(this.app.progress.coins()), L.coin.x + 34 * s, L.coin.y + L.coin.h / 2 + 1, {
     size: th.font.small,
     weight: '700',
@@ -88,7 +88,6 @@ HomeScene.prototype._renderTop = function (r) {
 
   // 玩法说明
   r.circle(L.help.cx, L.help.cy, L.help.r, th.color.card);
-  r.strokeCircle(L.help.cx, L.help.cy, L.help.r, th.color.border, 1);
   r.text(copy.guideHelpMark, L.help.cx, L.help.cy + 1, {
     size: th.font.body,
     weight: '700',
@@ -97,9 +96,8 @@ HomeScene.prototype._renderTop = function (r) {
   });
 
   // 签到
-  r.circle(L.checkin.cx, L.checkin.cy, L.checkin.r, th.color.card);
-  r.strokeCircle(L.checkin.cx, L.checkin.cy, L.checkin.r, th.color.border, 1);
-  draw.iconCalendar(r, L.checkin.cx, L.checkin.cy, 19 * s, th.color.text);
+  draw.iconCircle(r, L.checkin.cx, L.checkin.cy, L.checkin.r, th.color.card,
+    draw.iconCalendar, 19 * s, th.color.text);
   if (!this.app.signin.claimedToday() && !this.app.daily.guarded()) {
     var dr = 5 * s;
     r.circle(L.checkin.cx + L.checkin.r * 0.72, L.checkin.cy - L.checkin.r * 0.72, dr, th.color.dot);
@@ -107,9 +105,8 @@ HomeScene.prototype._renderTop = function (r) {
   }
 
   // 设置
-  r.circle(L.gear.cx, L.gear.cy, L.gear.r, th.color.card);
-  r.strokeCircle(L.gear.cx, L.gear.cy, L.gear.r, th.color.border, 1);
-  draw.iconGear(r, L.gear.cx, L.gear.cy, 18 * s, th.color.text);
+  draw.iconCircle(r, L.gear.cx, L.gear.cy, L.gear.r, th.color.card,
+    draw.iconGear, 18 * s, th.color.text);
 };
 
 HomeScene.prototype._renderTitle = function (r) {

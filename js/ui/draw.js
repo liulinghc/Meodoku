@@ -3,6 +3,7 @@
  * 这是 S1 的占位美术层；最终美术替换后，这些函数改为 drawImage 即可，
  * 调用方签名保持不变。
  */
+var themeBase = require('../data/theme').base;
 
 /* ---------------- 颜色工具 ---------------- */
 
@@ -20,7 +21,7 @@ function luminance(hex) {
 
 /** 浅色区域用深棕 X，深色区域用白 X */
 function xColorFor(hex) {
-  return luminance(hex) > 0.62 ? '#6B4A35' : '#FFFFFF';
+  return luminance(hex) > 0.62 ? themeBase.color.xDark : themeBase.color.xLight;
 }
 
 function alpha(hex, a) {
@@ -52,10 +53,10 @@ function ellipseFill(ctx, cx, cy, rx, ry, color) {
 
 function softShadow(r, x, y, w, h, rad) {
   var ctx = r.ctx;
-  ctx.fillStyle = 'rgba(90, 60, 40, 0.06)';
+  ctx.fillStyle = themeBase.color.shadowSoft;
   r.roundPath(x, y + 3, w, h, rad);
   ctx.fill();
-  ctx.fillStyle = 'rgba(90, 60, 40, 0.05)';
+  ctx.fillStyle = themeBase.color.shadowSofter;
   r.roundPath(x, y + 6, w, h, rad);
   ctx.fill();
 }
@@ -95,12 +96,12 @@ function drawEar(ctx, cx, cy, R, side, fill, inner, ink, lw) {
 function catFace(r, cx, cy, size, cat, opts) {
   var ctx = r.ctx;
   var R = size * 0.34;
-  var ink = (opts && opts.ink) || '#2E2A28';
+  var ink = (opts && opts.ink) || themeBase.color.catInk;
   var lw = Math.max(1, R * 0.10);
   var alpha = (opts && opts.alpha != null) ? opts.alpha : 1;
   var base = cat.base;
-  var patch = cat.patch || '#FFFFFF';
-  var inner = cat.inner || '#F4B8C8';
+  var patch = cat.patch || themeBase.color.card;
+  var inner = cat.inner || themeBase.color.catInner;
   var hasDetail = R > 8;
 
   ctx.save();
@@ -134,7 +135,7 @@ function catFace(r, cx, cy, size, cat, opts) {
     var ex = cx + si * eyeDX;
     ctx.beginPath();
     ctx.arc(ex, eyeY, sclera, 0, Math.PI * 2);
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = themeBase.color.card;
     ctx.fill();
     ctx.strokeStyle = ink;
     ctx.lineWidth = Math.max(0.7, lw * 0.5);
@@ -149,7 +150,7 @@ function catFace(r, cx, cy, size, cat, opts) {
     if (hasDetail) {
       ctx.beginPath();
       ctx.arc(ex - pr * 0.40, eyeY - pr * 0.42, pr * 0.38, 0, Math.PI * 2);
-      ctx.fillStyle = '#FFFFFF';
+      ctx.fillStyle = themeBase.color.card;
       ctx.fill();
     }
   }
@@ -160,7 +161,7 @@ function catFace(r, cx, cy, size, cat, opts) {
   ctx.lineTo(cx + R * 0.08, cy + R * 0.26);
   ctx.lineTo(cx, cy + R * 0.35);
   ctx.closePath();
-  ctx.fillStyle = '#E8879B';
+  ctx.fillStyle = themeBase.color.catNose;
   ctx.fill();
 
   // 嘴
@@ -176,7 +177,7 @@ function catFace(r, cx, cy, size, cat, opts) {
 
   // 腮红
   if (hasDetail) {
-    ctx.fillStyle = '#F6A6B8';
+    ctx.fillStyle = themeBase.color.catBlush;
     ctx.globalAlpha = alpha * 0.35;
     ctx.beginPath(); ctx.arc(cx - R * 0.63, cy + R * 0.34, R * 0.13, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(cx + R * 0.63, cy + R * 0.34, R * 0.13, 0, Math.PI * 2); ctx.fill();
@@ -231,6 +232,15 @@ function xMark(r, cx, cy, size, color) {
 }
 
 /* ---------------- 图标 ---------------- */
+
+/**
+ * 无描边圆形图标按钮：白底 + 居中图标。
+ * 各页顶栏统一走这里，避免每个页面各画一套“白圆 + 描边”。
+ */
+function iconCircle(r, cx, cy, radius, fill, icon, size, color) {
+  r.circle(cx, cy, radius, fill);
+  if (icon) icon(r, cx, cy, size || radius * 0.9, color || themeBase.color.text);
+}
 
 function iconBack(r, cx, cy, size, color) {
   var L = size * 0.30;
@@ -360,10 +370,10 @@ function iconCoin(r, cx, cy, size, color) {
   var rad = size * 0.40;
   ctx.beginPath();
   ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-  ctx.fillStyle = color || '#F2C94C';
+  ctx.fillStyle = color || themeBase.color.coinFace;
   ctx.fill();
-  r.strokeCircle(cx, cy, rad * 0.72, '#D9A62E', Math.max(1, size * 0.07));
-  ellipseFill(ctx, cx, cy, rad * 0.16, rad * 0.20, '#D9A62E');
+  r.strokeCircle(cx, cy, rad * 0.72, themeBase.color.coinDeep, Math.max(1, size * 0.07));
+  ellipseFill(ctx, cx, cy, rad * 0.16, rad * 0.20, themeBase.color.coinDeep);
 }
 
 function iconLock(r, cx, cy, size, color) {
@@ -485,7 +495,7 @@ function ruleIcon(r, kind, cx, cy, size, accent, ink) {
 
   // 网格
   ctx.save();
-  ctx.strokeStyle = alpha(ink || '#5B4335', 0.16);
+  ctx.strokeStyle = alpha(ink || themeBase.color.text, 0.16);
   ctx.lineWidth = 1;
   for (i = 1; i <= 2; i++) {
     ctx.beginPath();
@@ -512,12 +522,12 @@ function ruleIcon(r, kind, cx, cy, size, accent, ink) {
     dot(1, 1, accent);
   } else if (kind === 2) {
     dot(1, 1, accent);
-    cross(0, 1, alpha('#5B4335', 0.35));
-    cross(2, 1, alpha('#5B4335', 0.35));
+    cross(0, 1, alpha(themeBase.color.text, 0.35));
+    cross(2, 1, alpha(themeBase.color.text, 0.35));
   } else {
     dot(0, 0, accent);
-    cross(0, 1, alpha('#5B4335', 0.35));
-    cross(1, 0, alpha('#5B4335', 0.35));
+    cross(0, 1, alpha(themeBase.color.text, 0.35));
+    cross(1, 0, alpha(themeBase.color.text, 0.35));
   }
 }
 
@@ -556,6 +566,7 @@ module.exports = {
   softShadow: softShadow,
   catFace: catFace,
   xMark: xMark,
+  iconCircle: iconCircle,
   iconBack: iconBack,
   iconGear: iconGear,
   iconUndo: iconUndo,

@@ -1,5 +1,6 @@
 /**
- * 场景栈。只有栈顶接收输入与更新；下层可保留渲染（S1 不做转场）。
+ * 场景栈。只有栈顶接收输入与更新；下层保留在栈里但不渲染。
+ * 进/出场景时通知 app.transition 播一次淡入；每次按下通知 app.touchFx 画水波。
  */
 var logger = require('./logger');
 
@@ -26,6 +27,7 @@ SceneManager.prototype.push = function (name, params) {
   scene.sceneName = name;
   this.stack.push(scene);
   if (scene.enter) scene.enter(params || {});
+  if (this.app.transition) this.app.transition.start();
   return scene;
 };
 
@@ -35,6 +37,7 @@ SceneManager.prototype.pop = function () {
   if (scene && scene.exit) scene.exit();
   var top = this.top();
   if (top && top.resume) top.resume();
+  if (this.app.transition) this.app.transition.start();
 };
 
 SceneManager.prototype.replace = function (name, params) {
@@ -56,6 +59,7 @@ SceneManager.prototype.render = function (r) {
 };
 
 SceneManager.prototype.onTouchStart = function (x, y) {
+  if (this.app.touchFx) this.app.touchFx.start(x, y);
   var top = this.top();
   if (top && top.onTouchStart) top.onTouchStart(x, y);
 };

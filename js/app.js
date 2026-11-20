@@ -22,6 +22,8 @@ var Achievements = require('./services/achievements');
 var Shop = require('./services/shop');
 
 var Toast = require('./ui/widgets/toast');
+var TouchFx = require('./ui/widgets/touch-fx');
+var Transition = require('./ui/transition');
 var Debug = require('./ui/debug');
 
 var HomeScene = require('./ui/screens/home');
@@ -55,6 +57,8 @@ function App() {
   this.applySkin();
 
   this.toast = new Toast(this);
+  this.touchFx = new TouchFx(this);
+  this.transition = new Transition(this);
   this.debug = new Debug(this);
   this.debug.init();
 
@@ -127,6 +131,8 @@ App.prototype.frame = function (dt) {
   this.frames++;
   this.sm.update(dt);
   this.toast.update(dt);
+  this.touchFx.update(dt);
+  this.transition.update(dt);
   this.save.tick(clock.now());
   this.debug.frame(dt);
   this.render();
@@ -135,7 +141,26 @@ App.prototype.frame = function (dt) {
 App.prototype.render = function () {
   var r = this.renderer;
   r.begin();
+  // 先铺底色：场景在转场时是半透明的，不能透出上一帧
+  r.fill(this.theme.color.bg);
+
+  var p = this.transition.progress();
+  if (p < 1) {
+    var s = 0.985 + 0.015 * p;
+    r.save();
+    // 从 30% 透明度起步，避免切换瞬间整屏闪回奶油底
+    r.ctx.globalAlpha = 0.3 + 0.7 * p;
+    r.ctx.translate(r.w / 2, r.h / 2);
+    r.ctx.scale(s, s);
+    r.ctx.translate(-r.w / 2, -r.h / 2);
+  }
   this.sm.render(r);
+  if (p < 1) {
+    r.ctx.globalAlpha = 1;
+    r.restore();
+  }
+
+  this.touchFx.render(r);
   this.toast.render(r);
   this.debug.render(r);
 };

@@ -3,7 +3,8 @@
  * 只提供"画形状"的能力，不含任何业务语义。
  * 坐标系统一为逻辑像素（与 wx 触摸坐标一致），DPR 在内部处理。
  */
-var FONT_FAMILY = 'sans-serif';
+// 圆润的系统中文字体优先：iOS 苹方 / 安卓思源与雅黑，都没有时退回 sans-serif
+var FONT_FAMILY = '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
 
 function Renderer(canvas, ctx, width, height, dpr) {
   this.canvas = canvas;

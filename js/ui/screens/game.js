@@ -274,12 +274,9 @@ GameScene.prototype._renderTop = function (r) {
   var s = this.app.layout.s;
   var L = this.L;
 
-  r.circle(L.back.cx, L.back.cy, L.back.r, th.color.card);
-  r.strokeCircle(L.back.cx, L.back.cy, L.back.r, th.color.border, 1);
-  draw.iconBack(r, L.back.cx, L.back.cy, 20 * s, th.color.text);
+  draw.iconCircle(r, L.back.cx, L.back.cy, L.back.r, th.color.card, draw.iconBack, 20 * s, th.color.text);
 
   r.circle(L.help.cx, L.help.cy, L.help.r, th.color.card);
-  r.strokeCircle(L.help.cx, L.help.cy, L.help.r, th.color.border, 1);
   r.text(copy.guideHelpMark, L.help.cx, L.help.cy + 1, {
     size: th.font.body,
     weight: '700',
@@ -287,13 +284,11 @@ GameScene.prototype._renderTop = function (r) {
     align: 'center'
   });
 
-  r.circle(L.gear.cx, L.gear.cy, L.gear.r, th.color.card);
-  r.strokeCircle(L.gear.cx, L.gear.cy, L.gear.r, th.color.border, 1);
-  draw.iconGear(r, L.gear.cx, L.gear.cy, 19 * s, th.color.text);
+  draw.iconCircle(r, L.gear.cx, L.gear.cy, L.gear.r, th.color.card, draw.iconGear, 19 * s, th.color.text);
 
   r.text(this.dailyMode ? copy.dailyGameTitle : format(copy.levelTitle, this.index), r.w / 2, L.topBar.y + 19 * s, {
-    size: th.font.body,
-    weight: '700',
+    size: th.font.pageTitle,
+    weight: '800',
     color: th.color.text,
     align: 'center'
   });
